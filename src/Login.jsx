@@ -114,13 +114,12 @@ function Login({ setUser }) {
     // ==========================
 
     const handleGoogleLogin = async () => {
-
     try {
 
         const result = await signInWithPopup(auth, googleProvider);
 
-        console.log("Google Login Success");
-        console.log(result.user);
+        console.log("SUCCESS");
+        console.log(result);
 
         alert("Google Login Success");
 
@@ -128,14 +127,17 @@ function Login({ setUser }) {
 
     } catch (error) {
 
-        console.log(error);
-        console.log(error.code);
-        console.log(error.message);
+    console.error("Google Login Error:", error);
 
-        alert(error.code);
+    alert(
+        JSON.stringify({
+            code: error?.code,
+            message: error?.message,
+            name: error?.name
+        })
+    );
 
-    }
-
+}
 };
 
     // ==========================
