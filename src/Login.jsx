@@ -115,29 +115,28 @@ function Login({ setUser }) {
 
     const handleGoogleLogin = async () => {
 
-        try {
+    try {
 
-            await signInWithRedirect(
-                auth,
-                googleProvider
-            );
+        const result = await signInWithPopup(auth, googleProvider);
 
-        } catch (error) {
+        console.log("Google Login Success");
+        console.log(result.user);
 
-            switch (error.code) {
+        alert("Google Login Success");
 
-                case "auth/popup-blocked":
-                    alert("Popup blocked by browser.");
-                    break;
+        setUser(result.user);
 
-                default:
-                    alert(error.message);
+    } catch (error) {
 
-            }
+        console.log(error);
+        console.log(error.code);
+        console.log(error.message);
 
-        }
+        alert(error.code);
 
-    };
+    }
+
+};
 
     // ==========================
     // FORGOT PASSWORD
