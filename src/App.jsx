@@ -52,7 +52,7 @@ function App() {
   useEffect(() => {
 
     socketRef.current =
-      new WebSocket("ws://localhost:5001");
+      new WebSocket("wss://aiinterviewassistance-1.onrender.com");
 
     socketRef.current.onopen = () => {
 
@@ -323,7 +323,7 @@ useEffect(() => {
 
       const response =
         await fetch(
-          "http://localhost:5000/answer",
+          "https://aiinterviewassistance-1.onrender.com/answer",
           {
 
             method: "POST",
