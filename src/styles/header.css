@@ -1,0 +1,262 @@
+/* =====================================
+   HEADER
+===================================== */
+
+.header{
+
+    height:80px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:0 30px;
+
+    margin-bottom:25px;
+
+    background:#0f172a;
+
+    border:1px solid #1e293b;
+
+    border-radius:18px;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.35);
+
+}
+
+/* =====================================
+   LEFT
+===================================== */
+
+.header-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+}
+
+.logo-icon{
+
+    width:46px;
+
+    height:46px;
+
+    border-radius:12px;
+
+    background:#7c3aed;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-size:24px;
+
+    box-shadow:0 0 18px rgba(124,58,237,.45);
+
+}
+
+.logo-text{
+
+    margin:0;
+
+    color:white;
+
+    font-size:28px;
+
+    font-weight:700;
+
+    letter-spacing:.3px;
+
+}
+
+/* =====================================
+   RIGHT
+===================================== */
+
+.header-right{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:25px;
+
+}
+
+/* =====================================
+   CONNECTION
+===================================== */
+
+.connection-status{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    color:#cbd5e1;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    padding:10px 16px;
+
+    background:#111827;
+
+    border:1px solid #1f2937;
+
+    border-radius:12px;
+
+}
+
+.status-dot{
+
+    width:10px;
+
+    height:10px;
+
+    border-radius:50%;
+
+    background:#22c55e;
+
+    box-shadow:0 0 10px #22c55e;
+
+}
+
+/* =====================================
+   USER
+===================================== */
+
+.user-profile{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    background:#111827;
+
+    border:1px solid #1f2937;
+
+    border-radius:12px;
+
+    padding:8px 14px;
+
+}
+
+.avatar{
+
+    width:42px;
+
+    height:42px;
+
+    border-radius:50%;
+
+    background:#8b5cf6;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    color:white;
+
+    font-weight:bold;
+
+    font-size:18px;
+
+}
+
+.user-name{
+
+    color:white;
+
+    font-size:16px;
+
+    font-weight:600;
+
+}
+
+.arrow{
+
+    color:#94a3b8;
+
+    font-size:14px;
+
+}
+
+.profile-menu{
+
+    position:absolute;
+
+    top:65px;
+
+    right:0;
+
+    background:#111827;
+
+    border:1px solid #334155;
+
+    border-radius:12px;
+
+    padding:10px;
+
+    min-width:150px;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.4);
+
+    z-index:100;
+}
+
+.user-profile{
+
+    position:relative;
+
+    cursor:pointer;
+}
+
+.logout-btn{
+
+    width:100%;
+
+    border:none;
+
+    background:#ef4444;
+
+    color:white;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-weight:bold;
+}
+
+.logout-btn:hover{
+
+    background:#dc2626;
+}
+
+.avatar{
+
+    width:42px;
+
+    height:42px;
+
+    border-radius:50%;
+
+    object-fit:cover;
+}

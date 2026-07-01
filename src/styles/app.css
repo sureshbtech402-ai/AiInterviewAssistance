@@ -1,0 +1,74 @@
+/* ===========================
+   GLOBAL APP LAYOUT
+=========================== */
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", sans-serif;
+    background: #020617;
+    color: white;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.app-container {
+    min-height: 100vh;
+    padding: 30px;
+
+    background:
+        radial-gradient(circle at top right,
+            rgba(59,130,246,.18),
+            transparent 40%),
+
+        radial-gradient(circle at bottom left,
+            rgba(168,85,247,.18),
+            transparent 45%),
+
+        #020617;
+}
+
+/* ===========================
+   STATUS
+=========================== */
+
+.status {
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    margin: 25px 0;
+}
+
+/* ===========================
+   MAIN GRID
+=========================== */
+
+.main-layout {
+
+    display: grid;
+
+    grid-template-columns: 390px 1fr;
+
+    gap: 30px;
+
+    height: 78vh;
+
+}
+
+/* ===========================
+   RESPONSIVE
+=========================== */
+
+@media (max-width:1200px){
+
+    .main-layout{
+
+        grid-template-columns:1fr;
+
+        height:auto;
+
+    }
+
+}
