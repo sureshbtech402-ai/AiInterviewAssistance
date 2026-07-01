@@ -1,49 +1,19 @@
 import bg from "./assets/login-bg.png";
 import "./styles/login.css";
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 import { auth, googleProvider } from "./firebase";
 
 import {
     signInWithEmailAndPassword,
     sendPasswordResetEmail,
-    signInWithRedirect,
-    getRedirectResult
+    signInWithPopup
 } from "firebase/auth";
 
 function Login({ setUser }) {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-
-    // ==========================
-    // HANDLE GOOGLE REDIRECT RESULT
-    // ==========================
-
-    useEffect(() => {
-
-        getRedirectResult(auth)
-            .then((result) => {
-
-                if (result) {
-
-                    console.log(result.user);
-
-                    setUser(result.user);
-
-                    alert("✅ Google Login Successful");
-
-                }
-
-            })
-            .catch((error) => {
-
-                console.log(error);
-
-            });
-
-    }, [setUser]);
 
     // ==========================
     // EMAIL LOGIN
@@ -63,18 +33,15 @@ function Login({ setUser }) {
 
         try {
 
-            const userCredential =
-                await signInWithEmailAndPassword(
-                    auth,
-                    email,
-                    password
-                );
-
-            console.log(userCredential.user);
-
-            setUser(userCredential.user);
+            const userCredential = await signInWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
 
             alert("✅ Login Successful");
+
+            setUser(userCredential.user);
 
         } catch (error) {
 
@@ -114,31 +81,29 @@ function Login({ setUser }) {
     // ==========================
 
     const handleGoogleLogin = async () => {
-    try {
 
-        const result = await signInWithPopup(auth, googleProvider);
+        try {
 
-        console.log("SUCCESS");
-        console.log(result);
+            const result = await signInWithPopup(
+                auth,
+                googleProvider
+            );
 
-        alert("Google Login Success");
+            console.log("Google User:", result.user);
 
-        setUser(result.user);
+            alert("✅ Google Login Successful");
 
-    } catch (error) {
+            setUser(result.user);
 
-    console.error("Google Login Error:", error);
+        } catch (error) {
 
-    alert(
-        JSON.stringify({
-            code: error?.code,
-            message: error?.message,
-            name: error?.name
-        })
-    );
+            console.error("Google Login Error:", error);
 
-}
-};
+            alert(error.message);
+
+        }
+
+    };
 
     // ==========================
     // FORGOT PASSWORD
@@ -158,7 +123,7 @@ function Login({ setUser }) {
 
             await sendPasswordResetEmail(auth, email);
 
-            alert("✅ Password Reset Email Sent.\n\nPlease check your Gmail Inbox.");
+            alert("✅ Password Reset Email Sent.");
 
         }
 
