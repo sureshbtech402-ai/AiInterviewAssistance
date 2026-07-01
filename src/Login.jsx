@@ -1,19 +1,49 @@
 import bg from "./assets/login-bg.png";
 import "./styles/login.css";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 
 import { auth, googleProvider } from "./firebase";
 
 import {
     signInWithEmailAndPassword,
     sendPasswordResetEmail,
-    signInWithPopup
+    signInWithRedirect,
+    getRedirectResult
 } from "firebase/auth";
 
 function Login({ setUser }) {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+
+    // ==========================
+    // HANDLE GOOGLE REDIRECT RESULT
+    // ==========================
+
+    useEffect(() => {
+
+        getRedirectResult(auth)
+            .then((result) => {
+
+                if (result) {
+
+                    console.log(result.user);
+
+                    setUser(result.user);
+
+                    alert("✅ Google Login Successful");
+
+                }
+
+            })
+            .catch((error) => {
+
+                console.log(error);
+
+            });
+
+    }, [setUser]);
 
     // ==========================
     // EMAIL LOGIN
@@ -40,13 +70,11 @@ function Login({ setUser }) {
                     password
                 );
 
-            alert("✅ Login Successful");
-
             console.log(userCredential.user);
+
             setUser(userCredential.user);
 
-            // Next Step
-            // Navigate to Interview Assistant
+            alert("✅ Login Successful");
 
         } catch (error) {
 
@@ -89,23 +117,23 @@ function Login({ setUser }) {
 
         try {
 
-            const result =
-                await signInWithPopup(
-                    auth,
-                    googleProvider
-                );
-
-            console.log(result.user);
-            setUser(result.user);
-
-            alert("✅ Google Login Successful");
-
-            // Next Step
-            // Navigate to Interview Assistant
+            await signInWithRedirect(
+                auth,
+                googleProvider
+            );
 
         } catch (error) {
 
-            alert(error.message);
+            switch (error.code) {
+
+                case "auth/popup-blocked":
+                    alert("Popup blocked by browser.");
+                    break;
+
+                default:
+                    alert(error.message);
+
+            }
 
         }
 
