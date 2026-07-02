@@ -4,7 +4,12 @@ const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 const fs = require("fs");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 const app = express();
 
@@ -291,9 +296,12 @@ Rules:
 - Do NOT wrap JSON inside \`\`\`.
 `;
 
-const result = await model.generateContent(prompt);
+const response = await client.responses.create({
+  model: "gpt-5.5-flash",
+  input: prompt,
+});
 
-let responseText = result.response.text();
+const text = response.output_text;
 
 // Remove markdown fences if Gemini wraps JSON in ```json ... ```
 responseText = responseText
