@@ -289,7 +289,7 @@ Rules:
 `;
 
 const response = await client.responses.create({
-  model: "gpt-5.5-flash",
+  model: "gpt-5.5",
   input: prompt,
 });
 
@@ -301,8 +301,6 @@ responseText = responseText
   .trim();
 
 const parsed = JSON.parse(responseText);
-
-res.json(parsed);
 
 res.json(parsed);
   } catch (err) {
