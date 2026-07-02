@@ -323,7 +323,7 @@ useEffect(() => {
 
       const response =
         await fetch(
-          "https://aiinterviewassistance-1.onrender.com/answer",
+          "https://aiinterviewassistance-3.onrender.com/answer",
           {
 
             method: "POST",
