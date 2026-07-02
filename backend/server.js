@@ -289,7 +289,7 @@ Rules:
 `;
 
 const response = await client.responses.create({
-  model: "gpt-5.5",
+  model: "gpt-5.5-flash",
   input: prompt,
 });
 
@@ -314,6 +314,8 @@ res.json(parsed);
   }
 });
 
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
