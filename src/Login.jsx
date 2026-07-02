@@ -7,7 +7,8 @@ import { auth, googleProvider } from "./firebase";
 import {
     signInWithEmailAndPassword,
     sendPasswordResetEmail,
-    signInWithPopup
+    signInWithPopup,
+    signOut
 } from "firebase/auth";
 
 function Login({ setUser }) {
@@ -15,9 +16,15 @@ function Login({ setUser }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
-    // ==========================
-    // EMAIL LOGIN
-    // ==========================
+    const allowedEmails = [
+        "sureshbtech402@gmail.com",
+        "gollapruthvi@gmail.com",
+        "sureshchinnamadula768@gmail.com"
+    ];
+
+    const isAllowedUser = (userEmail) => {
+        return allowedEmails.includes(userEmail?.toLowerCase());
+    };
 
     const handleLogin = async () => {
 
@@ -39,46 +46,21 @@ function Login({ setUser }) {
                 password
             );
 
-            alert("✅ Login Successful");
+            const loggedInEmail = userCredential.user.email?.toLowerCase();
 
+            if (!isAllowedUser(loggedInEmail)) {
+                await signOut(auth);
+                alert("Access denied. You are not allowed to use this application.");
+                return;
+            }
+
+            alert("✅ Login Successful");
             setUser(userCredential.user);
 
         } catch (error) {
-
-            switch (error.code) {
-
-                case "auth/user-not-found":
-                    alert("No account found with this Email.");
-                    break;
-
-                case "auth/wrong-password":
-                    alert("Incorrect Password.");
-                    break;
-
-                case "auth/invalid-email":
-                    alert("Invalid Email Address.");
-                    break;
-
-                case "auth/invalid-credential":
-                    alert("Invalid Email or Password.");
-                    break;
-
-                case "auth/too-many-requests":
-                    alert("Too many attempts. Please try again later.");
-                    break;
-
-                default:
-                    alert(error.message);
-
-            }
-
+            alert("Invalid Email or Password.");
         }
-
     };
-
-    // ==========================
-    // GOOGLE LOGIN
-    // ==========================
 
     const handleGoogleLogin = async () => {
 
@@ -89,74 +71,45 @@ function Login({ setUser }) {
                 googleProvider
             );
 
-            console.log("Google User:", result.user);
+            const loggedInEmail = result.user.email?.toLowerCase();
+
+            if (!isAllowedUser(loggedInEmail)) {
+                await signOut(auth);
+                alert("Access denied. You are not allowed to use this application.");
+                return;
+            }
 
             alert("✅ Google Login Successful");
-
             setUser(result.user);
 
         } catch (error) {
-
             console.error("Google Login Error:", error);
-
             alert(error.message);
-
         }
-
     };
-
-    // ==========================
-    // FORGOT PASSWORD
-    // ==========================
 
     const handleForgotPassword = async () => {
 
         if (!email.trim()) {
-
             alert("Please enter your Email first.");
-
             return;
-
         }
 
         try {
-
             await sendPasswordResetEmail(auth, email);
-
             alert("✅ Password Reset Email Sent.");
-
+        } catch (error) {
+            alert(error.message);
         }
-
-        catch (error) {
-
-            switch (error.code) {
-
-                case "auth/user-not-found":
-                    alert("No account found with this Email.");
-                    break;
-
-                case "auth/invalid-email":
-                    alert("Invalid Email Address.");
-                    break;
-
-                default:
-                    alert(error.message);
-
-            }
-
-        }
-
     };
 
     return (
-
         <div
             className="login-page"
             style={{
                 backgroundImage: `url(${bg})`
             }}
         >
-
             <div className="login-card">
 
                 <h1 className="login-title">
@@ -214,11 +167,8 @@ function Login({ setUser }) {
                 </button>
 
             </div>
-
         </div>
-
     );
-
 }
 
 export default Login;
