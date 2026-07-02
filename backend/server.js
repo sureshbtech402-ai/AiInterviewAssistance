@@ -1,9 +1,10 @@
-require("dotenv").config();
+import dotenv from "dotenv";
+dotenv.config();
 
-const express = require("express");
-const cors = require("cors");
-const multer = require("multer");
-const fs = require("fs");
+import express from "express";
+import cors from "cors";
+import multer from "multer";
+import fs from "fs";
 
 import OpenAI from "openai";
 
@@ -19,15 +20,6 @@ const upload = multer({
 
 app.use(cors());
 app.use(express.json());
-
-// Gemini
-const genAI = new GoogleGenerativeAI(
-  process.env.GEMINI_API_KEY
-);
-
-const model = genAI.getGenerativeModel({
-  model: "gemini-2.5-flash",
-});
 
 // Test Route
 app.get("/", (req, res) => {
@@ -297,19 +289,20 @@ Rules:
 `;
 
 const response = await client.responses.create({
-  model: "gpt-5.5-flash",
+  model: "gpt-5.5",
   input: prompt,
 });
 
-const text = response.output_text;
+let responseText = response.output_text;
 
-// Remove markdown fences if Gemini wraps JSON in ```json ... ```
 responseText = responseText
   .replace(/```json/g, "")
   .replace(/```/g, "")
   .trim();
 
 const parsed = JSON.parse(responseText);
+
+res.json(parsed);
 
 res.json(parsed);
   } catch (err) {
