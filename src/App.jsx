@@ -16,7 +16,7 @@ import { extractPdfText } from "./pdfReader";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
-  "https://aiinterviewassistance-3.onrender.com";
+  "https://aiinterviewassistance-4.onrender.com/";
 
 const WS_URL =
   import.meta.env.VITE_WS_URL ||
