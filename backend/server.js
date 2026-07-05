@@ -6,7 +6,7 @@ import cors from "cors";
 import multer from "multer";
 import fs from "fs";
 import http from "http";
-import WebSocket from "ws";
+import { WebSocketServer, WebSocket } from "ws";
 
 import {
   createClient,
@@ -37,7 +37,7 @@ app.get("/", (req, res) => {
 // ===========================
 // DEEPGRAM LIVE WEBSOCKET
 // ===========================
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocketServer({ server });
 
 wss.on("connection", (client) => {
   console.log("React WebSocket Connected");
