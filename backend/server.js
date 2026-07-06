@@ -320,8 +320,6 @@ app.post("/answer", async (req, res) => {
         model: OPENAI_MODEL,
         input: prompt,
         stream: true,
-        temperature: 0.25,
-        max_output_tokens: 900,
       }),
     });
 
