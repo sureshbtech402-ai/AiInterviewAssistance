@@ -78,7 +78,10 @@ const updateQuestionFromTranscript = (payload) => {
 
     liveQuestionRef.current = text;
 
-    setQuestion(text);
+    setQuestion((prev) => {
+    if (prev.endsWith(text)) return prev;
+    return (prev + " " + text).trim();
+    });
 
     clearTimeout(silenceTimerRef.current);
 
@@ -88,7 +91,7 @@ const updateQuestionFromTranscript = (payload) => {
 
         console.log("Question Completed");
 
-    }, 1800);
+    }, 5000);
 
 };
 

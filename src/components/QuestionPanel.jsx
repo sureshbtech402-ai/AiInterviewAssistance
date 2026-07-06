@@ -16,7 +16,7 @@ function QuestionPanel({
       <div className="question-header">
         <div>
           <h2 className="panel-title">
-            🎤 Interview Question
+            🎤 Question
           </h2>
 
           <p className="panel-subtitle">
