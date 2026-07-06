@@ -7,36 +7,47 @@ import multer from "multer";
 import fs from "fs";
 import http from "http";
 import { WebSocketServer, WebSocket } from "ws";
-
-import {
-  createClient,
-  LiveTranscriptionEvents,
-} from "@deepgram/sdk";
+import { createClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 
 const app = express();
 const server = http.createServer(app);
+const upload = multer({ dest: "uploads/" });
 
-const upload = multer({
-  dest: "uploads/",
-});
+const PORT = process.env.PORT || 5000;
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5.5";
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 
-app.use(cors());
+app.use(
+  cors({
+    origin: ALLOWED_ORIGIN === "*" ? true : ALLOWED_ORIGIN.split(","),
+    credentials: false,
+  })
+);
+
 app.use(express.json({ limit: "10mb" }));
 
 const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 
-const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5.5";
-
-// ===========================
-// HEALTH CHECK
-// ===========================
 app.get("/", (req, res) => {
-  res.send("Backend Running 🚀");
+  res.send("AI Interview Assistant Backend Running 🚀");
 });
 
-// ===========================
-// DEEPGRAM LIVE WEBSOCKET
-// ===========================
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    deepgram: Boolean(process.env.DEEPGRAM_API_KEY),
+    openai: Boolean(process.env.OPENAI_API_KEY),
+    model: OPENAI_MODEL,
+  });
+});
+
+/* =====================================================
+   DEEPGRAM LIVE WEBSOCKET
+   Frontend sends WebM/Opus audio chunks.
+   Backend streams them to Deepgram Nova-3 and returns
+   interim/final transcript JSON to the frontend.
+===================================================== */
+
 const wss = new WebSocketServer({ server });
 
 wss.on("connection", (client) => {
@@ -44,71 +55,127 @@ wss.on("connection", (client) => {
 
   if (!process.env.DEEPGRAM_API_KEY) {
     console.error("Missing DEEPGRAM_API_KEY");
+    client.send(JSON.stringify({ error: "Missing DEEPGRAM_API_KEY" }));
     client.close();
     return;
   }
+
+  let deepgramReady = false;
+  let closedByClient = false;
+  const pendingAudio = [];
 
   const dgConnection = deepgram.listen.live({
     model: "nova-3",
     language: "en-US",
     punctuate: true,
-    interim_results: true,
     smart_format: true,
-    endpointing: 300,
+    interim_results: true,
+    endpointing: 250,
     vad_events: true,
     utterance_end_ms: 1000,
+    encoding: "opus",
+    container: "webm",
   });
+
+  const keepAlive = setInterval(() => {
+    try {
+      if (deepgramReady && typeof dgConnection.keepAlive === "function") {
+        dgConnection.keepAlive();
+      }
+    } catch (err) {
+      console.error("Deepgram keepAlive error:", err);
+    }
+  }, 5000);
+
+  const sendToClient = (payload) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(payload));
+    }
+  };
 
   dgConnection.on(LiveTranscriptionEvents.Open, () => {
     console.log("Deepgram Connected");
+    deepgramReady = true;
+    sendToClient({ type: "status", status: "deepgram_connected" });
 
-    client.on("message", (audioChunk) => {
-      if (dgConnection.getReadyState() === 1) {
-        dgConnection.send(audioChunk);
+    while (pendingAudio.length > 0) {
+      const chunk = pendingAudio.shift();
+      try {
+        dgConnection.send(chunk);
+      } catch (err) {
+        console.error("Deepgram buffered send error:", err);
       }
-    });
+    }
+  });
+
+  client.on("message", (audioChunk) => {
+    if (!audioChunk || audioChunk.length === 0) return;
+
+    try {
+      if (deepgramReady && dgConnection.getReadyState() === 1) {
+        dgConnection.send(audioChunk);
+      } else {
+        pendingAudio.push(audioChunk);
+        if (pendingAudio.length > 50) pendingAudio.shift();
+      }
+    } catch (err) {
+      console.error("Deepgram send error:", err);
+    }
   });
 
   dgConnection.on(LiveTranscriptionEvents.Transcript, (data) => {
     const transcript = data?.channel?.alternatives?.[0]?.transcript || "";
-
     if (!transcript.trim()) return;
 
-    const payload = {
-      text: transcript,
-      isFinal: Boolean(data?.is_final),
-      speechFinal: Boolean(data?.speech_final),
-    };
+    const isFinal = Boolean(data?.is_final);
+    const speechFinal = Boolean(data?.speech_final);
 
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(payload));
-    }
+    console.log(`${isFinal ? "Final" : "Interim"} Transcript:`, transcript);
+
+    sendToClient({
+      type: "transcript",
+      text: transcript,
+      isFinal,
+      speechFinal,
+    });
   });
 
   dgConnection.on(LiveTranscriptionEvents.Error, (err) => {
     console.error("Deepgram Error:", err);
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({ error: "Deepgram transcription error" }));
-    }
+    sendToClient({ type: "error", error: "Deepgram transcription error" });
   });
 
   dgConnection.on(LiveTranscriptionEvents.Close, () => {
     console.log("Deepgram Closed");
+    deepgramReady = false;
+    clearInterval(keepAlive);
+
+    if (!closedByClient && client.readyState === WebSocket.OPEN) {
+      sendToClient({ type: "status", status: "deepgram_closed" });
+    }
   });
 
   client.on("close", () => {
     console.log("React WebSocket Closed");
+    closedByClient = true;
+    clearInterval(keepAlive);
+
     try {
       dgConnection.finish();
     } catch (err) {
       console.error("Deepgram finish error:", err);
     }
   });
+
+  client.on("error", (err) => {
+    console.error("React WebSocket Error:", err);
+  });
 });
 
-// ===========================
-// DEEPGRAM FILE TRANSCRIBE
-// ===========================
+/* =====================================================
+   DEEPGRAM FILE TRANSCRIPTION FALLBACK
+===================================================== */
+
 app.post("/transcribe", upload.single("audio"), async (req, res) => {
   try {
     if (!req.file) {
@@ -129,9 +196,7 @@ app.post("/transcribe", upload.single("audio"), async (req, res) => {
 
     fs.unlinkSync(req.file.path);
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     const text =
       result?.results?.channels?.[0]?.alternatives?.[0]?.transcript || "";
@@ -150,14 +215,14 @@ function buildInterviewPrompt({
   company,
   interviewType,
 }) {
-  return `You are an Indian Java Spring Boot interview assistant.
-Answer like the candidate is speaking in a real interview.
-Keep it short, confident, practical, and resume-aware.
+  return `You are a senior Indian interview coach.
+Reply as if the candidate is speaking in a real interview.
+Be short, practical, confident, and resume-aware.
 
-Candidate Resume:
+Resume:
 ${resumeText || "Resume not uploaded"}
 
-Interview Context:
+Context:
 Company: ${company || "Generic"}
 Level: ${interviewLevel || "Mid Level"}
 Type: ${interviewType || "Technical"}
@@ -167,16 +232,16 @@ ${question}
 
 Rules:
 - Use simple Indian spoken English.
-- No textbook theory. Speak like a real candidate.
-- Keep Interview Ready Answer around 70 to 100 words.
-- Use **bold** for important technical words.
+- No textbook explanation, no long theory.
+- Interview Ready Answer: 70-100 words.
+- Use **bold** for important technical keywords.
 - Always include a project-related answer.
-- If resume has matching project information, use it naturally.
-- If resume is missing or unrelated, give a safe practical project-style example without fake company names.
-- If it is a coding question, include complete working code and short explanation.
-- Prefer Java for coding unless another language is clearly asked.
+- If resume is relevant, connect naturally with the candidate's project.
+- If resume is not enough, use a safe practical project example without fake company names.
+- For coding/program/query questions, include complete working code, complexity, output if useful, and simple explanation.
+- Prefer Java unless another language is clearly asked.
 
-Return only Markdown with this exact structure:
+Return only Markdown in this exact format:
 
 ## 🎯 Interview Ready Answer
 
@@ -204,31 +269,22 @@ function extractDeltaFromOpenAIEvent(event) {
     return event.delta || "";
   }
 
-  if (event.type === "response.output_text.done") {
-    return "";
-  }
-
   if (event.type === "response.message.delta") {
     const content = event.delta?.content || [];
-    return content
-      .map((item) => item?.text || item?.delta || "")
-      .join("");
+    return content.map((item) => item?.text || item?.delta || "").join("");
   }
 
   return "";
 }
 
-// ===========================
-// OPENAI STREAMING ANSWER ROUTE
-// ===========================
+/* =====================================================
+   OPENAI STREAMING ANSWER ROUTE
+   Streams plain Markdown chunks to the frontend.
+===================================================== */
+
 app.post("/answer", async (req, res) => {
-  const {
-    question,
-    resumeText,
-    interviewLevel,
-    company,
-    interviewType,
-  } = req.body;
+  const { question, resumeText, interviewLevel, company, interviewType } =
+    req.body || {};
 
   if (!question || !question.trim()) {
     return res.status(400).send("Question is empty");
@@ -247,9 +303,11 @@ app.post("/answer", async (req, res) => {
       interviewType,
     });
 
+    res.status(200);
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Cache-Control", "no-cache, no-transform");
     res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders?.();
 
     const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
@@ -262,13 +320,15 @@ app.post("/answer", async (req, res) => {
         model: OPENAI_MODEL,
         input: prompt,
         stream: true,
+        temperature: 0.25,
+        max_output_tokens: 900,
       }),
     });
 
     if (!openaiResponse.ok || !openaiResponse.body) {
       const errorText = await openaiResponse.text();
       console.error("OpenAI Stream Error:", errorText);
-      res.write("Unable to generate answer right now.");
+      res.write("Unable to generate answer right now. Please try again.");
       return res.end();
     }
 
@@ -278,11 +338,9 @@ app.post("/answer", async (req, res) => {
 
     while (true) {
       const { done, value } = await reader.read();
-
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
-
       const parts = buffer.split("\n\n");
       buffer = parts.pop() || "";
 
@@ -293,16 +351,12 @@ app.post("/answer", async (req, res) => {
 
         for (const line of lines) {
           const data = line.replace(/^data:\s*/, "").trim();
-
           if (!data || data === "[DONE]") continue;
 
           try {
             const event = JSON.parse(data);
             const delta = extractDeltaFromOpenAIEvent(event);
-
-            if (delta) {
-              res.write(delta);
-            }
+            if (delta) res.write(delta);
           } catch (err) {
             console.error("OpenAI stream parse error:", err);
           }
@@ -322,8 +376,6 @@ app.post("/answer", async (req, res) => {
     }
   }
 });
-
-const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

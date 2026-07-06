@@ -1,9 +1,6 @@
 import Login from "./Login";
 import { auth } from "./firebase";
-import {
-  signOut,
-  onAuthStateChanged,
-} from "firebase/auth";
+import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useState, useEffect, useRef } from "react";
 
 import Header from "./components/Header";
@@ -14,13 +11,17 @@ import AnswerPanel from "./components/AnswerPanel";
 
 import { extractPdfText } from "./pdfReader";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  "https://aiinterviewassistance-4.onrender.com";
+const trimTrailingSlash = (value) => (value || "").replace(/\/+$/, "");
 
-const WS_URL =
+const API_BASE_URL = trimTrailingSlash(
+  import.meta.env.VITE_API_BASE_URL ||
+    "https://aiinterviewassistance-4.onrender.com"
+);
+
+const WS_URL = trimTrailingSlash(
   import.meta.env.VITE_WS_URL ||
-  API_BASE_URL.replace(/^https:/, "wss:").replace(/^http:/, "ws:");
+    API_BASE_URL.replace(/^https:/, "wss:").replace(/^http:/, "ws:")
+);
 
 function App() {
   const [user, setUser] = useState(null);
@@ -45,6 +46,9 @@ function App() {
   const audioContextRef = useRef(null);
   const screenStreamRef = useRef(null);
   const textareaRef = useRef(null);
+  const finalTranscriptRef = useRef("");
+  const interimTranscriptRef = useRef("");
+  const answerAbortRef = useRef(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -56,68 +60,107 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const socket = new WebSocket(WS_URL);
-    socketRef.current = socket;
-
-    socket.onopen = () => {
-      console.log("✅ WebSocket Connected");
-    };
-
-    socket.onmessage = (event) => {
-      if (!event.data) return;
-
-      let transcriptText = "";
-
-      try {
-        const payload = JSON.parse(event.data);
-        transcriptText = payload.text || "";
-      } catch {
-        transcriptText = event.data;
-      }
-
-      if (!transcriptText.trim()) return;
-
-      setQuestion((prev) => {
-        const cleanedPrev = prev.trim();
-        const cleanedText = transcriptText.trim();
-
-        if (cleanedPrev.includes(cleanedText)) {
-          return prev;
-        }
-
-        return cleanedPrev
-          ? `${cleanedPrev} ${cleanedText}`
-          : cleanedText;
-      });
-    };
-
-    socket.onerror = (error) => {
-      console.error("WebSocket Error:", error);
-    };
-
-    socket.onclose = () => {
-      console.log("WebSocket Closed");
-    };
-
-    return () => {
-      socket.close();
-    };
-  }, []);
-
-  useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
     }
   }, [question]);
 
+  const updateQuestionFromTranscript = (payload) => {
+    const text = (payload?.text || "").trim();
+    if (!text) return;
+
+    if (payload.isFinal || payload.speechFinal) {
+      const currentFinal = finalTranscriptRef.current.trim();
+
+      if (!currentFinal.includes(text)) {
+        finalTranscriptRef.current = currentFinal
+          ? `${currentFinal} ${text}`
+          : text;
+      }
+
+      interimTranscriptRef.current = "";
+    } else {
+      interimTranscriptRef.current = text;
+    }
+
+    const combined = `${finalTranscriptRef.current} ${interimTranscriptRef.current}`.trim();
+    setQuestion(combined);
+  };
+
+  const openInterviewSocket = () => {
+    return new Promise((resolve, reject) => {
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        return resolve(socketRef.current);
+      }
+
+      if (socketRef.current) {
+        try {
+          socketRef.current.close();
+        } catch {}
+      }
+
+      const socket = new WebSocket(WS_URL);
+      socketRef.current = socket;
+
+      const timeout = setTimeout(() => {
+        reject(new Error("WebSocket connection timeout"));
+      }, 10000);
+
+      socket.onopen = () => {
+        clearTimeout(timeout);
+        console.log("✅ WebSocket Connected");
+        resolve(socket);
+      };
+
+      socket.onmessage = (event) => {
+        if (!event.data) return;
+
+        try {
+          const payload = JSON.parse(event.data);
+
+          if (payload.type === "transcript") {
+            updateQuestionFromTranscript(payload);
+          } else if (payload.error) {
+            console.error("Deepgram Error:", payload.error);
+          } else if (payload.status) {
+            console.log("Deepgram Status:", payload.status);
+          }
+        } catch {
+          updateQuestionFromTranscript({
+            type: "transcript",
+            text: event.data,
+            isFinal: true,
+          });
+        }
+      };
+
+      socket.onerror = (error) => {
+        clearTimeout(timeout);
+        console.error("WebSocket Error:", error);
+        reject(error);
+      };
+
+      socket.onclose = () => {
+        console.log("WebSocket Closed");
+      };
+    });
+  };
+
+  const closeInterviewSocket = () => {
+    if (socketRef.current) {
+      try {
+        socketRef.current.close();
+      } catch {}
+    }
+    socketRef.current = null;
+  };
+
   const handleResumeUpload = async (event) => {
     const file = event.target.files[0];
-
     if (!file) return;
 
     try {
       setResumeName(file.name);
-
       const text = await extractPdfText(file);
       setResumeText(text);
 
@@ -127,7 +170,6 @@ function App() {
         ) || [];
 
       setSkills([...new Set(skillMatches.map((skill) => skill.trim()))]);
-
       alert("Resume Uploaded Successfully");
     } catch (err) {
       console.error(err);
@@ -138,9 +180,12 @@ function App() {
   const startInterviewMode = async () => {
     setQuestion("");
     setAnswerData(null);
-    setIsInterviewRunning(true);
+    finalTranscriptRef.current = "";
+    interimTranscriptRef.current = "";
 
     try {
+      setIsInterviewRunning(true);
+
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
         audio: true,
@@ -149,44 +194,41 @@ function App() {
       screenStreamRef.current = stream;
 
       const audioTrack = stream.getAudioTracks()[0];
-
       if (!audioTrack) {
-        alert("Please enable Share Tab Audio.");
+        alert("Please select a Chrome tab and enable Share tab audio.");
         setIsInterviewRunning(false);
         stream.getTracks().forEach((track) => track.stop());
         return;
       }
+
+      const socket = await openInterviewSocket();
 
       audioTrack.onended = () => {
         console.log("Audio Track Ended");
         stopInterviewMode();
       };
 
-      const audioContext = new AudioContext({
-        sampleRate: 48000,
-      });
-
+      const audioContext = new AudioContext({ sampleRate: 48000 });
       audioContextRef.current = audioContext;
 
       const source = audioContext.createMediaStreamSource(stream);
       const destination = audioContext.createMediaStreamDestination();
-
       source.connect(destination);
 
-      const recorder = new MediaRecorder(destination.stream, {
-        mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-          ? "audio/webm;codecs=opus"
-          : "audio/webm",
-      });
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : "audio/webm";
 
+      const recorder = new MediaRecorder(destination.stream, { mimeType });
       mediaRecorderRef.current = recorder;
 
       recorder.ondataavailable = (event) => {
         if (
+          event.data &&
           event.data.size > 0 &&
-          socketRef.current?.readyState === WebSocket.OPEN
+          socket.readyState === WebSocket.OPEN
         ) {
-          socketRef.current.send(event.data);
+          socket.send(event.data);
         }
       };
 
@@ -195,13 +237,14 @@ function App() {
       };
 
       recorder.onerror = (e) => {
-        console.log("Recorder Error", e);
+        console.error("Recorder Error", e);
       };
 
-      recorder.start(300);
+      recorder.start(100);
     } catch (err) {
       console.error(err);
-      setIsInterviewRunning(false);
+      alert("Unable to start interview audio. Please try again and share tab audio.");
+      stopInterviewMode();
     }
   };
 
@@ -218,13 +261,17 @@ function App() {
     ) {
       mediaRecorderRef.current.stop();
     }
+    mediaRecorderRef.current = null;
 
-    audioContextRef.current?.close();
+    if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+      audioContextRef.current.close();
+    }
     audioContextRef.current = null;
 
     screenStreamRef.current?.getTracks().forEach((track) => track.stop());
     screenStreamRef.current = null;
 
+    closeInterviewSocket();
     setIsInterviewRunning(false);
   };
 
@@ -235,14 +282,16 @@ function App() {
     }
 
     try {
+      answerAbortRef.current?.abort();
+      answerAbortRef.current = new AbortController();
+
       setLoading(true);
       setAnswerData("");
 
       const response = await fetch(`${API_BASE_URL}/answer`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
+        signal: answerAbortRef.current.signal,
         body: JSON.stringify({
           question,
           resumeText,
@@ -262,7 +311,6 @@ function App() {
 
       while (true) {
         const { done, value } = await reader.read();
-
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
@@ -270,6 +318,7 @@ function App() {
         setAnswerData(fullText);
       }
     } catch (err) {
+      if (err.name === "AbortError") return;
       console.error(err);
       setAnswerData("Unable to generate answer right now. Please try again.");
       alert("Failed to Generate");
