@@ -304,7 +304,7 @@ app.post("/answer", async (req, res) => {
     });
 
     res.status(200);
-    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
     res.setHeader("Cache-Control", "no-cache, no-transform");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
@@ -354,7 +354,10 @@ app.post("/answer", async (req, res) => {
           try {
             const event = JSON.parse(data);
             const delta = extractDeltaFromOpenAIEvent(event);
-            if (delta) res.write(delta);
+            if (delta) {
+              res.write(delta);
+              res.flush?.();
+            }
           } catch (err) {
             console.error("OpenAI stream parse error:", err);
           }

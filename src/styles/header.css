@@ -3,27 +3,23 @@
 ===================================== */
 
 .header{
+    position:sticky;
+    top:0;
+    z-index:999;
 
-    height:80px;
+    height:68px;
 
     display:flex;
-
     align-items:center;
-
     justify-content:space-between;
 
-    padding:0 30px;
-
-    margin-bottom:25px;
+    padding:0 24px;
 
     background:#0f172a;
 
-    border:1px solid #1e293b;
+    border-bottom:1px solid #1e293b;
 
-    border-radius:18px;
-
-    box-shadow:0 10px 25px rgba(0,0,0,.35);
-
+    box-shadow:0 6px 18px rgba(0,0,0,.25);
 }
 
 /* =====================================
@@ -31,49 +27,38 @@
 ===================================== */
 
 .header-left{
-
     display:flex;
-
     align-items:center;
-
-    gap:15px;
-
+    gap:14px;
 }
 
 .logo-icon{
+    width:42px;
+    height:42px;
 
-    width:46px;
-
-    height:46px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
 
     border-radius:12px;
 
     background:#7c3aed;
 
-    display:flex;
+    font-size:22px;
 
-    justify-content:center;
-
-    align-items:center;
-
-    font-size:24px;
-
-    box-shadow:0 0 18px rgba(124,58,237,.45);
-
+    box-shadow:0 0 16px rgba(124,58,237,.45);
 }
 
 .logo-text{
-
     margin:0;
 
     color:white;
 
-    font-size:28px;
+    font-size:22px;
 
     font-weight:700;
 
     letter-spacing:.3px;
-
 }
 
 /* =====================================
@@ -81,13 +66,9 @@
 ===================================== */
 
 .header-right{
-
     display:flex;
-
     align-items:center;
-
-    gap:25px;
-
+    gap:18px;
 }
 
 /* =====================================
@@ -95,33 +76,27 @@
 ===================================== */
 
 .connection-status{
-
     display:flex;
-
     align-items:center;
-
     gap:10px;
 
-    color:#cbd5e1;
+    padding:8px 16px;
 
-    font-size:15px;
-
-    font-weight:600;
-
-    padding:10px 16px;
+    border-radius:12px;
 
     background:#111827;
 
     border:1px solid #1f2937;
 
-    border-radius:12px;
+    color:white;
 
+    font-size:15px;
+
+    font-weight:600;
 }
 
 .status-dot{
-
     width:10px;
-
     height:10px;
 
     border-radius:50%;
@@ -129,7 +104,6 @@
     background:#22c55e;
 
     box-shadow:0 0 10px #22c55e;
-
 }
 
 /* =====================================
@@ -138,11 +112,15 @@
 
 .user-profile{
 
+    position:relative;
+
     display:flex;
 
     align-items:center;
 
-    gap:12px;
+    gap:10px;
+
+    padding:6px 12px;
 
     background:#111827;
 
@@ -150,59 +128,38 @@
 
     border-radius:12px;
 
-    padding:8px 14px;
-
+    cursor:pointer;
 }
 
 .avatar{
-
-    width:42px;
-
-    height:42px;
+    width:40px;
+    height:40px;
 
     border-radius:50%;
 
-    background:#8b5cf6;
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    color:white;
-
-    font-weight:bold;
-
-    font-size:18px;
-
+    object-fit:cover;
 }
 
 .user-name{
-
     color:white;
-
-    font-size:16px;
-
+    font-size:15px;
     font-weight:600;
-
 }
 
 .arrow{
-
     color:#94a3b8;
-
-    font-size:14px;
-
+    font-size:12px;
 }
 
 .profile-menu{
 
     position:absolute;
 
-    top:65px;
+    top:60px;
 
     right:0;
+
+    width:170px;
 
     background:#111827;
 
@@ -212,18 +169,7 @@
 
     padding:10px;
 
-    min-width:150px;
-
-    box-shadow:0 10px 25px rgba(0,0,0,.4);
-
-    z-index:100;
-}
-
-.user-profile{
-
-    position:relative;
-
-    cursor:pointer;
+    box-shadow:0 12px 25px rgba(0,0,0,.35);
 }
 
 .logout-btn{
@@ -232,31 +178,24 @@
 
     border:none;
 
+    border-radius:10px;
+
     background:#ef4444;
 
     color:white;
 
     padding:12px;
 
-    border-radius:10px;
-
     cursor:pointer;
 
-    font-weight:bold;
+    font-size:15px;
+
+    font-weight:700;
+
+    transition:.25s;
 }
 
 .logout-btn:hover{
 
     background:#dc2626;
-}
-
-.avatar{
-
-    width:42px;
-
-    height:42px;
-
-    border-radius:50%;
-
-    object-fit:cover;
 }

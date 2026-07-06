@@ -1,25 +1,39 @@
 function InterviewStatus({ stopInterviewMode }) {
   return (
-    <button
-      onClick={stopInterviewMode}
+    <div
       style={{
-        position: "fixed",
-        right: "35px",
-        bottom: "30px",
-        zIndex: 9999,
-        background: "#dc2626",
-        color: "white",
-        border: "none",
-        borderRadius: "16px",
-        padding: "16px 26px",
-        cursor: "pointer",
-        fontWeight: "800",
-        fontSize: "17px",
-        boxShadow: "0 15px 35px rgba(220,38,38,.45)",
+        height: "70px",
+        display: "flex",
+        justifyContent: "flex-end",
+        alignItems: "center",
+        marginTop: "14px",
       }}
     >
-      🛑 Stop Interview
-    </button>
+      <button
+        onClick={stopInterviewMode}
+        style={{
+          width: "220px",
+          height: "56px",
+          background: "#dc2626",
+          color: "white",
+          border: "none",
+          borderRadius: "14px",
+          cursor: "pointer",
+          fontWeight: "800",
+          fontSize: "17px",
+          transition: ".25s",
+          boxShadow: "0 10px 25px rgba(220,38,38,.35)",
+        }}
+        onMouseOver={(e) => {
+          e.target.style.background = "#ef4444";
+        }}
+        onMouseOut={(e) => {
+          e.target.style.background = "#dc2626";
+        }}
+      >
+        🛑 Stop Interview
+      </button>
+    </div>
   );
 }
 

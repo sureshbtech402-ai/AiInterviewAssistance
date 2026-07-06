@@ -8,6 +8,7 @@ function QuestionPanel({
   setAnswerData,
   loading,
   generateAnswer,
+  clearQuestionAndAnswer,
 }) {
   return (
     <div className="question-panel">
@@ -47,10 +48,7 @@ function QuestionPanel({
       <div className="question-footer">
         <button
           className="clear-btn"
-          onClick={() => {
-            setQuestion("");
-            setAnswerData(null);
-          }}
+          onClick={clearQuestionAndAnswer}
         >
           🗑 Clear
         </button>

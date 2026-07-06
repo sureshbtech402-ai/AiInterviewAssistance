@@ -49,6 +49,9 @@ function App() {
   const finalTranscriptRef = useRef("");
   const interimTranscriptRef = useRef("");
   const answerAbortRef = useRef(null);
+  const silenceTimerRef = useRef(null);
+  const liveQuestionRef = useRef("");
+  const questionLockedRef = useRef(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -65,27 +68,29 @@ function App() {
     }
   }, [question]);
 
-  const updateQuestionFromTranscript = (payload) => {
+const updateQuestionFromTranscript = (payload) => {
+
     const text = (payload?.text || "").trim();
+
     if (!text) return;
 
-    if (payload.isFinal || payload.speechFinal) {
-      const currentFinal = finalTranscriptRef.current.trim();
+    if (questionLockedRef.current) return;
 
-      if (!currentFinal.includes(text)) {
-        finalTranscriptRef.current = currentFinal
-          ? `${currentFinal} ${text}`
-          : text;
-      }
+    liveQuestionRef.current = text;
 
-      interimTranscriptRef.current = "";
-    } else {
-      interimTranscriptRef.current = text;
-    }
+    setQuestion(text);
 
-    const combined = `${finalTranscriptRef.current} ${interimTranscriptRef.current}`.trim();
-    setQuestion(combined);
-  };
+    clearTimeout(silenceTimerRef.current);
+
+    silenceTimerRef.current = setTimeout(() => {
+
+        questionLockedRef.current = true;
+
+        console.log("Question Completed");
+
+    }, 1800);
+
+};
 
   const openInterviewSocket = () => {
     return new Promise((resolve, reject) => {
@@ -180,6 +185,10 @@ function App() {
   const startInterviewMode = async () => {
     setQuestion("");
     setAnswerData(null);
+    questionLockedRef.current = false;
+    liveQuestionRef.current = "";
+    clearTimeout(silenceTimerRef.current);
+
     finalTranscriptRef.current = "";
     interimTranscriptRef.current = "";
 
@@ -275,7 +284,19 @@ function App() {
     setIsInterviewRunning(false);
   };
 
+const clearQuestionAndAnswer = () => {
+  questionLockedRef.current = false;
+  liveQuestionRef.current = "";
+  finalTranscriptRef.current = "";
+  interimTranscriptRef.current = "";
+  clearTimeout(silenceTimerRef.current);
+
+  setQuestion("");
+  setAnswerData(null);
+};
+
   const generateAnswer = async () => {
+    questionLockedRef.current = true;
     if (!question.trim()) {
       alert("Question is Empty");
       return;
@@ -364,13 +385,14 @@ function App() {
 
       <div
         style={{
-          width: "100%",
-          minHeight: "calc(100vh - 76px)",
-          background: "#020617",
-          padding: "25px",
-          boxSizing: "border-box",
-          fontFamily: "Segoe UI",
-          color: "white",
+              width: "100%",
+              height: "calc(100vh - 68px)",
+              background: "#020617",
+              padding: "14px",
+              overflow: "hidden",
+              boxSizing: "border-box",
+              fontFamily: "Segoe UI",
+              color: "white",
         }}
       >
         {showConfig && (
@@ -415,32 +437,39 @@ function App() {
           </div>
         )}
 
-        {isInterviewRunning && (
-          <InterviewStatus stopInterviewMode={stopInterviewMode} />
-        )}
+       {interviewStarted && (
+          <>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "380px 1fr",
+                gap: "18px",
+                height: "calc(100vh - 170px)",
+                overflow: "hidden",
+              }}
+            >
+              <QuestionPanel
+                question={question}
+                setQuestion={setQuestion}
+                textareaRef={textareaRef}
+                isInterviewRunning={isInterviewRunning}
+                loading={loading}
+                generateAnswer={generateAnswer}
+                clearQuestionAndAnswer={clearQuestionAndAnswer}
+              />
 
-        {interviewStarted && (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "390px 1fr",
-              gap: "30px",
-              height: "calc(100vh - 145px)",
-              minHeight: "620px",
-            }}
-          >
-            <QuestionPanel
-              question={question}
-              setQuestion={setQuestion}
-              textareaRef={textareaRef}
-              isInterviewRunning={isInterviewRunning}
-              setAnswerData={setAnswerData}
-              loading={loading}
-              generateAnswer={generateAnswer}
-            />
+              <AnswerPanel
+                answerData={answerData}
+                loading={loading}
+              />
+            </div>
 
-            <AnswerPanel answerData={answerData} loading={loading} />
-          </div>
+            {isInterviewRunning && (
+              <InterviewStatus
+                stopInterviewMode={stopInterviewMode}
+              />
+            )}
+          </>
         )}
       </div>
     </>
