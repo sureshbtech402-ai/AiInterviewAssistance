@@ -14,7 +14,7 @@ const server = http.createServer(app);
 const upload = multer({ dest: "uploads/" });
 
 const PORT = process.env.PORT || 5000;
-const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5-mini";
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 
 app.use(
@@ -283,6 +283,11 @@ function isSpecialQuestion(question = "") {
 
   return (
     q.includes("tell me about yourself") ||
+    q.includes("tell me about you") ||
+    q.includes("about yourself") ||
+    q.includes("about you") ||
+    q.includes("your self") ||
+    q.includes("yourself") ||
     q.includes("introduce yourself") ||
     q.includes("self introduction") ||
     q.includes("explain your project") ||
@@ -323,7 +328,8 @@ Rules:
 - Answer confidently.
 - Do not sound like textbook.
 - Do not say "according to my resume".
-- Keep answer around 120-150 words.
+- Keep answer around 100-120 words.
+- Start immediately. Avoid extra points if not needed.
 - Mention experience, main skills, project, responsibilities naturally.
 - Use **bold** for important technologies.
 - Never invent fake company names.
