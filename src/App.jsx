@@ -15,7 +15,7 @@ const trimTrailingSlash = (value) => (value || "").replace(/\/+$/, "");
 
 const API_BASE_URL = trimTrailingSlash(
   import.meta.env.VITE_API_BASE_URL ||
-    "https://aiinterviewassistance-4.onrender.com"
+    "https://aiinterviewassistance-5.onrender.com"
 );
 
 const WS_URL = trimTrailingSlash(
