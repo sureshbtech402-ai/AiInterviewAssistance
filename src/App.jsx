@@ -40,6 +40,8 @@ function App() {
   const [interviewType, setInterviewType] = useState("Technical");
   const [skills, setSkills] = useState([]);
   const [isInterviewRunning, setIsInterviewRunning] = useState(false);
+  const [resumeSummary, setResumeSummary] = useState("");
+  const [resumeProfile, setResumeProfile] = useState(null);
 
   const socketRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -171,6 +173,16 @@ const updateQuestionFromTranscript = (payload) => {
       setResumeName(file.name);
       const text = await extractPdfText(file);
       setResumeText(text);
+
+    const summaryResponse = await fetch(`${API_BASE_URL}/resume-summary`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resumeText: text }),
+    });
+
+    const summaryData = await summaryResponse.json();
+
+    setResumeProfile(summaryData.resumeProfile);
 
       const skillMatches =
         text.match(
@@ -318,7 +330,9 @@ const clearQuestionAndAnswer = () => {
         signal: answerAbortRef.current.signal,
         body: JSON.stringify({
           question,
-          resumeText,
+          resumeText: resumeProfile
+          ? JSON.stringify(resumeProfile)
+          : resumeText,
           company: company === "Others" ? customCompany : company,
           interviewLevel,
           interviewType,

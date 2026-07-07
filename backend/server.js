@@ -14,7 +14,7 @@ const server = http.createServer(app);
 const upload = multer({ dest: "uploads/" });
 
 const PORT = process.env.PORT || 5000;
-const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5.5";
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5.5-mini";
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 
 app.use(
@@ -208,21 +208,109 @@ app.post("/transcribe", upload.single("audio"), async (req, res) => {
   }
 });
 
-function buildInterviewPrompt({
-  question,
-  resumeText,
-  interviewLevel,
-  company,
-  interviewType,
-}) {
-  return `You are a senior Indian interview coach.
-Reply as if the candidate is speaking in a real interview.
-Be short, practical, confident, and resume-aware.
+app.post("/resume-summary", async (req, res) => {
+  try {
+    const { resumeText } = req.body;
+
+    if (!resumeText) {
+      return res.status(400).json({ resumeProfile: null });
+    }
+
+    const prompt = `
+Create a structured resume profile for interview answers.
 
 Resume:
-${resumeText || "Resume not uploaded"}
+${resumeText}
 
-Context:
+Return ONLY valid JSON. No markdown.
+
+{
+  "candidateSummary": "",
+  "experience": "",
+  "primarySkills": [],
+  "secondarySkills": [],
+  "projectName": "",
+  "projectDomain": "",
+  "projectSummary": "",
+  "rolesAndResponsibilities": [],
+  "toolsAndTechnologies": [],
+  "achievements": [],
+  "selfIntroduction": "",
+  "projectExplanation": "",
+  "rolesExplanation": ""
+}
+`;
+
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: OPENAI_MODEL,
+        input: prompt,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("Resume Summary OpenAI Error:", data);
+      return res.json({
+        resumeProfile: {
+          candidateSummary: resumeText,
+        },
+      });
+    }
+
+    let text = data.output_text || "{}";
+    text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+
+    const resumeProfile = JSON.parse(text);
+
+    res.json({ resumeProfile });
+  } catch (err) {
+    console.error("Resume Summary Error:", err);
+    res.status(500).json({
+      resumeProfile: null,
+    });
+  }
+});
+
+function isSpecialQuestion(question = "") {
+  const q = question.toLowerCase();
+
+  return (
+    q.includes("tell me about yourself") ||
+    q.includes("introduce yourself") ||
+    q.includes("self introduction") ||
+    q.includes("explain your project") ||
+    q.includes("about your project") ||
+    q.includes("current project") ||
+    q.includes("roles and responsibilities") ||
+    q.includes("responsibilities") ||
+    q.includes("daily activities") ||
+    q.includes("project architecture")
+  );
+}
+
+function buildSpecialPrompt({
+  question,
+  resumeText,
+  company,
+  interviewLevel,
+  interviewType,
+}) {
+  return `
+You are a senior Indian interview coach.
+
+The question is a profile/project/responsibility question.
+Answer as the candidate speaking in a real interview.
+
+Resume Profile:
+${resumeText || "Resume profile not available"}
+
 Company: ${company || "Generic"}
 Level: ${interviewLevel || "Mid Level"}
 Type: ${interviewType || "Technical"}
@@ -231,24 +319,79 @@ Question:
 ${question}
 
 Rules:
-- Use simple Indian spoken English.
-- No textbook explanation, no long theory.
-- Interview Ready Answer: 70-100 words.
-- Use **bold** for important technical keywords.
-- Always include a project-related answer.
-- If resume is relevant, connect naturally with the candidate's project.
-- If resume is not enough, use a safe practical project example without fake company names.
-- For coding/program/query questions, include complete working code, complexity, output if useful, and simple explanation.
-- Prefer Java unless another language is clearly asked.
+- Use natural Indian spoken English.
+- Answer confidently.
+- Do not sound like textbook.
+- Do not say "according to my resume".
+- Keep answer around 120-150 words.
+- Mention experience, main skills, project, responsibilities naturally.
+- Use **bold** for important technologies.
+- Never invent fake company names.
 
-Return only Markdown in this exact format:
+Return only Markdown:
 
 ## 🎯 Interview Ready Answer
 
 ## ⭐ Key Points
-- 
-- 
-- 
+-
+-
+-
+
+## 📄 Project Related Answer
+`;
+}
+
+function buildInterviewPrompt({
+  question,
+  resumeText,
+  interviewLevel,
+  company,
+  interviewType,
+}) {
+  if (isSpecialQuestion(question)) {
+    return buildSpecialPrompt({
+      question,
+      resumeText,
+      interviewLevel,
+      company,
+      interviewType,
+    });
+  }
+
+  return `You are a senior Indian Java Spring Boot interview coach.
+Reply as if the candidate is speaking in a real interview.
+
+Resume Profile:
+${resumeText || "Resume profile not available"}
+
+Company: ${company || "Generic"}
+Level: ${interviewLevel || "Mid Level"}
+Type: ${interviewType || "Technical"}
+
+Question:
+${question}
+
+Rules:
+- Start directly with the answer.
+- Use simple Indian spoken English.
+- No textbook explanation.
+- No long theory.
+- Interview Ready Answer: 100-120 words.
+- Use **bold** for important technical keywords.
+- Always include a project-related answer.
+- If resume profile is relevant, connect naturally with project experience.
+- If resume profile is not enough, give a safe practical implementation example.
+- For coding/program/query questions, include complete working code, complexity, output if useful, and simple explanation.
+- Prefer Java unless another language is clearly asked.
+
+Return only Markdown:
+
+## 🎯 Interview Ready Answer
+
+## ⭐ Key Points
+-
+-
+-
 
 ## 📄 Project Related Answer
 
