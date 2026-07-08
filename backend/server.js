@@ -519,7 +519,6 @@ app.post("/answer", async (req, res) => {
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders?.();
 
-    // TARGET CHAT COMPLETIONS API CORRECTLY
     const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -535,7 +534,7 @@ app.post("/answer", async (req, res) => {
           },
         ],
         stream: true,
-        temperature: 0.1, // Keep responses deterministic and fast
+        temperature: 0.7, // Fixed to 0.7 for natural, varied, and expressive conversational speech
       }),
     });
 
