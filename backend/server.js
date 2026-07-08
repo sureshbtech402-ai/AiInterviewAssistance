@@ -208,6 +208,9 @@ app.post("/transcribe", upload.single("audio"), async (req, res) => {
   }
 });
 
+/* =====================================================
+   RESUME SUMMARY EXTRACTION ENDPOINT
+===================================================== */
 app.post("/resume-summary", async (req, res) => {
   try {
     const { resumeText } = req.body;
@@ -224,10 +227,11 @@ app.post("/resume-summary", async (req, res) => {
     If any value is missing, keep it empty.
 
     Second, when writing the conversational fields ("selfIntroduction", "projectExplanation", "rolesExplanation"), you must adhere to these CRITICAL SPOKEN TONE RULES:
-    1. BAN WEAK FILLERS: Do NOT start any sentence or bullet point with words like "So,", "Basically,", "Mainly,", "Actually,", "Like,", or "As such,".
-    2. ELITE AND CONFIDENT OPENINGS: Start spoken answers with high-impact transitions (e.g., "Certainly, to provide an overview, my name is...", "Over the past three years, my primary focus has been on...", "I specialize in...").
-    3. SPOKEN CONTRACTIONS: Use professional spoken contractions (e.g., "I'm", "I've", "we've") to keep it natural but highly polished. Do not sound like a dry textbook.
-    4. ACTION VERB MANDATE: For roles and responsibilities, every single point must begin directly with a strong, active technical verb (e.g., "Implemented...", "Developed...", "Architected...", "Optimized...").
+    1. BAN WEAK FILLERS & CASUAL OPENINGS: Do NOT start any sentence or bullet point with words like "So,", "Basically,", "Mainly,", "Actually,", "Like,", "As such,", or "I am...".
+    2. ELITE AND CONFIDENT OPENINGS: Start spoken answers with high-impact transitions (e.g., "Certainly, to provide an overview, my name is...", "Over the past three years, my primary technical focus has been on...", "I specialize in...").
+    3. INTEGRATE SPECIFIC FACTS: Weave in real, specific details from the resume context (such as exact college names, real projects like ING Bank, specific architectural migrations, and their primary tech stack components). Do not use generic placeholders.
+    4. ACTION VERB BULLET MANDATE: For roles and responsibilities, every single point must begin directly with a strong, active technical verb (e.g., "Implemented...", "Developed...", "Architected...", "Optimized..."). 
+    5. STRICT NO PRONOUNS RULE FOR BULLETS: Absolutely never start bullet points with personal pronouns or conversational descriptors (e.g., do NOT start with "I...", "We...", "My...", "Mainly...", "Also...", "Additionally..."). Start directly with the technical verb.
 
     Resume Content:
     ${resumeText}
@@ -241,12 +245,12 @@ app.post("/resume-summary", async (req, res) => {
       "projectName": "Major project name",
       "projectDomain": "Project domain",
       "projectSummary": "Brief overview of the project",
-      "rolesAndResponsibilities": ["Responsibility 1 starting with active verb", "Responsibility 2 starting with active verb"],
+      "rolesAndResponsibilities": ["Responsibility 1 starting with active verb directly", "Responsibility 2 starting with active verb directly"],
       "toolsAndTechnologies": ["Tech stack list"],
       "achievements": ["Explicit achievements if any"],
       "selfIntroduction": "A highly polished, elite, and professional spoken self-introduction based strictly on the resume facts. No informal starters.",
       "projectExplanation": "A 2-3 line spoken-ready, professional explanation of the project context and technical transition.",
-      "rolesExplanation": "A professional spoken description of core technical ownership starting with action verbs."
+      "rolesExplanation": "A professional spoken description of core technical ownership starting with action verbs directly."
     }
 `;
 
@@ -295,6 +299,10 @@ app.post("/resume-summary", async (req, res) => {
     });
   }
 });
+
+/* =====================================================
+   PROMPT DYNAMIC BUILDERS & INPUT PARSERS
+===================================================== */
 
 /**
  * Safely extracts a string from the question parameter,
@@ -357,7 +365,7 @@ function buildSpecialPrompt({
   interviewType,
 }) {
   const cleanQ = getCleanQuestion(question);
-  return `You are a technical interview simulator translating a resume into natural spoken responses.
+  return `You are an elite technical interview preparation engine. Translate the candidate's resume into a highly polished, natural, and powerful spoken response.
 
 Resume Context:
 ${resumeText || "Resume profile not available"}
@@ -365,22 +373,27 @@ ${resumeText || "Resume profile not available"}
 Interview Parameter: Level: ${interviewLevel || "Mid Level"}, Type: ${interviewType || "Technical"}
 Question: ${cleanQ}
 
-INSTRUCTIONS FOR NATURAL CONVERSATIONAL TONE:
-- Write exactly how a candidate naturally talks when answering live. 
-- Use active first-person spoken transitions (e.g., "Certainly, to provide an overview...", "Over the past few years, my core focus has been...").
-- BAN WEAK FILLERS: Do NOT start sentences or bullet points with words like "So,", "Basically,", "Mainly,", "Actually,", "Like,", or "As such,".
-- Use professional spoken contractions (I've, I'm, we've) naturally.
-- Do not make up any factual data, company names, or metrics not found in the resume context.
+INSTRUCTIONS FOR THE PERFECT SELF-INTRODUCTION (🎯 Self Introduction):
+- Do NOT use generic placeholder introductions (e.g., "I am an IT professional...").
+- Be highly specific: Seamlessly integrate real resume highlights, such as their primary tech stack (e.g., Java, Spring Boot, Hibernate), real company/project names (e.g., ING Bank), and major technical transformations (e.g., migrating a monolithic application to a microservice architecture).
+- Sound conversational and confident when spoken aloud. Use professional spoken contractions naturally (e.g., "I'm", "I've", "we've").
+- BAN WEAK FILLERS: Absolutely never start any sentence with "So,", "Basically,", "Mainly,", "Actually,", "Like,", or "As such,".
+- Begin with a premium, elite transition (e.g., "Certainly, to provide an overview, my name is...", "Over the past three years, my primary technical focus has been on...").
+
+INSTRUCTIONS FOR TECHNICAL ACTION BULLETS (⭐ Roles and Responsibilities):
+- Create exactly 3 high-impact bullet points demonstrating core technical ownership.
+- CRITICAL RULE: Every single bullet point MUST begin directly with a strong, active technical verb (e.g., "Implemented...", "Developed...", "Architected...", "Optimized...").
+- STRICTLY BAN starting bullet points with pronouns or conversational fillers (e.g., do NOT start with "I...", "We...", "My...", "Mainly...", "Also...", "Additionally..."). Start directly with the technical verb!
 
 Return exactly this Markdown structure and nothing else:
 
 ## 🎯 Self Introduction
-[Insert the conversational spoken response here]
+[Insert the highly polished, specific, conversational spoken response here]
 
 ## ⭐ Roles and Responsibilities
-- Provide a brief spoken bullet point highlighting a key ownership area from the resume.
-- Provide a second spoken bullet point.
-- Provide a third spoken bullet point.`;
+- [Active Technical Verb]...
+- [Active Technical Verb]...
+- [Active Technical Verb]...`;
 }
 
 /**
@@ -404,19 +417,28 @@ function buildInterviewPrompt({
 
   const requiresCoding = isCodingQuestion(cleanQ);
 
-  return `You are a technical interview simulator. Deliver a spoken explanation to a technical question combined with real experience from the resume.
+  return `You are an elite technical interview coach. Deliver a highly polished, spoken explanation combined with real experience from the resume.
 
 Resume Context:
 ${resumeText || "Resume profile not available"}
 
 Question: ${cleanQ}
 
-INSTRUCTIONS FOR SPOKEN TONE:
-- Start directly with the answer as if replying in a live conversation.
-- Use professional technical conversational bridges (e.g., "The way I look at it...", "In a practical scenario...", "We actually faced this when...").
-- Focus on practical delivery over heavy textbook definitions.
-- Keep the language elite, confident, and professional. 
-- BAN WEAK FILLERS: Do NOT start sentences with "So,", "Basically,", "Mainly," or "Actually,".
+INSTRUCTIONS FOR SPOKEN TONE (🎯 Interview Ready Answer):
+- Start directly with the answer as if replying live in an interview. No introductory pleasantries.
+- Use professional technical conversational bridges (e.g., "In a practical scenario...", "From an architectural standpoint...", "We actually faced these challenges when...").
+- Keep the vocabulary sharp, confident, and professional.
+- BAN WEAK FILLERS: Do NOT start sentences with "So,", "Basically,", "Mainly,", "Actually,", "Like,", or "As such,".
+- Connect the concept directly to the candidate's real resume experience (e.g., their experience with Spring Boot, Microservices, or Hibernate).
+
+INSTRUCTIONS FOR KEY TAKEAWAYS (⭐ Key Points):
+- Create 2-3 high-impact takeaway bullet points.
+- CRITICAL RULE: Every bullet point MUST begin directly with a strong, active technical verb (e.g., "Leveraged...", "Designed...", "Configured...", "Optimized..."). 
+- STRICTLY BAN starting bullet points with pronouns or fillers (e.g., do NOT start with "I...", "We...", "My...", "Mainly...", "Also...", "Additionally..."). Start directly with the technical verb!
+
+INSTRUCTIONS FOR PROJECT LINK (📄 Project Related Answer):
+- Provide a short 2-3 line conversational application tying this technical concept directly to a specific technology or ownership item listed on their resume.
+
 ${
   requiresCoding 
     ? `- Since this is a coding question, provide a brief mental approach, followed by the complete working code block, and complexity analysis.` 
@@ -429,11 +451,11 @@ Return exactly this Markdown structure:
 [Insert the conversational spoken explanation here]
 
 ## ⭐ Key Points
-- A spoken takeaway point.
-- Another spoken takeaway point.
+- [Active Technical Verb]...
+- [Active Technical Verb]...
 
 ## 📄 Project Related Answer
-[Provide a short 2-3 line conversational application tying this concept directly to a technology or responsibility listed in the resume]${
+[2-3 line conversational application linking this concept directly to the resume stack]${
   requiresCoding 
     ? `\n\n## 💻 Code\n[Provide the complete working code block here]\n\n## ⏱ Complexity\n- Time Complexity: O(...)\n- Space Complexity: O(...)` 
     : ""
