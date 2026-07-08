@@ -422,14 +422,14 @@ ${resumeProfile.rolesExplanation || ""}
   };
 
   const generateSelfIntroAnswer = async () => {
-    const introQuestion =
-      "Tell me about yourself including skills, project, roles and responsibilities.";
+  const introQuestion =
+  "Tell me about yourself based only on resume profile. Include real experience, skills, project, roles and responsibilities. Do not use selected company.";
 
     await streamAnswer(
       {
         question: introQuestion,
         resumeText: buildResumeContext(),
-        company: company === "Others" ? customCompany : company,
+        company: "Do not use company dropdown for self introduction",
         interviewLevel,
         interviewType,
       },

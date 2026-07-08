@@ -263,6 +263,9 @@ app.post("/resume-summary", async (req, res) => {
     });
 
     const data = await response.json();
+    console.log("========== OPENAI RESPONSE ==========");
+    console.log(JSON.stringify(data, null, 2));
+    console.log("=====================================");
 
     if (!response.ok) {
       console.error("Resume Summary OpenAI Error:", data);
@@ -279,6 +282,8 @@ app.post("/resume-summary", async (req, res) => {
       .trim();
 
     const resumeProfile = JSON.parse(text);
+    console.log("OUTPUT TEXT:");
+    console.log(text);
 
     res.json({ resumeProfile });
   } catch (err) {
@@ -327,7 +332,6 @@ Answer as the candidate speaking in a real interview.
 Resume Profile:
 ${resumeText || "Resume profile not available"}
 
-Company: ${company || "Generic"}
 Level: ${interviewLevel || "Mid Level"}
 Type: ${interviewType || "Technical"}
 
@@ -335,9 +339,9 @@ Question:
 ${question}
 
 Rules:
-- Use ONLY the provided Resume Profile.
-- Do NOT invent years of experience.
-- Do NOT invent company names.
+- Do NOT use selected company name unless it is clearly present in Resume Profile.
+- Do NOT say currently working at company from dropdown.
+- Use only actual resume details.
 - Do NOT invent achievements, metrics, clients, or cloud projects.
 - If data is missing, keep it generic without numbers.
 - Use natural Indian spoken English.
