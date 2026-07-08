@@ -46,6 +46,9 @@ function App() {
 
   const [isInterviewRunning, setIsInterviewRunning] = useState(false);
 
+  // Elegant Notification Toast State (Replaces banned alert functions)
+  const [toast, setToast] = useState({ message: "", type: "", visible: false });
+
   const socketRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioContextRef = useRef(null);
@@ -72,6 +75,15 @@ function App() {
     }
   }, [question]);
 
+  // Show safe toast notification
+  const showToast = (message, type = "info") => {
+    setToast({ message, type, visible: true });
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, visible: false }));
+    }, 4500);
+  };
+
+  // Prepares structural profile summary into plain text context
   const buildResumeContext = () => {
     if (!resumeProfile) {
       return resumeText || "Resume profile not available";
@@ -251,37 +263,37 @@ ${resumeProfile.rolesExplanation || ""}
       setResumeName(file.name);
       setResumeProfile(null);
 
+      // Extract raw text from client-side PDF reader engine
       const text = await extractPdfText(file);
       setResumeText(text);
 
-      const skillMatches =
-        text.match(
-          /Java|Spring Boot|Microservices|SQL|Oracle|React|AWS|Docker|Kubernetes|JPA|Hibernate|REST API|WebFlux|Jenkins|Git|Maven|JUnit|Mockito|Kafka/gi
-        ) || [];
-
-      setSkills([...new Set(skillMatches.map((skill) => skill.trim()))]);
-
-  const compactResume = text.slice(0, 5000);
-
-  setResumeProfile({
-        candidateSummary: compactResume,
-        experience: "",
-        primarySkills: [...new Set(skillMatches.map((skill) => skill.trim()))],
-        secondarySkills: [],
-        projectName: "",
-        projectDomain: "",
-        projectSummary: compactResume,
-        rolesAndResponsibilities: [],
-        toolsAndTechnologies: [...new Set(skillMatches.map((skill) => skill.trim()))],
-        achievements: [],
-        selfIntroduction: compactResume,
-        projectExplanation: compactResume,
-        rolesExplanation: compactResume,
+      // Trigger the backend API extraction process to structure facts correctly and build professional responses
+      const response = await fetch(`${API_BASE_URL}/resume-summary`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ resumeText: text }),
       });
-      alert("Resume Uploaded and Profile Created Successfully");
+
+      if (!response.ok) {
+        throw new Error("Unable to parse professional profile via AI extraction endpoint.");
+      }
+
+      const data = await response.json();
+
+      if (!data.resumeProfile) {
+        throw new Error("AI extraction failed to generate professional profiles.");
+      }
+
+      setResumeProfile(data.resumeProfile);
+      setSkills(data.resumeProfile.primarySkills || []);
+
+      showToast("Resume uploaded and AI professional profile created successfully!", "success");
     } catch (err) {
       console.error(err);
-      alert("Unable to read Resume");
+      showToast("Unable to process Resume. Please try again with another file format.", "error");
+      setResumeName("");
     } finally {
       setResumeProcessing(false);
     }
@@ -308,7 +320,7 @@ ${resumeProfile.rolesExplanation || ""}
       const audioTrack = stream.getAudioTracks()[0];
 
       if (!audioTrack) {
-        alert("Please select a Chrome tab and enable Share tab audio.");
+        showToast("Please select a Chrome tab and enable 'Share tab audio' checkbox.", "error");
         setIsInterviewRunning(false);
         stream.getTracks().forEach((track) => track.stop());
         return;
@@ -363,9 +375,7 @@ ${resumeProfile.rolesExplanation || ""}
       recorder.start(100);
     } catch (err) {
       console.error(err);
-      alert(
-        "Unable to start interview audio. Please try again and share tab audio."
-      );
+      showToast("Unable to start interview audio. Please verify share permissions.", "error");
       stopInterviewMode();
     }
   };
@@ -418,8 +428,8 @@ ${resumeProfile.rolesExplanation || ""}
   };
 
   const generateSelfIntroAnswer = async () => {
-  const introQuestion =
-  "Tell me about yourself based only on resume profile. Include real experience, skills, project, roles and responsibilities. Do not use selected company.";
+    const introQuestion =
+      "Introduce yourself and present an overview of your professional profile.";
 
     await streamAnswer(
       {
@@ -435,12 +445,12 @@ ${resumeProfile.rolesExplanation || ""}
 
   const startInterviewFlow = async () => {
     if (resumeProcessing) {
-      alert("Resume profile is still creating. Please wait.");
+      showToast("Resume profile is still being generated. Please wait...", "info");
       return;
     }
 
     if (!resumeProfile) {
-      alert("Please upload resume and wait until resume profile is created.");
+      showToast("Please upload a resume first and wait until the AI profile completes.", "info");
       return;
     }
 
@@ -493,7 +503,7 @@ ${resumeProfile.rolesExplanation || ""}
     questionLockedRef.current = true;
 
     if (!question.trim()) {
-      alert("Question is Empty");
+      showToast("Question panel is currently empty.", "info");
       return;
     }
 
@@ -554,13 +564,40 @@ ${resumeProfile.rolesExplanation || ""}
           boxSizing: "border-box",
           fontFamily: "Segoe UI",
           color: "white",
+          position: "relative",
         }}
       >
+        {/* Floating Toast Notification System */}
+        {toast.visible && (
+          <div
+            style={{
+              position: "absolute",
+              top: "20px",
+              right: "20px",
+              padding: "12px 24px",
+              borderRadius: "8px",
+              color: "white",
+              fontWeight: "600",
+              zIndex: 9999,
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
+              animation: "fadeIn 0.3s ease",
+              background:
+                toast.type === "success"
+                  ? "#10b981"
+                  : toast.type === "error"
+                  ? "#ef4444"
+                  : "#3b82f6",
+            }}
+          >
+            {toast.message}
+          </div>
+        )}
+
         {showConfig && (
           <UploadResume
             resumeName={
               resumeProcessing
-                ? "Creating Resume Profile..."
+                ? "Processing Profile via AI Extraction Engine..."
                 : resumeName
             }
             handleResumeUpload={handleResumeUpload}
@@ -596,10 +633,12 @@ ${resumeProfile.rolesExplanation || ""}
                 cursor: resumeProcessing ? "not-allowed" : "pointer",
                 fontSize: "18px",
                 fontWeight: "bold",
+                boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
+                transition: "all 0.2s ease-in-out",
               }}
             >
               {resumeProcessing
-                ? "⏳ Creating Resume Profile..."
+                ? "⏳ Generating AI Profile..."
                 : "🚀 Start Interview"}
             </button>
           </div>

@@ -296,25 +296,39 @@ app.post("/resume-summary", async (req, res) => {
   }
 });
 
+/**
+ * Safely extracts a string from the question parameter,
+ * even if it's passed as an object, undefined, or null.
+ */
+function getCleanQuestion(question) {
+  if (!question) return "";
+  if (typeof question === "string") return question;
+  if (typeof question === "object") {
+    return question.question || question.text || question.transcript || JSON.stringify(question);
+  }
+  return String(question);
+}
+
 function isSpecialQuestion(question = "") {
-  const q = question.toLowerCase().trim;
+  const cleanQ = getCleanQuestion(question).toLowerCase().trim();
+  if (!cleanQ) return false;
 
   return (
-    q.includes("tell me about yourself") ||
-    q.includes("tell me about you") ||
-    q.includes("about yourself") ||
-    q.includes("about you") ||
-    q.includes("your self") ||
-    q.includes("yourself") ||
-    q.includes("introduce yourself") ||
-    q.includes("self introduction") ||
-    q.includes("explain your project") ||
-    q.includes("about your project") ||
-    q.includes("current project") ||
-    q.includes("roles and responsibilities") ||
-    q.includes("responsibilities") ||
-    q.includes("daily activities") ||
-    q.includes("project architecture")
+    cleanQ.includes("tell me about yourself") ||
+    cleanQ.includes("tell me about you") ||
+    cleanQ.includes("about yourself") ||
+    cleanQ.includes("about you") ||
+    cleanQ.includes("your self") ||
+    cleanQ.includes("yourself") ||
+    cleanQ.includes("introduce yourself") ||
+    cleanQ.includes("self introduction") ||
+    cleanQ.includes("explain your project") ||
+    cleanQ.includes("about your project") ||
+    cleanQ.includes("current project") ||
+    cleanQ.includes("roles and responsibilities") ||
+    cleanQ.includes("responsibilities") ||
+    cleanQ.includes("daily activities") ||
+    cleanQ.includes("project architecture")
   );
 }
 
@@ -322,13 +336,15 @@ function isSpecialQuestion(question = "") {
  * Helper to detect if the interviewer's question explicitly asks for coding/queries.
  */
 function isCodingQuestion(question) {
-  const lower = question.toLowerCase();
+  const cleanQ = getCleanQuestion(question).toLowerCase().trim();
+  if (!cleanQ) return false;
+
   const codingKeywords = [
     "code", "program", "write a", "implement", "coding", "function", "snippet", 
     "algorithm", "query", "sql", "database schema", "class", "method", "compile", 
     "regex", "syntax"
   ];
-  return codingKeywords.some(keyword => lower.includes(keyword));
+  return codingKeywords.some(keyword => cleanQ.includes(keyword));
 }
 
 /**
@@ -340,13 +356,14 @@ function buildSpecialPrompt({
   interviewLevel,
   interviewType,
 }) {
+  const cleanQ = getCleanQuestion(question);
   return `You are a technical interview simulator translating a resume into natural spoken responses.
 
 Resume Context:
 ${resumeText || "Resume profile not available"}
 
 Interview Parameter: Level: ${interviewLevel || "Mid Level"}, Type: ${interviewType || "Technical"}
-Question: ${question}
+Question: ${cleanQ}
 
 INSTRUCTIONS FOR NATURAL CONVERSATIONAL TONE:
 - Write exactly how a candidate naturally talks when answering live. 
@@ -375,23 +392,24 @@ function buildInterviewPrompt({
   interviewLevel,
   interviewType,
 }) {
-  if (isSpecialQuestion(question)) {
+  const cleanQ = getCleanQuestion(question);
+  if (isSpecialQuestion(cleanQ)) {
     return buildSpecialPrompt({
-      question,
+      question: cleanQ,
       resumeText,
       interviewLevel,
       interviewType,
     });
   }
 
-  const requiresCoding = isCodingQuestion(question);
+  const requiresCoding = isCodingQuestion(cleanQ);
 
   return `You are a technical interview simulator. Deliver a spoken explanation to a technical question combined with real experience from the resume.
 
 Resume Context:
 ${resumeText || "Resume profile not available"}
 
-Question: ${question}
+Question: ${cleanQ}
 
 INSTRUCTIONS FOR SPOKEN TONE:
 - Start directly with the answer as if replying in a live conversation.
@@ -422,10 +440,16 @@ Return exactly this Markdown structure:
 }`;
 }
 
-
 function extractDeltaFromOpenAIEvent(event) {
   if (!event || typeof event !== "object") return "";
 
+  // Handle standard OpenAI Chat Completions stream chunks (choices[0].delta.content)
+  if (event.choices && Array.isArray(event.choices) && event.choices[0]) {
+    const delta = event.choices[0].delta;
+    return delta?.content || "";
+  }
+
+  // Fallbacks
   if (event.type === "response.output_text.delta") {
     return event.delta || "";
   }
@@ -447,7 +471,9 @@ app.post("/answer", async (req, res) => {
   const { question, resumeText, interviewLevel, company, interviewType } =
     req.body || {};
 
-  if (!question || !question.trim()) {
+  const cleanQ = getCleanQuestion(question);
+
+  if (!cleanQ || !cleanQ.trim()) {
     return res.status(400).send("Question is empty");
   }
 
@@ -457,7 +483,7 @@ app.post("/answer", async (req, res) => {
 
   try {
     const prompt = buildInterviewPrompt({
-      question,
+      question: cleanQ,
       resumeText,
       interviewLevel,
       company,
@@ -471,7 +497,8 @@ app.post("/answer", async (req, res) => {
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders?.();
 
-    const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
+    // TARGET CHAT COMPLETIONS API CORRECTLY
+    const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -479,8 +506,14 @@ app.post("/answer", async (req, res) => {
       },
       body: JSON.stringify({
         model: OPENAI_MODEL,
-        input: prompt,
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
         stream: true,
+        temperature: 0.1, // Keep responses deterministic and fast
       }),
     });
 
