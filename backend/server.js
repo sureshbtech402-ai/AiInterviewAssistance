@@ -14,7 +14,7 @@ const server = http.createServer(app);
 const upload = multer({ dest: "uploads/" });
 
 const PORT = process.env.PORT || 5000;
-const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5-mini";
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 
 app.use(
@@ -324,7 +324,6 @@ function isSpecialQuestion(question = "") {
 function buildSpecialPrompt({
   question,
   resumeText,
-  company,
   interviewLevel,
   interviewType,
 }) {
@@ -344,12 +343,13 @@ Question:
 ${question}
 
 Rules:
+- Answer like I am speaking in interview, not writing notes.
+- Use natural Indian spoken English.
 - Do NOT use selected company name unless it is clearly present in Resume Profile.
 - Do NOT say currently working at company from dropdown.
 - Use only actual resume details.
 - Do NOT invent achievements, metrics, clients, or cloud projects.
 - If data is missing, keep it generic without numbers.
-- Use natural Indian spoken English.
 - Answer confidently.
 - Do not sound like textbook.
 - Do not say "according to my resume".
@@ -403,6 +403,9 @@ Question:
 ${question}
 
 Rules:
+- Answer like I am speaking in interview, not writing notes.
+- Avoid headings inside paragraphs.
+- Use natural first-person language: "In my project, I worked on..."
 - Start directly with the answer.
 - Use simple Indian spoken English.
 - No textbook explanation.

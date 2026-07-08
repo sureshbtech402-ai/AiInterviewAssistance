@@ -261,27 +261,23 @@ ${resumeProfile.rolesExplanation || ""}
 
       setSkills([...new Set(skillMatches.map((skill) => skill.trim()))]);
 
-      const summaryResponse = await fetch(`${API_BASE_URL}/resume-summary`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          resumeText: text,
-        }),
+  const compactResume = text.slice(0, 5000);
+
+  setResumeProfile({
+        candidateSummary: compactResume,
+        experience: "",
+        primarySkills: [...new Set(skillMatches.map((skill) => skill.trim()))],
+        secondarySkills: [],
+        projectName: "",
+        projectDomain: "",
+        projectSummary: compactResume,
+        rolesAndResponsibilities: [],
+        toolsAndTechnologies: [...new Set(skillMatches.map((skill) => skill.trim()))],
+        achievements: [],
+        selfIntroduction: compactResume,
+        projectExplanation: compactResume,
+        rolesExplanation: compactResume,
       });
-
-      const summaryData = await summaryResponse.json();
-
-      if (!summaryData.resumeProfile) {
-        alert("Resume uploaded, but profile creation failed. Please try again.");
-        return;
-      }
-
-      console.log("Resume Profile:", summaryData.resumeProfile);
-
-      setResumeProfile(summaryData.resumeProfile);
-
       alert("Resume Uploaded and Profile Created Successfully");
     } catch (err) {
       console.error(err);
