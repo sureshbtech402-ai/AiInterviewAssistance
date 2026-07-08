@@ -47,7 +47,6 @@ app.get("/health", (req, res) => {
    Backend streams them to Deepgram Nova-3 and returns
    interim/final transcript JSON to the frontend.
 ===================================================== */
-
 const wss = new WebSocketServer({ server });
 
 wss.on("connection", (client) => {
@@ -175,7 +174,6 @@ wss.on("connection", (client) => {
 /* =====================================================
    DEEPGRAM FILE TRANSCRIPTION FALLBACK
 ===================================================== */
-
 app.post("/transcribe", upload.single("audio"), async (req, res) => {
   try {
     if (!req.file) {
@@ -210,6 +208,8 @@ app.post("/transcribe", upload.single("audio"), async (req, res) => {
 
 /* =====================================================
    RESUME SUMMARY EXTRACTION ENDPOINT
+   Runs at ultra-strict temperature 0.0 to prevent
+   hallucinations and guarantee formatted JSON schema.
 ===================================================== */
 app.post("/resume-summary", async (req, res) => {
   try {
@@ -227,11 +227,11 @@ app.post("/resume-summary", async (req, res) => {
     If any value is missing, keep it empty.
 
     Second, when writing the conversational fields ("selfIntroduction", "projectExplanation", "rolesExplanation"), you must adhere to these CRITICAL SPOKEN TONE RULES:
-    1. BAN WEAK FILLERS & CASUAL OPENINGS: Do NOT start any sentence or bullet point with words like "So,", "Basically,", "Mainly,", "Actually,", "Like,", "As such,", or "I am...".
-    2. ELITE AND CONFIDENT OPENINGS: Start spoken answers with high-impact transitions (e.g., "Certainly, to provide an overview, my name is...", "Over the past three years, my primary technical focus has been on...", "I specialize in...").
-    3. INTEGRATE SPECIFIC FACTS: Weave in real, specific details from the resume context (such as exact college names, real projects like ING Bank, specific architectural migrations, and their primary tech stack components). Do not use generic placeholders.
-    4. ACTION VERB BULLET MANDATE: For roles and responsibilities, every single point must begin directly with a strong, active technical verb (e.g., "Implemented...", "Developed...", "Architected...", "Optimized..."). 
-    5. STRICT NO PRONOUNS RULE FOR BULLETS: Absolutely never start bullet points with personal pronouns or conversational descriptors (e.g., do NOT start with "I...", "We...", "My...", "Mainly...", "Also...", "Additionally..."). Start directly with the technical verb.
+    1. EXTREMELY NATURAL SPOKEN FLOW: Formulate the "selfIntroduction" field to match this exact template structure based strictly on the candidate's real resume details:
+       "Thank you for giving me this opportunity to introduce myself. My name is [Candidate Name], and I am from [Location/Native Place if in resume]. I have around [Years] years of experience as a [Primary Role, e.g., Java Backend Developer] and currently work at [Current Company Name, e.g., Tata Consultancy Services]. My technical skills include [Core Tech Stack list, e.g., Java, Spring Boot, Microservices, Hibernate, SQL, REST APIs, Kafka, Docker, Kubernetes, Git, and Maven]. Currently, I am working on the [Project Name, e.g., ING Digitization] project for a [Domain, e.g., banking] client, where I [Core Responsibilities, e.g., develop REST APIs, implement business logic, and work with Spring Data JPA and microservices]. I enjoy learning new technologies and solving technical problems. I am looking for an opportunity where I can contribute, learn, and grow professionally. Thank you."
+       If any of these details (like Location or Company Name) are not present in the resume, omit those specific statements naturally without leaving blank templates.
+    2. BAN WEAK FILLERS: Do NOT start any sentence or bullet point with words like "So,", "Basically,", "Mainly,", "Actually,", "Like,", or "As such,".
+    3. ACTION VERB MANDATE: For roles and responsibilities, every single point must begin directly with a strong, active technical verb (e.g., "Implemented...", "Developed...", "Architected...", "Optimized..."). No pronouns like "I" or "We" inside bullet points.
 
     Resume Content:
     ${resumeText}
@@ -245,12 +245,12 @@ app.post("/resume-summary", async (req, res) => {
       "projectName": "Major project name",
       "projectDomain": "Project domain",
       "projectSummary": "Brief overview of the project",
-      "rolesAndResponsibilities": ["Responsibility 1 starting with active verb directly", "Responsibility 2 starting with active verb directly"],
+      "rolesAndResponsibilities": ["Responsibility 1 starting with active verb", "Responsibility 2 starting with active verb"],
       "toolsAndTechnologies": ["Tech stack list"],
       "achievements": ["Explicit achievements if any"],
-      "selfIntroduction": "A highly polished, elite, and professional spoken self-introduction based strictly on the resume facts. No informal starters.",
+      "selfIntroduction": "A highly natural, professional spoken self-introduction matching the exact requested flow. Clear, smooth, and welcoming. Do not use robotic or forced high-falutin openers.",
       "projectExplanation": "A 2-3 line spoken-ready, professional explanation of the project context and technical transition.",
-      "rolesExplanation": "A professional spoken description of core technical ownership starting with action verbs directly."
+      "rolesExplanation": "A professional spoken description of core technical ownership starting with action verbs."
     }
 `;
 
@@ -261,15 +261,15 @@ app.post("/resume-summary", async (req, res) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini", // Optimized for ultra-fast response times
-        response_format: { type: "json_object" }, // Forces raw JSON return, eliminating parsing errors
+        model: "gpt-4o-mini",
+        response_format: { type: "json_object" }, 
         messages: [
           {
             role: "user",
             content: prompt,
           },
         ],
-        temperature: 0.1, // Keeps the extraction deterministic, fast, and strict
+        temperature: 0.0, // Strict, deterministic extraction
       }),
     });
 
@@ -318,25 +318,25 @@ function getCleanQuestion(question) {
 }
 
 function isSpecialQuestion(question = "") {
-  const cleanQ = getCleanQuestion(question).toLowerCase().trim();
-  if (!cleanQ) return false;
+  const q = getCleanQuestion(question).toLowerCase().trim();
+  if (!q) return false;
 
   return (
-    cleanQ.includes("tell me about yourself") ||
-    cleanQ.includes("tell me about you") ||
-    cleanQ.includes("about yourself") ||
-    cleanQ.includes("about you") ||
-    cleanQ.includes("your self") ||
-    cleanQ.includes("yourself") ||
-    cleanQ.includes("introduce yourself") ||
-    cleanQ.includes("self introduction") ||
-    cleanQ.includes("explain your project") ||
-    cleanQ.includes("about your project") ||
-    cleanQ.includes("current project") ||
-    cleanQ.includes("roles and responsibilities") ||
-    cleanQ.includes("responsibilities") ||
-    cleanQ.includes("daily activities") ||
-    cleanQ.includes("project architecture")
+    q.includes("tell me about yourself") ||
+    q.includes("tell me about you") ||
+    q.includes("about yourself") ||
+    q.includes("about you") ||
+    q.includes("your self") ||
+    q.includes("yourself") ||
+    q.includes("introduce yourself") ||
+    q.includes("self introduction") ||
+    q.includes("explain your project") ||
+    q.includes("about your project") ||
+    q.includes("current project") ||
+    q.includes("roles and responsibilities") ||
+    q.includes("responsibilities") ||
+    q.includes("daily activities") ||
+    q.includes("project architecture")
   );
 }
 
@@ -365,30 +365,26 @@ function buildSpecialPrompt({
   interviewType,
 }) {
   const cleanQ = getCleanQuestion(question);
-  return `You are an elite technical interview preparation engine. Translate the candidate's resume into a highly polished, natural, and powerful spoken response.
+  return `You are an elite corporate technical coach. Translate the candidate's resume details into an exceptionally natural, warm, and highly polished spoken self-introduction.
 
-Resume Context:
+Resume Profile Context:
 ${resumeText || "Resume profile not available"}
 
-Interview Parameter: Level: ${interviewLevel || "Mid Level"}, Type: ${interviewType || "Technical"}
+Interview Parameters: Level: ${interviewLevel || "Mid Level"}, Type: ${interviewType || "Technical"}
 Question: ${cleanQ}
 
-INSTRUCTIONS FOR THE PERFECT SELF-INTRODUCTION (🎯 Self Introduction):
-- Do NOT use generic placeholder introductions (e.g., "I am an IT professional...").
-- Be highly specific: Seamlessly integrate real resume highlights, such as their primary tech stack (e.g., Java, Spring Boot, Hibernate), real company/project names (e.g., ING Bank), and major technical transformations (e.g., migrating a monolithic application to a microservice architecture).
-- Sound conversational and confident when spoken aloud. Use professional spoken contractions naturally (e.g., "I'm", "I've", "we've").
-- BAN WEAK FILLERS: Absolutely never start any sentence with "So,", "Basically,", "Mainly,", "Actually,", "Like,", or "As such,".
-- Begin with a premium, elite transition (e.g., "Certainly, to provide an overview, my name is...", "Over the past three years, my primary technical focus has been on...").
-
-INSTRUCTIONS FOR TECHNICAL ACTION BULLETS (⭐ Roles and Responsibilities):
-- Create exactly 3 high-impact bullet points demonstrating core technical ownership.
-- CRITICAL RULE: Every single bullet point MUST begin directly with a strong, active technical verb (e.g., "Implemented...", "Developed...", "Architected...", "Optimized...").
-- STRICTLY BAN starting bullet points with pronouns or conversational fillers (e.g., do NOT start with "I...", "We...", "My...", "Mainly...", "Also...", "Additionally..."). Start directly with the technical verb!
+CRITICAL RULES FOR THE SELF-INTRODUCTION:
+1. EXTREMELY NATURAL FLOW (MATCH THIS EXACT STYLE): 
+   "Thank you for giving me this opportunity to introduce myself. My name is [Candidate Name], and I am from [Location]. I have around [X] years of experience as a [Primary Title, e.g. Java Backend Developer] and currently work at [Current Company Name]. My technical skills include [Primary skills, e.g. Java, Spring Boot, Microservices, Hibernate, SQL, REST APIs, Kafka, Docker, Kubernetes, Git, and Maven]. Currently, I am working on the [Project Name] project for a [Domain] client, where I develop [Responsibilities]. I enjoy learning new technologies and solving technical problems. I am looking for an opportunity where I can contribute, learn, and grow professionally. Thank you."
+   Make sure it matches this structure exactly, naturally filling in the brackets with actual facts from the provided Resume Context.
+2. BAN WEAK FILLERS: Absolutely never use words like "So,", "Basically,", "Mainly,", "Actually,", "Like,", or "As such,".
+3. TECHNICAL ACTION BULLETS: In the "Roles and Responsibilities" section, create exactly 3 high-impact bullet points demonstrating technical ownership. Every single bullet point MUST begin directly with a strong, active technical verb (e.g., "Implemented...", "Developed...", "Architected...", "Optimized...").
+4. STRICT NO PRONOUNS RULE FOR BULLETS: Absolutely never start bullet points with personal pronouns or conversational descriptors (do NOT start with "I...", "We...", "My...", "Mainly...", "Also...", "Additionally..."). Start directly with the technical verb!
 
 Return exactly this Markdown structure and nothing else:
 
 ## 🎯 Self Introduction
-[Insert the highly polished, specific, conversational spoken response here]
+[Insert the highly natural, specific, conversational spoken response here]
 
 ## ⭐ Roles and Responsibilities
 - [Active Technical Verb]...
@@ -397,81 +393,90 @@ Return exactly this Markdown structure and nothing else:
 }
 
 /**
- * Builds the concept or coding interview prompt dynamically depending on whether code is asked.
+ * Builds the prompt strictly for coding questions.
+ * Isolates code output and approach explanation. No conceptual headers!
  */
-function buildInterviewPrompt({
+function buildCodingPrompt({
+  question,
+  resumeText,
+}) {
+  const cleanQ = getCleanQuestion(question);
+  return `You are an elite coding interviewer. Provide the code solution and a brief, expert description of how the code is structured.
+
+Question: ${cleanQ}
+
+INSTRUCTIONS:
+1. Provide ONLY the complete, working, and well-commented code block under the "## 💻 Code" section.
+2. Provide the complexity analysis and a 2-3 sentence spoken-ready explanation of how the code is structured under "## ⏱ Complexity & Explanation".
+3. Do NOT include any "Interview Ready Answer", "Key Points", "Project Related Answer", or other conceptual headings. Keep it completely isolated to code.
+
+Return exactly this Markdown structure:
+
+## 💻 Code
+[Provide the complete working code block here]
+
+## ⏱ Complexity & Explanation
+- **Time Complexity:** O(...)
+- **Space Complexity:** O(...)
+
+### How the Code is Written
+[Concise 2-3 sentence explanation of the logic, approach, and how it executes optimal data management]`;
+}
+
+/**
+ * Builds the prompt strictly for conceptual questions.
+ * Ensures the main answer is returned in structured bullet points with highlighted keywords in bold.
+ */
+function buildConceptPrompt({
   question,
   resumeText,
   interviewLevel,
   interviewType,
 }) {
   const cleanQ = getCleanQuestion(question);
-  if (isSpecialQuestion(cleanQ)) {
-    return buildSpecialPrompt({
-      question: cleanQ,
-      resumeText,
-      interviewLevel,
-      interviewType,
-    });
-  }
+  return `You are a professional technical interview simulator. Deliver a highly structured, bulleted response for a conceptual technical question.
 
-  const requiresCoding = isCodingQuestion(cleanQ);
-
-  return `You are an elite technical interview coach. Deliver a highly polished, spoken explanation combined with real experience from the resume.
-
-Resume Context:
+Resume Profile Context:
 ${resumeText || "Resume profile not available"}
 
 Question: ${cleanQ}
 
-INSTRUCTIONS FOR SPOKEN TONE (🎯 Interview Ready Answer):
-- Start directly with the answer as if replying live in an interview. No introductory pleasantries.
-- Use professional technical conversational bridges (e.g., "In a practical scenario...", "From an architectural standpoint...", "We actually faced these challenges when...").
-- Keep the vocabulary sharp, confident, and professional.
-- BAN WEAK FILLERS: Do NOT start sentences with "So,", "Basically,", "Mainly,", "Actually,", "Like,", or "As such,".
-- Connect the concept directly to the candidate's real resume experience (e.g., their experience with Spring Boot, Microservices, or Hibernate).
+INSTRUCTIONS FOR BULLET-BASED "INTERVIEW READY ANSWER" (🎯 Interview Ready Answer):
+- Provide the answer strictly in 3 concise, high-impact conversational bullet points (finishing within exactly 100-120 words total).
+- Every bullet point must begin directly with a highlighted **Key Technical Phrase** in bold, followed by a direct conversational spoken explanation.
+- Keep the language elite, confident, and professional. 
+- BAN WEAK FILLERS: Do NOT start sentences or clauses with "So,", "Basically,", "Mainly," or "Actually,".
 
 INSTRUCTIONS FOR KEY TAKEAWAYS (⭐ Key Points):
-- Create 2-3 high-impact takeaway bullet points.
-- CRITICAL RULE: Every bullet point MUST begin directly with a strong, active technical verb (e.g., "Leveraged...", "Designed...", "Configured...", "Optimized..."). 
-- STRICTLY BAN starting bullet points with pronouns or fillers (e.g., do NOT start with "I...", "We...", "My...", "Mainly...", "Also...", "Additionally..."). Start directly with the technical verb!
+- Provide 2-3 high-impact technical bullet points.
+- Every bullet point MUST start directly with a strong, active technical verb (e.g., "Leveraged...", "Designed...", "Decoupled...", "Optimized..."). STRICTLY BAN starting with pronouns like "I", "We", "My", "Also", or "Additionally".
 
 INSTRUCTIONS FOR PROJECT LINK (📄 Project Related Answer):
-- Provide a short 2-3 line conversational application tying this technical concept directly to a specific technology or ownership item listed on their resume.
-
-${
-  requiresCoding 
-    ? `- Since this is a coding question, provide a brief mental approach, followed by the complete working code block, and complexity analysis.` 
-    : `- Since this is a conceptual question, do NOT include any code block, code template, or complexity section.`
-}
+- Provide a brief 2-3 line conversational application tying this technical concept directly to a technology or responsibility listed in the resume (e.g., ING Bank, Spring Boot).
 
 Return exactly this Markdown structure:
 
 ## 🎯 Interview Ready Answer
-[Insert the conversational spoken explanation here]
+- **[Key Tech Term/Concept]**: [Punchy, conversational spoken explanation highlighting the architecture]
+- **[Key Tech Term/Concept]**: [How it solves real-world issues, spoken naturally]
+- **[Key Tech Term/Concept]**: [Direct implementation connection to Spring Boot microservices]
 
 ## ⭐ Key Points
-- [Active Technical Verb]...
-- [Active Technical Verb]...
+- [Strong Active Verb]...
+- [Strong Active Verb]...
 
 ## 📄 Project Related Answer
-[2-3 line conversational application linking this concept directly to the resume stack]${
-  requiresCoding 
-    ? `\n\n## 💻 Code\n[Provide the complete working code block here]\n\n## ⏱ Complexity\n- Time Complexity: O(...)\n- Space Complexity: O(...)` 
-    : ""
-}`;
+[Provide a short 2-3 line conversational application tying this concept directly to a technology or responsibility listed in the resume]`;
 }
 
 function extractDeltaFromOpenAIEvent(event) {
   if (!event || typeof event !== "object") return "";
 
-  // Handle standard OpenAI Chat Completions stream chunks (choices[0].delta.content)
   if (event.choices && Array.isArray(event.choices) && event.choices[0]) {
     const delta = event.choices[0].delta;
     return delta?.content || "";
   }
 
-  // Fallbacks
   if (event.type === "response.output_text.delta") {
     return event.delta || "";
   }
@@ -488,7 +493,6 @@ function extractDeltaFromOpenAIEvent(event) {
    OPENAI STREAMING ANSWER ROUTE
    Streams plain Markdown chunks to the frontend.
 ===================================================== */
-
 app.post("/answer", async (req, res) => {
   const { question, resumeText, interviewLevel, company, interviewType } =
     req.body || {};
@@ -504,13 +508,29 @@ app.post("/answer", async (req, res) => {
   }
 
   try {
-    const prompt = buildInterviewPrompt({
-      question: cleanQ,
-      resumeText,
-      interviewLevel,
-      company,
-      interviewType,
-    });
+    let prompt = "";
+    
+    // Choose the isolated prompt context based on input characteristics
+    if (isSpecialQuestion(cleanQ)) {
+      prompt = buildSpecialPrompt({
+        question: cleanQ,
+        resumeText,
+        interviewLevel,
+        interviewType,
+      });
+    } else if (isCodingQuestion(cleanQ)) {
+      prompt = buildCodingPrompt({
+        question: cleanQ,
+        resumeText,
+      });
+    } else {
+      prompt = buildConceptPrompt({
+        question: cleanQ,
+        resumeText,
+        interviewLevel,
+        interviewType,
+      });
+    }
 
     res.status(200);
     res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
@@ -534,7 +554,7 @@ app.post("/answer", async (req, res) => {
           },
         ],
         stream: true,
-        temperature: 0.7, // Fixed to 0.7 for natural, varied, and expressive conversational speech
+        temperature: 0.7, // Adds natural variation for natural-sounding speech delivery
       }),
     });
 
