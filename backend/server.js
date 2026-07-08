@@ -41,12 +41,6 @@ app.get("/health", (req, res) => {
   });
 });
 
-/* =====================================================
-   DEEPGRAM LIVE WEBSOCKET
-   Frontend sends WebM/Opus audio chunks.
-   Backend streams them to Deepgram Nova-3 and returns
-   interim/final transcript JSON to the frontend.
-===================================================== */
 const wss = new WebSocketServer({ server });
 
 wss.on("connection", (client) => {
@@ -171,9 +165,6 @@ wss.on("connection", (client) => {
   });
 });
 
-/* =====================================================
-   DEEPGRAM FILE TRANSCRIPTION FALLBACK
-===================================================== */
 app.post("/transcribe", upload.single("audio"), async (req, res) => {
   try {
     if (!req.file) {
@@ -206,11 +197,6 @@ app.post("/transcribe", upload.single("audio"), async (req, res) => {
   }
 });
 
-/* =====================================================
-   RESUME SUMMARY EXTRACTION ENDPOINT
-   Runs at ultra-strict temperature 0.0 to prevent
-   hallucinations and guarantee formatted JSON schema.
-===================================================== */
 app.post("/resume-summary", async (req, res) => {
   try {
     const { resumeText } = req.body;
@@ -300,14 +286,6 @@ app.post("/resume-summary", async (req, res) => {
   }
 });
 
-/* =====================================================
-   PROMPT DYNAMIC BUILDERS & INPUT PARSERS
-===================================================== */
-
-/**
- * Safely extracts a string from the question parameter,
- * even if it's passed as an object, undefined, or null.
- */
 function getCleanQuestion(question) {
   if (!question) return "";
   if (typeof question === "string") return question;
@@ -340,9 +318,6 @@ function isSpecialQuestion(question = "") {
   );
 }
 
-/**
- * Helper to detect if the interviewer's question explicitly asks for coding/queries.
- */
 function isCodingQuestion(question) {
   const cleanQ = getCleanQuestion(question).toLowerCase().trim();
   if (!cleanQ) return false;
@@ -355,9 +330,6 @@ function isCodingQuestion(question) {
   return codingKeywords.some(keyword => cleanQ.includes(keyword));
 }
 
-/**
- * Builds the special spoken prompt for self-introductions or roles/project walkthroughs.
- */
 function buildSpecialPrompt({
   question,
   resumeText,
@@ -392,16 +364,24 @@ Return exactly this Markdown structure and nothing else:
 - [Active Technical Verb]...`;
 }
 
-/**
- * Builds the prompt strictly for coding questions.
- * Isolates code output and approach explanation. No conceptual headers!
- */
 function buildCodingPrompt({
   question,
   resumeText,
 }) {
   const cleanQ = getCleanQuestion(question);
-  return `You are an elite coding interviewer. Provide the code solution and a brief, expert description of how the code is structured.
+  return `You are an elite coding interviewer. 
+Analyze the candidate's primary technical stack from the Resume Context below.
+
+Resume Context:
+${resumeText || "Resume profile not available"}
+
+CRITICAL CODING LANGUAGE RULE:
+1. Identify the candidate's primary programming/backend language from their resume skills (e.g., Java, SQL, JavaScript, C++, Python).
+2. You MUST write the complete code solution ONLY in their primary language. 
+   - For example, if they are a Java Backend Developer, write the solution in Java.
+   - If it is a database or query question, write it in SQL.
+   - Do NOT write Python code if their resume specifies Java. Do NOT write JavaScript/Node.js if they are a C++ developer.
+   - Only deviate if the question explicitly asks for a specific programming language (e.g., "Write this in Python").
 
 Question: ${cleanQ}
 
@@ -413,7 +393,7 @@ INSTRUCTIONS:
 Return exactly this Markdown structure:
 
 ## 💻 Code
-[Provide the complete working code block here]
+[Provide the complete working code block here in their primary language]
 
 ## ⏱ Complexity & Explanation
 - **Time Complexity:** O(...)
@@ -423,10 +403,6 @@ Return exactly this Markdown structure:
 [Concise 2-3 sentence explanation of the logic, approach, and how it executes optimal data management]`;
 }
 
-/**
- * Builds the prompt strictly for conceptual questions.
- * Ensures the main answer is returned in structured bullet points with highlighted keywords in bold.
- */
 function buildConceptPrompt({
   question,
   resumeText,
@@ -434,32 +410,31 @@ function buildConceptPrompt({
   interviewType,
 }) {
   const cleanQ = getCleanQuestion(question);
-  return `You are a professional technical interview simulator. Deliver a highly structured, bulleted response for a conceptual technical question.
+  return `You are a professional technical interview simulator. Deliver a highly structured, direct technical response for a conceptual technical question.
 
 Resume Profile Context:
 ${resumeText || "Resume profile not available"}
 
 Question: ${cleanQ}
 
-INSTRUCTIONS FOR BULLET-BASED "INTERVIEW READY ANSWER" (🎯 Interview Ready Answer):
-- Provide the answer strictly in 3 concise, high-impact conversational bullet points (finishing within exactly 100-120 words total).
-- Every bullet point must begin directly with a highlighted **Key Technical Phrase** in bold, followed by a direct conversational spoken explanation.
-- Keep the language elite, confident, and professional. 
-- BAN WEAK FILLERS: Do NOT start sentences or clauses with "So,", "Basically,", "Mainly," or "Actually,".
+INSTRUCTIONS FOR "INTERVIEW READY ANSWER" (🎯 Interview Ready Answer):
+- Start directly with the main answer in a highly polished, natural spoken conversational format.
+- If the question asks about a specific annotation, keyword, framework, or concept (like @SpringBootApplication), start with a direct definition highlighted with an emoji (e.g., 👉 "@SpringBootApplication is...").
+- If the concept consists of multiple components or sub-parts (e.g., @Configuration, @EnableAutoConfiguration, @ComponentScan), list those components directly and explain each of them simply, clearly, and concisely in bullet points.
+- Ensure the total explanation is extremely direct, punchy, conversational, and finishes within 100-120 words.
+- BAN WEAK FILLERS: Do NOT start sentences or clauses with "So,", "Basically,", "Mainly,", or "Actually,".
 
 INSTRUCTIONS FOR KEY TAKEAWAYS (⭐ Key Points):
 - Provide 2-3 high-impact technical bullet points.
 - Every bullet point MUST start directly with a strong, active technical verb (e.g., "Leveraged...", "Designed...", "Decoupled...", "Optimized..."). STRICTLY BAN starting with pronouns like "I", "We", "My", "Also", or "Additionally".
 
 INSTRUCTIONS FOR PROJECT LINK (📄 Project Related Answer):
-- Provide a brief 2-3 line conversational application tying this technical concept directly to a technology or responsibility listed in the resume (e.g., ING Bank, Spring Boot).
+- Provide a brief 2-3 line conversational application tying this technical concept directly to a technology or responsibility listed in the resume (e.g., ING Digitization, Spring Boot).
 
 Return exactly this Markdown structure:
 
 ## 🎯 Interview Ready Answer
-- **[Key Tech Term/Concept]**: [Punchy, conversational spoken explanation highlighting the architecture]
-- **[Key Tech Term/Concept]**: [How it solves real-world issues, spoken naturally]
-- **[Key Tech Term/Concept]**: [Direct implementation connection to Spring Boot microservices]
+[Your direct definition starting with a 👉 emoji, followed by simple bullet points breaking down each sub-annotation/concept component if applicable]
 
 ## ⭐ Key Points
 - [Strong Active Verb]...
@@ -489,10 +464,6 @@ function extractDeltaFromOpenAIEvent(event) {
   return "";
 }
 
-/* =====================================================
-   OPENAI STREAMING ANSWER ROUTE
-   Streams plain Markdown chunks to the frontend.
-===================================================== */
 app.post("/answer", async (req, res) => {
   const { question, resumeText, interviewLevel, company, interviewType } =
     req.body || {};
@@ -565,36 +536,69 @@ app.post("/answer", async (req, res) => {
       return res.end();
     }
 
-    const reader = openaiResponse.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
+    if (typeof openaiResponse.body.getReader === "function") {
+      const reader = openaiResponse.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      buffer += decoder.decode(value, { stream: true });
-      const parts = buffer.split("\n\n");
-      buffer = parts.pop() || "";
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() || "";
 
-      for (const part of parts) {
-        const lines = part
-          .split("\n")
-          .filter((line) => line.startsWith("data:"));
+        for (const part of parts) {
+          const lines = part
+            .split("\n")
+            .filter((line) => line.startsWith("data:"));
 
-        for (const line of lines) {
-          const data = line.replace(/^data:\s*/, "").trim();
-          if (!data || data === "[DONE]") continue;
+          for (const line of lines) {
+            const data = line.replace(/^data:\s*/, "").trim();
+            if (!data || data === "[DONE]") continue;
 
-          try {
-            const event = JSON.parse(data);
-            const delta = extractDeltaFromOpenAIEvent(event);
-            if (delta) {
-              res.write(delta);
-              res.flush?.();
+            try {
+              const event = JSON.parse(data);
+              const delta = extractDeltaFromOpenAIEvent(event);
+              if (delta) {
+                res.write(delta);
+                res.flush?.();
+              }
+            } catch (err) {
+              console.error("OpenAI stream parse error:", err);
             }
-          } catch (err) {
-            console.error("OpenAI stream parse error:", err);
+          }
+        }
+      }
+    } else if (typeof openaiResponse.body[Symbol.asyncIterator] === "function") {
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      for await (const chunk of openaiResponse.body) {
+        buffer += decoder.decode(chunk, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() || "";
+
+        for (const part of parts) {
+          const lines = part
+            .split("\n")
+            .filter((line) => line.startsWith("data:"));
+
+          for (const line of lines) {
+            const data = line.replace(/^data:\s*/, "").trim();
+            if (!data || data === "[DONE]") continue;
+
+            try {
+              const event = JSON.parse(data);
+              const delta = extractDeltaFromOpenAIEvent(event);
+              if (delta) {
+                res.write(delta);
+                res.flush?.();
+              }
+            } catch (err) {
+              console.error("OpenAI stream parse error:", err);
+            }
           }
         }
       }
