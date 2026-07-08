@@ -32,24 +32,26 @@ function App() {
   const [answerData, setAnswerData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [interviewStarted, setInterviewStarted] = useState(false);
+
   const [resumeText, setResumeText] = useState("");
   const [resumeName, setResumeName] = useState("");
+  const [resumeProfile, setResumeProfile] = useState(null);
+  const [resumeProcessing, setResumeProcessing] = useState(false);
+
   const [company, setCompany] = useState("Oracle");
   const [customCompany, setCustomCompany] = useState("");
   const [interviewLevel, setInterviewLevel] = useState("Mid Level");
   const [interviewType, setInterviewType] = useState("Technical");
   const [skills, setSkills] = useState([]);
+
   const [isInterviewRunning, setIsInterviewRunning] = useState(false);
-  const [resumeSummary, setResumeSummary] = useState("");
-  const [resumeProfile, setResumeProfile] = useState(null);
 
   const socketRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioContextRef = useRef(null);
   const screenStreamRef = useRef(null);
   const textareaRef = useRef(null);
-  const finalTranscriptRef = useRef("");
-  const interimTranscriptRef = useRef("");
+
   const answerAbortRef = useRef(null);
   const silenceTimerRef = useRef(null);
   const liveQuestionRef = useRef("");
@@ -70,32 +72,105 @@ function App() {
     }
   }, [question]);
 
-const updateQuestionFromTranscript = (payload) => {
+  const buildResumeContext = () => {
+    if (!resumeProfile) {
+      return resumeText || "Resume profile not available";
+    }
 
+    const primarySkills = Array.isArray(resumeProfile.primarySkills)
+      ? resumeProfile.primarySkills.join(", ")
+      : "";
+
+    const secondarySkills = Array.isArray(resumeProfile.secondarySkills)
+      ? resumeProfile.secondarySkills.join(", ")
+      : "";
+
+    const responsibilities = Array.isArray(
+      resumeProfile.rolesAndResponsibilities
+    )
+      ? resumeProfile.rolesAndResponsibilities.join("\n- ")
+      : "";
+
+    const tools = Array.isArray(resumeProfile.toolsAndTechnologies)
+      ? resumeProfile.toolsAndTechnologies.join(", ")
+      : "";
+
+    const achievements = Array.isArray(resumeProfile.achievements)
+      ? resumeProfile.achievements.join("\n- ")
+      : "";
+
+    return `
+Candidate Summary:
+${resumeProfile.candidateSummary || ""}
+
+Experience:
+${resumeProfile.experience || ""}
+
+Primary Skills:
+${primarySkills}
+
+Secondary Skills:
+${secondarySkills}
+
+Project Name:
+${resumeProfile.projectName || ""}
+
+Project Domain:
+${resumeProfile.projectDomain || ""}
+
+Project Summary:
+${resumeProfile.projectSummary || ""}
+
+Roles and Responsibilities:
+- ${responsibilities}
+
+Tools and Technologies:
+${tools}
+
+Achievements:
+- ${achievements}
+
+Self Introduction:
+${resumeProfile.selfIntroduction || ""}
+
+Project Explanation:
+${resumeProfile.projectExplanation || ""}
+
+Roles Explanation:
+${resumeProfile.rolesExplanation || ""}
+`.trim();
+  };
+
+  const updateQuestionFromTranscript = (payload) => {
     const text = (payload?.text || "").trim();
 
     if (!text) return;
-
     if (questionLockedRef.current) return;
 
     liveQuestionRef.current = text;
 
     setQuestion((prev) => {
-    if (prev.endsWith(text)) return prev;
-    return (prev + " " + text).trim();
+      const cleanedPrev = prev.trim();
+
+      if (!cleanedPrev) return text;
+
+      if (
+        cleanedPrev.endsWith(text) ||
+        cleanedPrev.includes(text)
+      ) {
+        return cleanedPrev;
+      }
+
+      return `${cleanedPrev} ${text}`.trim();
     });
 
     clearTimeout(silenceTimerRef.current);
 
     silenceTimerRef.current = setTimeout(() => {
-
-        questionLockedRef.current = true;
-
-        console.log("Question Completed");
-
+      questionLockedRef.current = true;
+      console.log("Question Completed");
     }, 5000);
-
-};
+  };
 
   const openInterviewSocket = () => {
     return new Promise((resolve, reject) => {
@@ -162,50 +237,67 @@ const updateQuestionFromTranscript = (payload) => {
         socketRef.current.close();
       } catch {}
     }
+
     socketRef.current = null;
   };
 
   const handleResumeUpload = async (event) => {
     const file = event.target.files[0];
+
     if (!file) return;
 
     try {
+      setResumeProcessing(true);
       setResumeName(file.name);
+      setResumeProfile(null);
+
       const text = await extractPdfText(file);
       setResumeText(text);
 
-    const summaryResponse = await fetch(`${API_BASE_URL}/resume-summary`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ resumeText: text }),
-    });
-
-    const summaryData = await summaryResponse.json();
-
-    setResumeProfile(summaryData.resumeProfile);
-
       const skillMatches =
         text.match(
-          /Java|Spring Boot|Microservices|SQL|Oracle|React|AWS|Docker|Kubernetes|JPA|Hibernate|REST API|WebFlux|Jenkins/gi
+          /Java|Spring Boot|Microservices|SQL|Oracle|React|AWS|Docker|Kubernetes|JPA|Hibernate|REST API|WebFlux|Jenkins|Git|Maven|JUnit|Mockito|Kafka/gi
         ) || [];
 
       setSkills([...new Set(skillMatches.map((skill) => skill.trim()))]);
-      alert("Resume Uploaded Successfully");
+
+      const summaryResponse = await fetch(`${API_BASE_URL}/resume-summary`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          resumeText: text,
+        }),
+      });
+
+      const summaryData = await summaryResponse.json();
+
+      if (!summaryData.resumeProfile) {
+        alert("Resume uploaded, but profile creation failed. Please try again.");
+        return;
+      }
+
+      console.log("Resume Profile:", summaryData.resumeProfile);
+
+      setResumeProfile(summaryData.resumeProfile);
+
+      alert("Resume Uploaded and Profile Created Successfully");
     } catch (err) {
       console.error(err);
       alert("Unable to read Resume");
+    } finally {
+      setResumeProcessing(false);
     }
   };
 
   const startInterviewMode = async () => {
     setQuestion("");
     setAnswerData(null);
+
     questionLockedRef.current = false;
     liveQuestionRef.current = "";
     clearTimeout(silenceTimerRef.current);
-
-    finalTranscriptRef.current = "";
-    interimTranscriptRef.current = "";
 
     try {
       setIsInterviewRunning(true);
@@ -218,6 +310,7 @@ const updateQuestionFromTranscript = (payload) => {
       screenStreamRef.current = stream;
 
       const audioTrack = stream.getAudioTracks()[0];
+
       if (!audioTrack) {
         alert("Please select a Chrome tab and enable Share tab audio.");
         setIsInterviewRunning(false);
@@ -232,18 +325,25 @@ const updateQuestionFromTranscript = (payload) => {
         stopInterviewMode();
       };
 
-      const audioContext = new AudioContext({ sampleRate: 48000 });
+      const audioContext = new AudioContext({
+        sampleRate: 48000,
+      });
+
       audioContextRef.current = audioContext;
 
       const source = audioContext.createMediaStreamSource(stream);
       const destination = audioContext.createMediaStreamDestination();
+
       source.connect(destination);
 
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus"
         : "audio/webm";
 
-      const recorder = new MediaRecorder(destination.stream, { mimeType });
+      const recorder = new MediaRecorder(destination.stream, {
+        mimeType,
+      });
+
       mediaRecorderRef.current = recorder;
 
       recorder.ondataavailable = (event) => {
@@ -267,56 +367,14 @@ const updateQuestionFromTranscript = (payload) => {
       recorder.start(100);
     } catch (err) {
       console.error(err);
-      alert("Unable to start interview audio. Please try again and share tab audio.");
+      alert(
+        "Unable to start interview audio. Please try again and share tab audio."
+      );
       stopInterviewMode();
     }
   };
 
-  const startInterviewFlow = () => {
-    setInterviewStarted(true);
-    setShowConfig(false);
-    startInterviewMode();
-  };
-
-  const stopInterviewMode = () => {
-    if (
-      mediaRecorderRef.current &&
-      mediaRecorderRef.current.state !== "inactive"
-    ) {
-      mediaRecorderRef.current.stop();
-    }
-    mediaRecorderRef.current = null;
-
-    if (audioContextRef.current && audioContextRef.current.state !== "closed") {
-      audioContextRef.current.close();
-    }
-    audioContextRef.current = null;
-
-    screenStreamRef.current?.getTracks().forEach((track) => track.stop());
-    screenStreamRef.current = null;
-
-    closeInterviewSocket();
-    setIsInterviewRunning(false);
-  };
-
-const clearQuestionAndAnswer = () => {
-  questionLockedRef.current = false;
-  liveQuestionRef.current = "";
-  finalTranscriptRef.current = "";
-  interimTranscriptRef.current = "";
-  clearTimeout(silenceTimerRef.current);
-
-  setQuestion("");
-  setAnswerData(null);
-};
-
-  const generateAnswer = async () => {
-    questionLockedRef.current = true;
-    if (!question.trim()) {
-      alert("Question is Empty");
-      return;
-    }
-
+  const streamAnswer = async (payload, fallbackMessage) => {
     try {
       answerAbortRef.current?.abort();
       answerAbortRef.current = new AbortController();
@@ -326,17 +384,11 @@ const clearQuestionAndAnswer = () => {
 
       const response = await fetch(`${API_BASE_URL}/answer`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         signal: answerAbortRef.current.signal,
-        body: JSON.stringify({
-          question,
-          resumeText: resumeProfile
-          ? JSON.stringify(resumeProfile)
-          : resumeText,
-          company: company === "Others" ? customCompany : company,
-          interviewLevel,
-          interviewType,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok || !response.body) {
@@ -349,20 +401,116 @@ const clearQuestionAndAnswer = () => {
 
       while (true) {
         const { done, value } = await reader.read();
+
         if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
+        const chunk = decoder.decode(value, {
+          stream: true,
+        });
+
         fullText += chunk;
         setAnswerData(fullText);
       }
     } catch (err) {
       if (err.name === "AbortError") return;
+
       console.error(err);
-      setAnswerData("Unable to generate answer right now. Please try again.");
-      alert("Failed to Generate");
+      setAnswerData(fallbackMessage);
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateSelfIntroAnswer = async () => {
+    const introQuestion =
+      "Tell me about yourself including skills, project, roles and responsibilities.";
+
+    await streamAnswer(
+      {
+        question: introQuestion,
+        resumeText: buildResumeContext(),
+        company: company === "Others" ? customCompany : company,
+        interviewLevel,
+        interviewType,
+      },
+      "Unable to generate self introduction right now."
+    );
+  };
+
+  const startInterviewFlow = async () => {
+    if (resumeProcessing) {
+      alert("Resume profile is still creating. Please wait.");
+      return;
+    }
+
+    if (!resumeProfile) {
+      alert("Please upload resume and wait until resume profile is created.");
+      return;
+    }
+
+    setInterviewStarted(true);
+    setShowConfig(false);
+
+    await startInterviewMode();
+
+    setTimeout(() => {
+      generateSelfIntroAnswer();
+    }, 700);
+  };
+
+  const stopInterviewMode = () => {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
+      mediaRecorderRef.current.stop();
+    }
+
+    mediaRecorderRef.current = null;
+
+    if (
+      audioContextRef.current &&
+      audioContextRef.current.state !== "closed"
+    ) {
+      audioContextRef.current.close();
+    }
+
+    audioContextRef.current = null;
+
+    screenStreamRef.current?.getTracks().forEach((track) => track.stop());
+    screenStreamRef.current = null;
+
+    closeInterviewSocket();
+    setIsInterviewRunning(false);
+  };
+
+  const clearQuestionAndAnswer = () => {
+    questionLockedRef.current = false;
+    liveQuestionRef.current = "";
+    clearTimeout(silenceTimerRef.current);
+
+    setQuestion("");
+    setAnswerData(null);
+  };
+
+  const generateAnswer = async () => {
+    questionLockedRef.current = true;
+
+    if (!question.trim()) {
+      alert("Question is Empty");
+      return;
+    }
+
+    await streamAnswer(
+      {
+        question,
+        resumeText: buildResumeContext(),
+        company: company === "Others" ? customCompany : company,
+        interviewLevel,
+        interviewType,
+      },
+      "Unable to generate answer right now. Please try again."
+    );
   };
 
   if (authLoading) {
@@ -402,19 +550,23 @@ const clearQuestionAndAnswer = () => {
 
       <div
         style={{
-              width: "100%",
-              height: "calc(100vh - 68px)",
-              background: "#020617",
-              padding: "14px",
-              overflow: "hidden",
-              boxSizing: "border-box",
-              fontFamily: "Segoe UI",
-              color: "white",
+          width: "100%",
+          height: "calc(100vh - 68px)",
+          background: "#020617",
+          padding: "14px",
+          overflow: "hidden",
+          boxSizing: "border-box",
+          fontFamily: "Segoe UI",
+          color: "white",
         }}
       >
         {showConfig && (
           <UploadResume
-            resumeName={resumeName}
+            resumeName={
+              resumeProcessing
+                ? "Creating Resume Profile..."
+                : resumeName
+            }
             handleResumeUpload={handleResumeUpload}
             skills={skills}
             company={company}
@@ -437,24 +589,27 @@ const clearQuestionAndAnswer = () => {
             }}
           >
             <button
+              disabled={resumeProcessing}
               onClick={startInterviewFlow}
               style={{
-                background: "#8b5cf6",
+                background: resumeProcessing ? "#475569" : "#8b5cf6",
                 color: "white",
                 border: "none",
                 padding: "15px 35px",
                 borderRadius: "12px",
-                cursor: "pointer",
+                cursor: resumeProcessing ? "not-allowed" : "pointer",
                 fontSize: "18px",
                 fontWeight: "bold",
               }}
             >
-              🚀 Start Interview
+              {resumeProcessing
+                ? "⏳ Creating Resume Profile..."
+                : "🚀 Start Interview"}
             </button>
           </div>
         )}
 
-       {interviewStarted && (
+        {interviewStarted && (
           <>
             <div
               style={{
@@ -475,16 +630,11 @@ const clearQuestionAndAnswer = () => {
                 clearQuestionAndAnswer={clearQuestionAndAnswer}
               />
 
-              <AnswerPanel
-                answerData={answerData}
-                loading={loading}
-              />
+              <AnswerPanel answerData={answerData} loading={loading} />
             </div>
 
             {isInterviewRunning && (
-              <InterviewStatus
-                stopInterviewMode={stopInterviewMode}
-              />
+              <InterviewStatus stopInterviewMode={stopInterviewMode} />
             )}
           </>
         )}

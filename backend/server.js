@@ -14,7 +14,7 @@ const server = http.createServer(app);
 const upload = multer({ dest: "uploads/" });
 
 const PORT = process.env.PORT || 5000;
-const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5-mini";
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 
 app.use(
@@ -217,28 +217,37 @@ app.post("/resume-summary", async (req, res) => {
     }
 
     const prompt = `
-Create a structured resume profile for interview answers.
+    You are a strict resume extraction engine.
 
-Resume:
-${resumeText}
+    Extract ONLY facts explicitly present in the resume.
+    Do NOT guess.
+    Do NOT infer.
+    Do NOT invent company names.
+    Do NOT invent years of experience.
+    Do NOT invent project names.
+    Do NOT invent achievements or percentages.
+    If any value is missing, keep it empty.
 
-Return ONLY valid JSON. No markdown.
+    Resume:
+    ${resumeText}
 
-{
-  "candidateSummary": "",
-  "experience": "",
-  "primarySkills": [],
-  "secondarySkills": [],
-  "projectName": "",
-  "projectDomain": "",
-  "projectSummary": "",
-  "rolesAndResponsibilities": [],
-  "toolsAndTechnologies": [],
-  "achievements": [],
-  "selfIntroduction": "",
-  "projectExplanation": "",
-  "rolesExplanation": ""
-}
+    Return ONLY valid JSON. No markdown. No explanation.
+
+    {
+      "candidateSummary": "",
+      "experience": "",
+      "primarySkills": [],
+      "secondarySkills": [],
+      "projectName": "",
+      "projectDomain": "",
+      "projectSummary": "",
+      "rolesAndResponsibilities": [],
+      "toolsAndTechnologies": [],
+      "achievements": [],
+      "selfIntroduction": "",
+      "projectExplanation": "",
+      "rolesExplanation": ""
+    }
 `;
 
     const response = await fetch("https://api.openai.com/v1/responses", {
@@ -258,14 +267,16 @@ Return ONLY valid JSON. No markdown.
     if (!response.ok) {
       console.error("Resume Summary OpenAI Error:", data);
       return res.json({
-        resumeProfile: {
-          candidateSummary: resumeText,
-        },
+        resumeProfile: null,
       });
     }
 
     let text = data.output_text || "{}";
-    text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+
+    text = text
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
 
     const resumeProfile = JSON.parse(text);
 
@@ -324,6 +335,11 @@ Question:
 ${question}
 
 Rules:
+- Use ONLY the provided Resume Profile.
+- Do NOT invent years of experience.
+- Do NOT invent company names.
+- Do NOT invent achievements, metrics, clients, or cloud projects.
+- If data is missing, keep it generic without numbers.
 - Use natural Indian spoken English.
 - Answer confidently.
 - Do not sound like textbook.
