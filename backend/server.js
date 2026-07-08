@@ -217,54 +217,55 @@ app.post("/resume-summary", async (req, res) => {
     }
 
     const prompt = `
-    You are a strict resume extraction engine.
+    You are an elite resume extraction and interview preparation engine.
 
-    Extract ONLY facts explicitly present in the resume.
-    Do NOT guess.
-    Do NOT infer.
-    Do NOT invent company names.
-    Do NOT invent years of experience.
-    Do NOT invent project names.
-    Do NOT invent achievements or percentages.
+    First, extract ONLY facts explicitly present in the resume.
+    Do NOT guess, infer, or invent details (no fake company names, years, projects, or metrics).
     If any value is missing, keep it empty.
 
-    Resume:
+    Second, when writing the conversational fields ("selfIntroduction", "projectExplanation", "rolesExplanation"), you must adhere to these CRITICAL SPOKEN TONE RULES:
+    1. BAN WEAK FILLERS: Do NOT start any sentence or bullet point with words like "So,", "Basically,", "Mainly,", "Actually,", "Like,", or "As such,".
+    2. ELITE AND CONFIDENT OPENINGS: Start spoken answers with high-impact transitions (e.g., "Certainly, to provide an overview, my name is...", "Over the past three years, my primary focus has been on...", "I specialize in...").
+    3. SPOKEN CONTRACTIONS: Use professional spoken contractions (e.g., "I'm", "I've", "we've") to keep it natural but highly polished. Do not sound like a dry textbook.
+    4. ACTION VERB MANDATE: For roles and responsibilities, every single point must begin directly with a strong, active technical verb (e.g., "Implemented...", "Developed...", "Architected...", "Optimized...").
+
+    Resume Content:
     ${resumeText}
 
     Return the data matching this exact JSON schema:
     {
-      "candidateSummary": "",
-      "experience": "",
-      "primarySkills": [],
-      "secondarySkills": [],
-      "projectName": "",
-      "projectDomain": "",
-      "projectSummary": "",
-      "rolesAndResponsibilities": [],
-      "toolsAndTechnologies": [],
-      "achievements": [],
-      "selfIntroduction": "",
-      "projectExplanation": "",
-      "rolesExplanation": ""
+      "candidateSummary": "A brief professional summary of the candidate.",
+      "experience": "Total experience extracted.",
+      "primarySkills": ["List of core skills"],
+      "secondarySkills": ["List of supportive skills"],
+      "projectName": "Major project name",
+      "projectDomain": "Project domain",
+      "projectSummary": "Brief overview of the project",
+      "rolesAndResponsibilities": ["Responsibility 1 starting with active verb", "Responsibility 2 starting with active verb"],
+      "toolsAndTechnologies": ["Tech stack list"],
+      "achievements": ["Explicit achievements if any"],
+      "selfIntroduction": "A highly polished, elite, and professional spoken self-introduction based strictly on the resume facts. No informal starters.",
+      "projectExplanation": "A 2-3 line spoken-ready, professional explanation of the project context and technical transition.",
+      "rolesExplanation": "A professional spoken description of core technical ownership starting with action verbs."
     }
 `;
 
-    const response = await fetch("[https://api.openai.com/v1/chat/completions](https://api.openai.com/v1/chat/completions)", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        response_format: { type: "json_object" }, 
+        model: "gpt-4o-mini", // Optimized for ultra-fast response times
+        response_format: { type: "json_object" }, // Forces raw JSON return, eliminating parsing errors
         messages: [
           {
             role: "user",
             content: prompt,
           },
         ],
-        temperature: 0.1,
+        temperature: 0.1, // Keeps the extraction deterministic, fast, and strict
       }),
     });
 
@@ -281,7 +282,6 @@ app.post("/resume-summary", async (req, res) => {
     }
 
     const text = data.choices[0].message.content.trim();
-
     console.log("OUTPUT TEXT:");
     console.log(text);
 
@@ -297,7 +297,7 @@ app.post("/resume-summary", async (req, res) => {
 });
 
 function isSpecialQuestion(question = "") {
-  const q = question.toLowerCase();
+  const q = question.toLowerCase().trim;
 
   return (
     q.includes("tell me about yourself") ||
@@ -318,6 +318,22 @@ function isSpecialQuestion(question = "") {
   );
 }
 
+/**
+ * Helper to detect if the interviewer's question explicitly asks for coding/queries.
+ */
+function isCodingQuestion(question) {
+  const lower = question.toLowerCase();
+  const codingKeywords = [
+    "code", "program", "write a", "implement", "coding", "function", "snippet", 
+    "algorithm", "query", "sql", "database schema", "class", "method", "compile", 
+    "regex", "syntax"
+  ];
+  return codingKeywords.some(keyword => lower.includes(keyword));
+}
+
+/**
+ * Builds the special spoken prompt for self-introductions or roles/project walkthroughs.
+ */
 function buildSpecialPrompt({
   question,
   resumeText,
@@ -326,30 +342,33 @@ function buildSpecialPrompt({
 }) {
   return `You are a technical interview simulator translating a resume into natural spoken responses.
 
-    Resume Context:
-    ${resumeText || "Resume profile not available"}
+Resume Context:
+${resumeText || "Resume profile not available"}
 
-    Interview Parameter: Level: ${interviewLevel || "Mid Level"}, Type: ${interviewType || "Technical"}
-    Question: ${question}
+Interview Parameter: Level: ${interviewLevel || "Mid Level"}, Type: ${interviewType || "Technical"}
+Question: ${question}
 
-    INSTRUCTIONS FOR NATURAL CONVERSATIONAL TONE:
-    - Write exactly how a candidate naturally talks when answering live. 
-    - Use active first-person spoken transitions (e.g., "So, looking at my experience...", "Basically, what we did was...", "Mainly, I've been focusing on...").
-    - Use common contractions naturally (I've, I'm, we're, didn't).
-    - Do not make up any factual data, company names, or metrics not found in the resume context.
-    - Keep the length concise (roughly a brief 1-minute spoken response). Avoid rigid textbook language.
+INSTRUCTIONS FOR NATURAL CONVERSATIONAL TONE:
+- Write exactly how a candidate naturally talks when answering live. 
+- Use active first-person spoken transitions (e.g., "Certainly, to provide an overview...", "Over the past few years, my core focus has been...").
+- BAN WEAK FILLERS: Do NOT start sentences or bullet points with words like "So,", "Basically,", "Mainly,", "Actually,", "Like,", or "As such,".
+- Use professional spoken contractions (I've, I'm, we've) naturally.
+- Do not make up any factual data, company names, or metrics not found in the resume context.
 
-    Return exactly this Markdown structure and nothing else:
+Return exactly this Markdown structure and nothing else:
 
-    ## 🎯 Self Introduction
-    [Insert the conversational spoken response here]
+## 🎯 Self Introduction
+[Insert the conversational spoken response here]
 
-    ## ⭐ Roles and Responsibilities
-    - Provide a brief spoken bullet point highlighting a key ownership area from the resume.
-    - Provide a second spoken bullet point.
-    - Provide a third spoken bullet point.`;
+## ⭐ Roles and Responsibilities
+- Provide a brief spoken bullet point highlighting a key ownership area from the resume.
+- Provide a second spoken bullet point.
+- Provide a third spoken bullet point.`;
 }
 
+/**
+ * Builds the concept or coding interview prompt dynamically depending on whether code is asked.
+ */
 function buildInterviewPrompt({
   question,
   resumeText,
@@ -357,42 +376,52 @@ function buildInterviewPrompt({
   interviewType,
 }) {
   if (isSpecialQuestion(question)) {
-    return buildSpecialPrompt({ question, resumeText, interviewLevel, interviewType });
+    return buildSpecialPrompt({
+      question,
+      resumeText,
+      interviewLevel,
+      interviewType,
+    });
   }
+
+  const requiresCoding = isCodingQuestion(question);
 
   return `You are a technical interview simulator. Deliver a spoken explanation to a technical question combined with real experience from the resume.
 
-    Resume Context:
-    ${resumeText || "Resume profile not available"}
+Resume Context:
+${resumeText || "Resume profile not available"}
 
-    Question: ${question}
+Question: ${question}
 
-    INSTRUCTIONS FOR SPOKEN TONE:
-    - Start directly with the answer as if replying in a live conversation.
-    - Use casual but professional technical conversational bridges (e.g., "The way I look at it...", "In a practical scenario...", "We actually faced this when...").
-    - Focus on practical delivery over heavy textbook definitions.
-    
-    
-    For coding questions:
-    - Give short approach.
-    - Then give complete working code.
-
-
-    Return exactly this Markdown structure:
-
-    ## 🎯 Interview Ready Answer
-    [Insert the conversational spoken explanation here]
-
-    ## ⭐ Key Points
-    - A spoken takeaway point.
-    - Another spoken takeaway point.
-
-    ## 📄 Project Related Answer
-    [Provide a short 2-3 line conversational application tying this concept directly to a technology or responsibility listed in the resume]
-
-    ## 💻 Code
-    Only if coding is required.`;
+INSTRUCTIONS FOR SPOKEN TONE:
+- Start directly with the answer as if replying in a live conversation.
+- Use professional technical conversational bridges (e.g., "The way I look at it...", "In a practical scenario...", "We actually faced this when...").
+- Focus on practical delivery over heavy textbook definitions.
+- Keep the language elite, confident, and professional. 
+- BAN WEAK FILLERS: Do NOT start sentences with "So,", "Basically,", "Mainly," or "Actually,".
+${
+  requiresCoding 
+    ? `- Since this is a coding question, provide a brief mental approach, followed by the complete working code block, and complexity analysis.` 
+    : `- Since this is a conceptual question, do NOT include any code block, code template, or complexity section.`
 }
+
+Return exactly this Markdown structure:
+
+## 🎯 Interview Ready Answer
+[Insert the conversational spoken explanation here]
+
+## ⭐ Key Points
+- A spoken takeaway point.
+- Another spoken takeaway point.
+
+## 📄 Project Related Answer
+[Provide a short 2-3 line conversational application tying this concept directly to a technology or responsibility listed in the resume]${
+  requiresCoding 
+    ? `\n\n## 💻 Code\n[Provide the complete working code block here]\n\n## ⏱ Complexity\n- Time Complexity: O(...)\n- Space Complexity: O(...)` 
+    : ""
+}`;
+}
+
 
 function extractDeltaFromOpenAIEvent(event) {
   if (!event || typeof event !== "object") return "";
