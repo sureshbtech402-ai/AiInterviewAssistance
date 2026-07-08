@@ -231,8 +231,7 @@ app.post("/resume-summary", async (req, res) => {
     Resume:
     ${resumeText}
 
-    Return ONLY valid JSON. No markdown. No explanation.
-
+    Return the data matching this exact JSON schema:
     {
       "candidateSummary": "",
       "experience": "",
@@ -250,15 +249,25 @@ app.post("/resume-summary", async (req, res) => {
     }
 `;
 
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    // 1. Correct Endpoint URL
+    const response = await fetch("[https://api.openai.com/v1/chat/completions](https://api.openai.com/v1/chat/completions)", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: OPENAI_MODEL,
-        input: prompt,
+        model: "gpt-4o-mini", // Or your OPENAI_MODEL variable
+        // 2. Enforce Native JSON output (Removes any markdown backticks automatically)
+        response_format: { type: "json_object" }, 
+        // 3. Correct payload structure for Chat Models
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: 0.1, // Keeps the extraction strict, predictable, and fast
       }),
     });
 
@@ -274,23 +283,15 @@ app.post("/resume-summary", async (req, res) => {
       });
     }
 
-   let text =
-    data.output_text ||
-    data.output?.find((item) => item.type === "message")
-      ?.content?.find((content) => content.type === "output_text")
-      ?.text ||
-    "{}";
+    // 4. Correct way to extract text from a Chat Completion response
+    const text = data.choices[0].message.content.trim();
 
-    text = text
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-
-    const resumeProfile = JSON.parse(text);
     console.log("OUTPUT TEXT:");
     console.log(text);
 
+    const resumeProfile = JSON.parse(text);
     res.json({ resumeProfile });
+
   } catch (err) {
     console.error("Resume Summary Error:", err);
     res.status(500).json({
@@ -327,50 +328,30 @@ function buildSpecialPrompt({
   interviewLevel,
   interviewType,
 }) {
-  return `
-You are an Indian Java interview coach.
+  return `You are a technical interview simulator translating a resume into natural spoken responses.
 
-Write the answer exactly like I am speaking in a real interview.
-Do not write like notes. Do not write like documentation.
+    Resume Context:
+    ${resumeText || "Resume profile not available"}
 
-Resume Profile:
-${resumeText || "Resume profile not available"}
+    Interview Parameter: Level: ${interviewLevel || "Mid Level"}, Type: ${interviewType || "Technical"}
+    Question: ${question}
 
-Level: ${interviewLevel || "Mid Level"}
-Type: ${interviewType || "Technical"}
+    INSTRUCTIONS FOR NATURAL CONVERSATIONAL TONE:
+    - Write exactly how a candidate naturally talks when answering live. 
+    - Use active first-person spoken transitions (e.g., "So, looking at my experience...", "Basically, what we did was...", "Mainly, I've been focusing on...").
+    - Use common contractions naturally (I've, I'm, we're, didn't).
+    - Do not make up any factual data, company names, or metrics not found in the resume context.
+    - Keep the length concise (roughly a brief 1-minute spoken response). Avoid rigid textbook language.
 
-Question:
-${question}
+    Return exactly this Markdown structure and nothing else:
 
-Rules:
-- Use ONLY resume details.
-- Do NOT invent company, years, client, metrics, awards, or achievements.
-- Use simple spoken English.
-- Use first person: "I have...", "I worked...", "In my project..."
-- Keep it natural and interview-ready.
-- Avoid bullet points unless really needed.
-- Do not over-explain.
-- Keep answer around 120-150 words.
-- Use **bold** only for key technologies.
-- Do not say "according to my resume".
+    ## 🎯 Self Introduction
+    [Insert the conversational spoken response here]
 
-For self introduction, speak in this order:
-1. Experience
-2. Skills
-3. Project
-4. Roles and responsibilities
-5. Closing confidence
-
-Return only this format:
-
-## 🎯 Self Introduction
-
-<one natural spoken answer>
-
-## 📄 Project Related
-
-<2-3 lines only>
-`;
+    ## ⭐ Roles and Responsibilities
+    - Provide a brief spoken bullet point highlighting a key ownership area from the resume.
+    - Provide a second spoken bullet point.
+    - Provide a third spoken bullet point.`;
 }
 
 function buildInterviewPrompt({
@@ -380,59 +361,39 @@ function buildInterviewPrompt({
   interviewType,
 }) {
   if (isSpecialQuestion(question)) {
-    return buildSpecialPrompt({
-      question,
-      resumeText,
-      interviewLevel,
-      interviewType,
-    });
+    return buildSpecialPrompt({ question, resumeText, interviewLevel, interviewType });
   }
 
-return `
-You are an Indian Java/Spring Boot interview coach.
+  return `You are a technical interview simulator. Deliver a spoken explanation to a technical question combined with real experience from the resume.
 
-Write the answer exactly like I am speaking in a live interview.
-The answer should sound natural, not like textbook notes.
+    Resume Context:
+    ${resumeText || "Resume profile not available"}
 
-Resume Profile:
-${resumeText || "Resume profile not available"}
+    Question: ${question}
 
-Question:
-${question}
+    INSTRUCTIONS FOR SPOKEN TONE:
+    - Start directly with the answer as if replying in a live conversation.
+    - Use casual but professional technical conversational bridges (e.g., "The way I look at it...", "In a practical scenario...", "We actually faced this when...").
+    - Focus on practical delivery over heavy textbook definitions.
+    - If the question involves coding, provide a brief mental approach, followed by the code block, and clear complexity metrics.
 
-      Rules:
-      - Start directly.
-      - Use simple Indian spoken English.
-      - Use first person when project example is needed.
-      - Keep answer around 90-120 words.
-      - First explain the concept simply.
-      - Then give one practical/project usage.
-      - Do not sound like documentation.
-      - Do not add unnecessary theory.
-      - Do not invent fake project details.
-      - Use **bold** for important technical words only.
+    Return exactly this Markdown structure:
 
-      For coding questions:
-      - Give short approach.
-      - Then complete working code.
-      - Add complexity.
+    ## 🎯 Interview Ready Answer
+    [Insert the conversational spoken explanation here]
 
-      Return only Markdown:
+    ## ⭐ Key Points
+    - A spoken takeaway point.
+    - Another spoken takeaway point.
 
-      ## 🎯 Interview Ready Answer
+    ## 📄 Project Related Answer
+    [Provide a short 2-3 line conversational application tying this concept directly to a technology or responsibility listed in the resume]
 
-      <one natural spoken answer>
+    ## 💻 Code
+    [Only if coding is explicitly required]
 
-      ## 📄 Project Related Answer
-
-      <2-3 lines only>
-
-      ## 💻 Code
-      Only if coding is required.
-
-      ## ⏱ Complexity
-      Only if coding is required.
-`;
+    ## ⏱ Complexity
+    [Only if coding is explicitly required]`;
 }
 
 function extractDeltaFromOpenAIEvent(event) {
