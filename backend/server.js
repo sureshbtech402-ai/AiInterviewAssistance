@@ -274,7 +274,12 @@ app.post("/resume-summary", async (req, res) => {
       });
     }
 
-    let text = data.output_text || "{}";
+   let text =
+    data.output_text ||
+    data.output?.find((item) => item.type === "message")
+      ?.content?.find((content) => content.type === "output_text")
+      ?.text ||
+    "{}";
 
     text = text
       .replace(/```json/g, "")
