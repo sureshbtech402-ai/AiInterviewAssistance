@@ -249,7 +249,6 @@ app.post("/resume-summary", async (req, res) => {
     }
 `;
 
-    // 1. Correct Endpoint URL
     const response = await fetch("[https://api.openai.com/v1/chat/completions](https://api.openai.com/v1/chat/completions)", {
       method: "POST",
       headers: {
@@ -257,17 +256,15 @@ app.post("/resume-summary", async (req, res) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini", // Or your OPENAI_MODEL variable
-        // 2. Enforce Native JSON output (Removes any markdown backticks automatically)
+        model: "gpt-4o-mini",
         response_format: { type: "json_object" }, 
-        // 3. Correct payload structure for Chat Models
         messages: [
           {
             role: "user",
             content: prompt,
           },
         ],
-        temperature: 0.1, // Keeps the extraction strict, predictable, and fast
+        temperature: 0.1,
       }),
     });
 
@@ -283,7 +280,6 @@ app.post("/resume-summary", async (req, res) => {
       });
     }
 
-    // 4. Correct way to extract text from a Chat Completion response
     const text = data.choices[0].message.content.trim();
 
     console.log("OUTPUT TEXT:");
@@ -375,7 +371,12 @@ function buildInterviewPrompt({
     - Start directly with the answer as if replying in a live conversation.
     - Use casual but professional technical conversational bridges (e.g., "The way I look at it...", "In a practical scenario...", "We actually faced this when...").
     - Focus on practical delivery over heavy textbook definitions.
-    - If the question involves coding, provide a brief mental approach, followed by the code block, and clear complexity metrics.
+    
+    
+    For coding questions:
+    - Give short approach.
+    - Then give complete working code.
+
 
     Return exactly this Markdown structure:
 
@@ -390,10 +391,7 @@ function buildInterviewPrompt({
     [Provide a short 2-3 line conversational application tying this concept directly to a technology or responsibility listed in the resume]
 
     ## 💻 Code
-    [Only if coding is explicitly required]
-
-    ## ⏱ Complexity
-    [Only if coding is explicitly required]`;
+    Only if coding is required.`;
 }
 
 function extractDeltaFromOpenAIEvent(event) {
