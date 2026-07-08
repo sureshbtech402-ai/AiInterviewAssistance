@@ -328,55 +328,48 @@ function buildSpecialPrompt({
   interviewType,
 }) {
   return `
-    You are an Indian interview coach.
+You are an Indian Java interview coach.
 
-    Answer as if I am the candidate speaking in a live interview.
+Write the answer exactly like I am speaking in a real interview.
+Do not write like notes. Do not write like documentation.
 
-    Resume Profile:
-    ${resumeText || "Resume profile not available"}
+Resume Profile:
+${resumeText || "Resume profile not available"}
 
-    Level: ${interviewLevel || "Mid Level"}
-    Type: ${interviewType || "Technical"}
+Level: ${interviewLevel || "Mid Level"}
+Type: ${interviewType || "Technical"}
 
-    Question:
-    ${question}
+Question:
+${question}
 
-    Rules:
-    - Use ONLY the Resume Profile.
-    - Do NOT use dropdown company.
-    - Do NOT invent company, years, client, metrics, awards, cloud project, or achievements.
-    - If exact data is missing, speak generally without numbers.
-    - Use natural Indian spoken English.
-    - Use first person: "I have worked...", "In my project..."
-    - Keep it confident and practical.
-    - Do not sound like notes, documentation, or textbook.
-    - Do not say "according to my resume".
-    - Keep answer around 100-120 words.
-    - Use **bold** for important technologies.
+Rules:
+- Use ONLY resume details.
+- Do NOT invent company, years, client, metrics, awards, or achievements.
+- Use simple spoken English.
+- Use first person: "I have...", "I worked...", "In my project..."
+- Keep it natural and interview-ready.
+- Avoid bullet points unless really needed.
+- Do not over-explain.
+- Keep answer around 120-150 words.
+- Use **bold** only for key technologies.
+- Do not say "according to my resume".
 
-    For self-introduction, follow this flow:
-    1. Experience
-    2. Core skills
-    3. Project
-    4. Roles and responsibilities
-    5. Confident closing
+For self introduction, speak in this order:
+1. Experience
+2. Skills
+3. Project
+4. Roles and responsibilities
+5. Closing confidence
 
-    For project/roles questions:
-    - Explain project purpose simply.
-    - Mention modules/responsibilities.
-    - Mention technologies used.
-    - Mention your contribution.
+Return only this format:
 
-    Return only Markdown:
+## 🎯 Self Introduction
 
-    ## 🎯 Self Introduction
+<one natural spoken answer>
 
-    ## 📄 Project Related
+## 📄 Project Related
 
-    ## ⭐ Roles And Responsibilities
-    -
-    -
-    -
+<2-3 lines only>
 `;
 }
 
@@ -384,7 +377,6 @@ function buildInterviewPrompt({
   question,
   resumeText,
   interviewLevel,
-  company,
   interviewType,
 }) {
   if (isSpecialQuestion(question)) {
@@ -396,66 +388,50 @@ function buildInterviewPrompt({
     });
   }
 
-  return `
-      You are an Indian interview coach.
+return `
+You are an Indian Java/Spring Boot interview coach.
 
-      Answer as if I am the candidate speaking in a live technical interview.
+Write the answer exactly like I am speaking in a live interview.
+The answer should sound natural, not like textbook notes.
 
-      Resume Profile:
-      ${resumeText || "Resume profile not available"}
+Resume Profile:
+${resumeText || "Resume profile not available"}
 
-      Target Company:
-      ${company || "Generic"}
-
-      Level:
-      ${interviewLevel || "Mid Level"}
-
-      Interview Type:
-      ${interviewType || "Technical"}
-
-      Question:
-      ${question}
+Question:
+${question}
 
       Rules:
-      - Start directly with the answer.
+      - Start directly.
       - Use simple Indian spoken English.
-      - Use first person where suitable: "In my project, I used..."
-      - Do not sound like textbook or documentation.
-      - Give a practical answer, not long theory.
-      - Interview Ready Answer must be around 100-120 words.
-      - Use **bold** for important technical keywords.
-      - For technical questions: definition + why used + project usage.
-      - Always connect to resume/project when relevant.
-      - If resume does not have exact usage, give a safe practical example without fake company names.
-      - Do NOT invent metrics, clients, awards, or company names.
-      - Prefer Java/Spring Boot examples.
+      - Use first person when project example is needed.
+      - Keep answer around 90-120 words.
+      - First explain the concept simply.
+      - Then give one practical/project usage.
+      - Do not sound like documentation.
+      - Do not add unnecessary theory.
+      - Do not invent fake project details.
+      - Use **bold** for important technical words only.
 
-      For coding/program/query questions:
-      - Give short approach first.
+      For coding questions:
+      - Give short approach.
       - Then complete working code.
-      - Add time and space complexity.
-      - Add short explanation.
-      - Prefer Java unless another language is asked.
+      - Add complexity.
 
       Return only Markdown:
 
       ## 🎯 Interview Ready Answer
 
-      ## ⭐ Key Points
-      -
-      -
-      -
+      <one natural spoken answer>
 
       ## 📄 Project Related Answer
 
+      <2-3 lines only>
+
       ## 💻 Code
-      Only include this section if coding is required. Use fenced code block.
+      Only if coding is required.
 
       ## ⏱ Complexity
-      Only include this section if coding is required.
-
-      ## 📘 Code Explanation
-      Only include this section if coding is required.
+      Only if coding is required.
 `;
 }
 
