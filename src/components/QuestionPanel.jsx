@@ -5,7 +5,6 @@ function QuestionPanel({
   setQuestion,
   textareaRef,
   isInterviewRunning,
-  setAnswerData,
   loading,
   generateAnswer,
   clearQuestionAndAnswer,

@@ -1,3 +1,4 @@
+
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -347,7 +348,7 @@ Question: ${cleanQ}
 
 CRITICAL RULES FOR THE SELF-INTRODUCTION:
 1. EXTREMELY NATURAL FLOW (MATCH THIS EXACT STYLE): 
-   "Thank you for giving me this opportunity to introduce myself. My name is [Candidate Name], and I am from [Location]. I have around [X] years of experience as a [Primary Title, e.g. Java Backend Developer] and currently work at [Current Company Name]. My technical skills include [Primary skills, e.g. Java, Spring Boot, Microservices, Hibernate, SQL, REST APIs, Kafka, Docker, Kubernetes, Git, and Maven]. Currently, I am working on the [Project Name] project for a [Domain] client, where I develop [Responsibilities]. I enjoy learning new technologies and solving technical problems. I am looking for an opportunity where I can contribute, learn, and grow professionally. Thank you."
+   "Thank you for giving me this opportunity to introduce myself. My name is Suresh Chinnamadula, and I am from Anantapur, Andhra Pradesh. I have around 4 years of experience as a Java Backend Developer and currently work at Tata Consultancy Services. My technical skills include Java, Spring Boot, Microservices, Hibernate, SQL, REST APIs, Apache Kafka, Docker, Kubernetes, Git, and Maven. Currently, I am working on the ING Digitization project for a banking client, where I develop REST APIs, implement business logic, and work with Spring Data JPA and microservices. I enjoy learning new technologies and solving technical problems. I am looking for an opportunity where I can contribute, learn, and grow professionally. Thank you."
    Make sure it matches this structure exactly, naturally filling in the brackets with actual facts from the provided Resume Context.
 2. BAN WEAK FILLERS: Absolutely never use words like "So,", "Basically,", "Mainly,", "Actually,", "Like,", or "As such,".
 3. TECHNICAL ACTION BULLETS: In the "Roles and Responsibilities" section, create exactly 3 high-impact bullet points demonstrating technical ownership. Every single bullet point MUST begin directly with a strong, active technical verb (e.g., "Implemented...", "Developed...", "Architected...", "Optimized...").
@@ -408,24 +409,30 @@ function buildConceptPrompt({
   resumeText,
   interviewLevel,
   interviewType,
+  company,
 }) {
   const cleanQ = getCleanQuestion(question);
   return `You are a professional technical interview simulator. Deliver a highly structured, direct technical response for a conceptual technical question.
 
 Resume Profile Context:
 ${resumeText || "Resume profile not available"}
+Target Company Context: ${company || "Target Company"}
+Target Level: ${interviewLevel || "Mid Level"}
+Target Type: ${interviewType || "Technical"}
 
 Question: ${cleanQ}
 
 INSTRUCTIONS FOR "INTERVIEW READY ANSWER" (🎯 Interview Ready Answer):
-- Start directly with the main answer in a highly polished, natural spoken conversational format.
-- If the question asks about a specific annotation, keyword, framework, or concept (like @SpringBootApplication), start with a direct definition highlighted with an emoji (e.g., 👉 "@SpringBootApplication is...").
-- If the concept consists of multiple components or sub-parts (e.g., @Configuration, @EnableAutoConfiguration, @ComponentScan), list those components directly and explain each of them simply, clearly, and concisely in bullet points.
+- Start directly with the main definition of the core concept. Make it highly clear, clean, and conversational.
+- If the question asks about a specific annotation, keyword, framework, or concept (like @SpringBootApplication), start with a direct definition highlighted with an emoji: 👉 "[Concept] is...".
+- EXAMPLE FORMAT: 👉 "@SpringBootApplication is the main annotation that enables a Spring Boot application. It combines @Configuration, @EnableAutoConfiguration, and @ComponentScan, which helps in configuring the application automatically and scanning all Spring components."
+- Immediately follow that definition with direct, simple bullet points explaining each sub-component (e.g., explaining @Configuration, @EnableAutoConfiguration, and @ComponentScan) in very simple words.
 - Ensure the total explanation is extremely direct, punchy, conversational, and finishes within 100-120 words.
 - BAN WEAK FILLERS: Do NOT start sentences or clauses with "So,", "Basically,", "Mainly,", or "Actually,".
 
 INSTRUCTIONS FOR KEY TAKEAWAYS (⭐ Key Points):
 - Provide 2-3 high-impact technical bullet points.
+- Highlight core technical keywords in **bold**.
 - Every bullet point MUST start directly with a strong, active technical verb (e.g., "Leveraged...", "Designed...", "Decoupled...", "Optimized..."). STRICTLY BAN starting with pronouns like "I", "We", "My", "Also", or "Additionally".
 
 INSTRUCTIONS FOR PROJECT LINK (📄 Project Related Answer):
@@ -434,7 +441,7 @@ INSTRUCTIONS FOR PROJECT LINK (📄 Project Related Answer):
 Return exactly this Markdown structure:
 
 ## 🎯 Interview Ready Answer
-[Your direct definition starting with a 👉 emoji, followed by simple bullet points breaking down each sub-annotation/concept component if applicable]
+[Your direct definition starting with a 👉 emoji, followed immediately by simple bullet points breaking down each sub-component in simple words]
 
 ## ⭐ Key Points
 - [Strong Active Verb]...
@@ -465,7 +472,7 @@ function extractDeltaFromOpenAIEvent(event) {
 }
 
 app.post("/answer", async (req, res) => {
-  const { question, resumeText, interviewLevel, company, interviewType } =
+  const { question, resumeText, interviewLevel, company, interviewType, history } =
     req.body || {};
 
   const cleanQ = getCleanQuestion(question);
@@ -500,6 +507,7 @@ app.post("/answer", async (req, res) => {
         resumeText,
         interviewLevel,
         interviewType,
+        company,
       });
     }
 
@@ -510,6 +518,28 @@ app.post("/answer", async (req, res) => {
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders?.();
 
+    // Inject history to maintain conversational memory for follow-up questions
+    const messages = [];
+    messages.push({
+      role: "system",
+      content: "You are an elite technical interview simulator. Ground all your responses strictly in the facts provided in the resume context."
+    });
+
+    if (Array.isArray(history) && history.length > 0) {
+      history.forEach((turn) => {
+        messages.push({
+          role: turn.role === "assistant" ? "assistant" : "user",
+          content: turn.content,
+        });
+      });
+    }
+
+    // Push prompt instructions as the immediate next instruction
+    messages.push({
+      role: "user",
+      content: prompt,
+    });
+
     const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -518,12 +548,7 @@ app.post("/answer", async (req, res) => {
       },
       body: JSON.stringify({
         model: OPENAI_MODEL,
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
+        messages,
         stream: true,
         temperature: 0.7, // Adds natural variation for natural-sounding speech delivery
       }),

@@ -193,7 +193,9 @@ ${resumeProfile.rolesExplanation || ""}
       if (socketRef.current) {
         try {
           socketRef.current.close();
-        } catch {}
+        } catch {
+          console.log("Open");
+        }
       }
 
       const socket = new WebSocket(WS_URL);
@@ -247,7 +249,9 @@ ${resumeProfile.rolesExplanation || ""}
     if (socketRef.current) {
       try {
         socketRef.current.close();
-      } catch {}
+      } catch {
+        console.log("Closed");
+      }
     }
 
     socketRef.current = null;
@@ -496,7 +500,6 @@ ${resumeProfile.rolesExplanation || ""}
     clearTimeout(silenceTimerRef.current);
 
     setQuestion("");
-    setAnswerData(null);
   };
 
   const generateAnswer = async () => {
