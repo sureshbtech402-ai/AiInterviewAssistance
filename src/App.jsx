@@ -60,6 +60,10 @@ function App() {
   const liveQuestionRef = useRef("");
   const questionLockedRef = useRef(false);
 
+  const finalTranscriptRef = useRef("");
+  const interimTranscriptRef = useRef("");
+  const ignoreStaleTranscriptRef = useRef(false);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -153,36 +157,68 @@ ${resumeProfile.rolesExplanation || ""}
 `.trim();
   };
 
-  const updateQuestionFromTranscript = (payload) => {
-    const text = (payload?.text || "").trim();
+const updateQuestionFromTranscript = (payload) => {
+  const text = (payload?.text || "").trim();
 
-    if (!text) return;
-    if (questionLockedRef.current) return;
+  if (!text || questionLockedRef.current) {
+    return;
+  }
 
-    liveQuestionRef.current = text;
+  /*
+   * After Clear, Deepgram may send one remaining final result
+   * from the previous question. Ignore it.
+   */
+  if (ignoreStaleTranscriptRef.current) {
+    if (payload.isFinal || payload.speechFinal) {
+      return;
+    }
 
-    setQuestion((prev) => {
-      const cleanedPrev = prev.trim();
+    // A new interim result means a new question has started.
+    ignoreStaleTranscriptRef.current = false;
+  }
 
-      if (!cleanedPrev) return text;
+  clearTimeout(silenceTimerRef.current);
 
-      if (
-        cleanedPrev.endsWith(text) ||
-        cleanedPrev.includes(text)
-      ) {
-        return cleanedPrev;
-      }
+  if (payload.isFinal || payload.speechFinal) {
+    const previousFinal = finalTranscriptRef.current.trim();
 
-      return `${cleanedPrev} ${text}`.trim();
-    });
+    /*
+     * Avoid adding the same Deepgram final result twice.
+     */
+    if (!previousFinal.endsWith(text)) {
+      finalTranscriptRef.current = previousFinal
+        ? `${previousFinal} ${text}`
+        : text;
+    }
 
-    clearTimeout(silenceTimerRef.current);
+    interimTranscriptRef.current = "";
+  } else {
+    /*
+     * Interim text must replace the old interim text,
+     * not append to it.
+     */
+    interimTranscriptRef.current = text;
+  }
 
-    silenceTimerRef.current = setTimeout(() => {
-      questionLockedRef.current = true;
-      console.log("Question Completed");
-    }, 5000);
-  };
+  const completeQuestion = [
+    finalTranscriptRef.current,
+    interimTranscriptRef.current,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  setQuestion(completeQuestion);
+
+  silenceTimerRef.current = setTimeout(() => {
+    questionLockedRef.current = true;
+    interimTranscriptRef.current = "";
+
+    setQuestion(finalTranscriptRef.current.trim());
+
+    console.log("Question Completed");
+  }, 4000);
+};
 
   const openInterviewSocket = () => {
     return new Promise((resolve, reject) => {
@@ -308,7 +344,12 @@ ${resumeProfile.rolesExplanation || ""}
     setAnswerData(null);
 
     questionLockedRef.current = false;
+    ignoreStaleTranscriptRef.current = false;
+
     liveQuestionRef.current = "";
+    finalTranscriptRef.current = "";
+    interimTranscriptRef.current = "";
+
     clearTimeout(silenceTimerRef.current);
 
     try {
@@ -494,13 +535,23 @@ ${resumeProfile.rolesExplanation || ""}
     setIsInterviewRunning(false);
   };
 
-  const clearQuestionAndAnswer = () => {
-    questionLockedRef.current = false;
-    liveQuestionRef.current = "";
-    clearTimeout(silenceTimerRef.current);
+const clearQuestionAndAnswer = () => {
+  clearTimeout(silenceTimerRef.current);
 
-    setQuestion("");
-  };
+  questionLockedRef.current = false;
+  ignoreStaleTranscriptRef.current = true;
+
+  liveQuestionRef.current = "";
+  finalTranscriptRef.current = "";
+  interimTranscriptRef.current = "";
+
+  setQuestion("");
+
+  if (textareaRef.current) {
+    textareaRef.current.value = "";
+    textareaRef.current.scrollTop = 0;
+  }
+};
 
   const generateAnswer = async () => {
     questionLockedRef.current = true;
