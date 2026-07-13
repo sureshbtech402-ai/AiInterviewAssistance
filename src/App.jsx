@@ -10,6 +10,7 @@ import QuestionPanel from "./components/QuestionPanel";
 import AnswerPanel from "./components/AnswerPanel";
 
 import { extractPdfText } from "./pdfReader";
+import "./styles/app.css";
 
 const trimTrailingSlash = (value) => (value || "").replace(/\/+$/, "");
 
@@ -560,23 +561,23 @@ const updateQuestionFromTranscript = (payload) => {
     setIsInterviewRunning(false);
   };
 
-const clearQuestionAndAnswer = () => {
-  clearTimeout(silenceTimerRef.current);
+  const clearQuestionAndAnswer = () => {
+    clearTimeout(silenceTimerRef.current);
 
-  questionLockedRef.current = false;
-  ignoreStaleTranscriptRef.current = true;
+    questionLockedRef.current = false;
+    ignoreStaleTranscriptRef.current = true;
 
-  liveQuestionRef.current = "";
-  finalTranscriptRef.current = "";
-  interimTranscriptRef.current = "";
+    liveQuestionRef.current = "";
+    finalTranscriptRef.current = "";
+    interimTranscriptRef.current = "";
 
-  setQuestion("");
+    setQuestion("");
+    setAnswerData(null);
 
-  if (textareaRef.current) {
-    textareaRef.current.value = "";
-    textareaRef.current.scrollTop = 0;
-  }
-};
+    if (textareaRef.current) {
+      textareaRef.current.scrollTop = 0;
+    }
+  };
 
   const generateAnswer = async () => {
     questionLockedRef.current = true;
@@ -633,107 +634,57 @@ const clearQuestionAndAnswer = () => {
         }}
       />
 
-      <div
-        style={{
-          width: "100%",
-          height: "calc(100vh - 68px)",
-          background: "#020617",
-          padding: "14px",
-          overflow: "hidden",
-          boxSizing: "border-box",
-          fontFamily: "Segoe UI",
-          color: "white",
-          position: "relative",
-        }}
+      <main
+        className={`app-container ${
+          interviewStarted ? "interview-active" : "config-active"
+        }`}
       >
         {/* Floating Toast Notification System */}
         {toast.visible && (
           <div
-            style={{
-              position: "absolute",
-              top: "20px",
-              right: "20px",
-              padding: "12px 24px",
-              borderRadius: "8px",
-              color: "white",
-              fontWeight: "600",
-              zIndex: 9999,
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
-              animation: "fadeIn 0.3s ease",
-              background:
-                toast.type === "success"
-                  ? "#10b981"
-                  : toast.type === "error"
-                  ? "#ef4444"
-                  : "#3b82f6",
-            }}
+            className={`app-toast app-toast-${toast.type || "info"}`}
           >
             {toast.message}
           </div>
         )}
 
         {showConfig && (
-          <UploadResume
-            resumeName={
-              resumeProcessing
-                ? "Processing Profile via AI Extraction Engine..."
-                : resumeName
-            }
-            handleResumeUpload={handleResumeUpload}
-            skills={skills}
-            company={company}
-            setCompany={setCompany}
-            customCompany={customCompany}
-            setCustomCompany={setCustomCompany}
-            interviewLevel={interviewLevel}
-            setInterviewLevel={setInterviewLevel}
-            interviewType={interviewType}
-            setInterviewType={setInterviewType}
-          />
-        )}
+          <div className="config-page-content">
+            <UploadResume
+              resumeName={
+                resumeProcessing
+                  ? "Processing Profile via AI Extraction Engine..."
+                  : resumeName
+              }
+              handleResumeUpload={handleResumeUpload}
+              skills={skills}
+              company={company}
+              setCompany={setCompany}
+              customCompany={customCompany}
+              setCustomCompany={setCustomCompany}
+              interviewLevel={interviewLevel}
+              setInterviewLevel={setInterviewLevel}
+              interviewType={interviewType}
+              setInterviewType={setInterviewType}
+            />
 
-        {showConfig && (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              marginBottom: "25px",
-            }}
-          >
-            <button
-              disabled={resumeProcessing}
-              onClick={startInterviewFlow}
-              style={{
-                background: resumeProcessing ? "#475569" : "#8b5cf6",
-                color: "white",
-                border: "none",
-                padding: "15px 35px",
-                borderRadius: "12px",
-                cursor: resumeProcessing ? "not-allowed" : "pointer",
-                fontSize: "18px",
-                fontWeight: "bold",
-                boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
-                transition: "all 0.2s ease-in-out",
-              }}
-            >
-              {resumeProcessing
-                ? "⏳ Generating AI Profile..."
-                : "🚀 Start Interview"}
-            </button>
+            <div className="config-start-row">
+              <button
+                disabled={resumeProcessing}
+                onClick={startInterviewFlow}
+                className="start-interview-btn"
+              >
+                {resumeProcessing
+                  ? "⏳ Generating AI Profile..."
+                  : "🚀 Start AI Interview"}
+              </button>
+            </div>
           </div>
         )}
 
         {interviewStarted && (
           <>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "380px 1fr",
-                gap: "18px",
-                height: "calc(100vh - 170px)",
-                overflow: "hidden",
-              }}
-            >
+            <div className="main-layout">
               <QuestionPanel
                 question={question}
                 setQuestion={setQuestion}
@@ -752,7 +703,7 @@ const clearQuestionAndAnswer = () => {
             )}
           </>
         )}
-      </div>
+      </main>
     </>
   );
 }

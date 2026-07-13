@@ -85,6 +85,7 @@ button{
 
     width:100%;
     min-height:100vh;
+    padding-bottom:70px;
 
     padding:22px;
 
@@ -179,18 +180,15 @@ button{
 .main-layout{
     display:grid;
 
-    grid-template-columns:
-        minmax(350px, 420px)
-        minmax(0, 1fr);
+    grid-template-columns:minmax(350px,420px) minmax(0,1fr);
 
     gap:18px;
 
-    width:100%;
-    height:calc(100vh - 170px);
+    min-height:650px;
 
-    min-height:0;
+    height:auto;
 
-    overflow:hidden;
+    overflow:visible;
 }
 
 /* =========================================
@@ -293,5 +291,130 @@ textarea:focus-visible{
 
     .main-layout{
         gap:14px;
+    }
+}
+/* =========================================
+   CONFIGURATION PAGE LAYOUT
+========================================= */
+
+.config-active{
+    height:calc(100vh - 74px);
+    min-height:calc(100vh - 74px);
+    overflow-y:auto;
+    overflow-x:hidden;
+    padding:24px;
+}
+
+.config-page-content{
+    width:100%;
+    max-width:1480px;
+    margin:0 auto;
+    padding-bottom:40px;
+}
+
+.config-start-row{
+    display:flex;
+    justify-content:center;
+    margin-top:-8px;
+    padding:0 20px 30px;
+}
+
+.start-interview-btn{
+    min-width:270px;
+    height:58px;
+    padding:0 32px;
+
+    border:none;
+    border-radius:16px;
+
+    background:linear-gradient(
+        90deg,
+        #7c3aed,
+        #2563eb
+    );
+
+    color:white;
+    font-size:18px;
+    font-weight:900;
+
+    cursor:pointer;
+
+    box-shadow:
+        0 14px 32px rgba(99,102,241,.32);
+
+    transition:
+        transform .2s ease,
+        box-shadow .2s ease,
+        opacity .2s ease;
+}
+
+.start-interview-btn:hover:not(:disabled){
+    transform:translateY(-2px);
+    box-shadow:
+        0 20px 40px rgba(99,102,241,.42);
+}
+
+.start-interview-btn:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+}
+
+/* =========================================
+   INTERVIEW PAGE LAYOUT
+========================================= */
+
+.interview-active{
+    height:calc(100vh - 74px);
+    overflow:hidden;
+    padding:14px;
+}
+
+.interview-active .main-layout{
+    height:calc(100vh - 102px);
+}
+
+/* =========================================
+   TOAST
+========================================= */
+
+.app-toast{
+    position:fixed;
+    top:92px;
+    right:22px;
+    z-index:9999;
+
+    max-width:420px;
+    padding:13px 20px;
+
+    border-radius:12px;
+
+    color:white;
+    font-size:14px;
+    font-weight:800;
+
+    box-shadow:0 14px 32px rgba(0,0,0,.4);
+    animation:fadeIn .3s ease;
+}
+
+.app-toast-success{
+    background:#10b981;
+}
+
+.app-toast-error{
+    background:#ef4444;
+}
+
+.app-toast-info{
+    background:#3b82f6;
+}
+
+@media (max-width:720px){
+    .config-active{
+        padding:12px;
+    }
+
+    .start-interview-btn{
+        width:100%;
+        min-width:0;
     }
 }
