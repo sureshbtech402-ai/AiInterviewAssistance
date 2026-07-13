@@ -11,16 +11,17 @@ function QuestionPanel({
 }) {
   return (
     <div className="question-panel">
-
       <div className="question-header">
-        <div>
-          <h2 className="panel-title">
-            🎤 Question
-          </h2>
+        <div className="title-wrapper">
+          <div className="title-icon">🎤</div>
 
-          <p className="panel-subtitle">
-            Live transcript from interviewer
-          </p>
+          <div>
+            <h2 className="panel-title">Question</h2>
+
+            <p className="panel-subtitle">
+              Live transcript from interviewer
+            </p>
+          </div>
         </div>
 
         <div
@@ -30,7 +31,9 @@ function QuestionPanel({
               : "status stopped"
           }
         >
-          {isInterviewRunning ? "🟢 Listening" : "🔴 Stopped"}
+          <span className="status-dot"></span>
+
+          {isInterviewRunning ? "Listening" : "Stopped"}
         </div>
       </div>
 
@@ -38,7 +41,7 @@ function QuestionPanel({
         <textarea
           ref={textareaRef}
           value={question}
-          onChange={(e) => setQuestion(e.target.value)}
+          onChange={(event) => setQuestion(event.target.value)}
           placeholder="The interviewer's question will appear here..."
           className="question-box"
         />
@@ -46,6 +49,7 @@ function QuestionPanel({
 
       <div className="question-footer">
         <button
+          type="button"
           className="clear-btn"
           onClick={clearQuestionAndAnswer}
         >
@@ -53,14 +57,16 @@ function QuestionPanel({
         </button>
 
         <button
-          disabled={loading}
+          type="button"
+          disabled={loading || !question.trim()}
           onClick={generateAnswer}
           className="generate-btn"
         >
-          {loading ? "Generating..." : "✨ Generate AI Answer"}
+          {loading
+            ? "⚡ Generating..."
+            : "✨ Generate AI Answer"}
         </button>
       </div>
-
     </div>
   );
 }

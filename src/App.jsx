@@ -1,18 +1,25 @@
 import Login from "./Login";
 import { auth } from "./firebase";
-import { signOut, onAuthStateChanged } from "firebase/auth";
-import { useState, useEffect, useRef } from "react";
+import {
+  signOut,
+  onAuthStateChanged,
+} from "firebase/auth";
+import {
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 
 import Header from "./components/Header";
 import UploadResume from "./components/UploadResume";
-import InterviewStatus from "./components/InterviewStatus";
 import QuestionPanel from "./components/QuestionPanel";
 import AnswerPanel from "./components/AnswerPanel";
 
 import { extractPdfText } from "./pdfReader";
 import "./styles/app.css";
 
-const trimTrailingSlash = (value) => (value || "").replace(/\/+$/, "");
+const trimTrailingSlash = (value) =>
+  (value || "").replace(/\/+$/, "");
 
 const API_BASE_URL = trimTrailingSlash(
   import.meta.env.VITE_API_BASE_URL ||
@@ -21,34 +28,80 @@ const API_BASE_URL = trimTrailingSlash(
 
 const WS_URL = trimTrailingSlash(
   import.meta.env.VITE_WS_URL ||
-    API_BASE_URL.replace(/^https:/, "wss:").replace(/^http:/, "ws:")
+    API_BASE_URL
+      .replace(/^https:/, "wss:")
+      .replace(/^http:/, "ws:")
 );
 
 function App() {
   const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [authLoading, setAuthLoading] =
+    useState(true);
 
-  const [question, setQuestion] = useState("");
-  const [showConfig, setShowConfig] = useState(true);
-  const [answerData, setAnswerData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [interviewStarted, setInterviewStarted] = useState(false);
+  const [question, setQuestion] =
+    useState("");
 
-  const [resumeText, setResumeText] = useState("");
-  const [resumeName, setResumeName] = useState("");
-  const [resumeProfile, setResumeProfile] = useState(null);
-  const [resumeProcessing, setResumeProcessing] = useState(false);
+  const [showConfig, setShowConfig] =
+    useState(true);
 
-  const [company, setCompany] = useState("Oracle");
-  const [customCompany, setCustomCompany] = useState("");
-  const [interviewLevel, setInterviewLevel] = useState("Mid Level");
-  const [interviewType, setInterviewType] = useState("Technical");
-  const [skills, setSkills] = useState([]);
+  const [answerData, setAnswerData] =
+    useState(null);
 
-  const [isInterviewRunning, setIsInterviewRunning] = useState(false);
+  const [loading, setLoading] =
+    useState(false);
 
-  // Elegant Notification Toast State (Replaces banned alert functions)
-  const [toast, setToast] = useState({ message: "", type: "", visible: false });
+  const [
+    interviewStarted,
+    setInterviewStarted,
+  ] = useState(false);
+
+  const [resumeText, setResumeText] =
+    useState("");
+
+  const [resumeName, setResumeName] =
+    useState("");
+
+  const [
+    resumeProfile,
+    setResumeProfile,
+  ] = useState(null);
+
+  const [
+    resumeProcessing,
+    setResumeProcessing,
+  ] = useState(false);
+
+  const [company, setCompany] =
+    useState("Oracle");
+
+  const [
+    customCompany,
+    setCustomCompany,
+  ] = useState("");
+
+  const [
+    interviewLevel,
+    setInterviewLevel,
+  ] = useState("Mid Level");
+
+  const [
+    interviewType,
+    setInterviewType,
+  ] = useState("Technical");
+
+  const [skills, setSkills] =
+    useState([]);
+
+  const [
+    isInterviewRunning,
+    setIsInterviewRunning,
+  ] = useState(false);
+
+  const [toast, setToast] = useState({
+    message: "",
+    type: "",
+    visible: false,
+  });
 
   const socketRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -63,71 +116,154 @@ function App() {
 
   const finalTranscriptRef = useRef("");
   const interimTranscriptRef = useRef("");
-  const ignoreStaleTranscriptRef = useRef(false);
+  const ignoreStaleTranscriptRef =
+    useRef(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setAuthLoading(false);
-    });
+    const unsubscribe =
+      onAuthStateChanged(
+        auth,
+        (currentUser) => {
+          setUser(currentUser);
+          setAuthLoading(false);
+        }
+      );
 
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+      textareaRef.current.scrollTop =
+        textareaRef.current.scrollHeight;
     }
   }, [question]);
 
-  // Show safe toast notification
-  const showToast = (message, type = "info") => {
-    setToast({ message, type, visible: true });
+  const showToast = (
+    message,
+    type = "info"
+  ) => {
+    setToast({
+      message,
+      type,
+      visible: true,
+    });
+
     setTimeout(() => {
-      setToast((prev) => ({ ...prev, visible: false }));
+      setToast((previous) => ({
+        ...previous,
+        visible: false,
+      }));
     }, 4500);
   };
 
-  // Prepares structural profile summary into plain text context
   const buildResumeContext = () => {
     if (!resumeProfile) {
-      return resumeText || "Resume profile not available";
+      return (
+        resumeText ||
+        "Resume profile not available"
+      );
     }
 
-    const primarySkills = Array.isArray(resumeProfile.primarySkills)
+    const primarySkills = Array.isArray(
+      resumeProfile.primarySkills
+    )
       ? resumeProfile.primarySkills.join(", ")
       : "";
 
-    const secondarySkills = Array.isArray(resumeProfile.secondarySkills)
-      ? resumeProfile.secondarySkills.join(", ")
-      : "";
-
-    const responsibilities = Array.isArray(
-      resumeProfile.rolesAndResponsibilities
+    const secondarySkills = Array.isArray(
+      resumeProfile.secondarySkills
     )
-      ? resumeProfile.rolesAndResponsibilities.join("\n- ")
+      ? resumeProfile.secondarySkills.join(
+          ", "
+        )
       : "";
 
-    const tools = Array.isArray(resumeProfile.toolsAndTechnologies)
-      ? resumeProfile.toolsAndTechnologies.join(", ")
+    const responsibilities =
+      Array.isArray(
+        resumeProfile.rolesAndResponsibilities
+      )
+        ? resumeProfile.rolesAndResponsibilities.join(
+            "\n- "
+          )
+        : "";
+
+    const tools = Array.isArray(
+      resumeProfile.toolsAndTechnologies
+    )
+      ? resumeProfile.toolsAndTechnologies.join(
+          ", "
+        )
       : "";
 
-    const achievements = Array.isArray(resumeProfile.achievements)
-      ? resumeProfile.achievements.join("\n- ")
+    const achievements = Array.isArray(
+      resumeProfile.achievements
+    )
+      ? resumeProfile.achievements.join(
+          "\n- "
+        )
       : "";
+
+    const previousCompanies =
+      Array.isArray(
+        resumeProfile.previousCompanies
+      )
+        ? resumeProfile.previousCompanies
+            .map((item) => {
+              return [
+                item.companyName || "",
+                item.designation || "",
+                item.duration || "",
+              ]
+                .filter(Boolean)
+                .join(" | ");
+            })
+            .filter(Boolean)
+            .join("\n")
+        : "";
+
+    const employmentHistory =
+      Array.isArray(
+        resumeProfile.employmentHistory
+      )
+        ? resumeProfile.employmentHistory
+            .map((item) => {
+              return [
+                item.isCurrent
+                  ? "Current"
+                  : "Previous",
+                item.companyName || "",
+                item.designation || "",
+                item.duration || "",
+              ]
+                .filter(Boolean)
+                .join(" | ");
+            })
+            .filter(Boolean)
+            .join("\n")
+        : "";
+
+    const previousProjects =
+      Array.isArray(
+        resumeProfile.previousProjectNames
+      )
+        ? resumeProfile.previousProjectNames.join(
+            ", "
+          )
+        : "";
 
     return `
+Candidate Name:
+${resumeProfile.candidateName || ""}
+
+Location:
+${resumeProfile.location || ""}
+
 Candidate Summary:
 ${resumeProfile.candidateSummary || ""}
 
-Experience:
+Total Experience:
 ${resumeProfile.experience || ""}
-
-Primary Skills:
-${primarySkills}
-
-Secondary Skills:
-${secondarySkills}
 
 Current Company:
 ${resumeProfile.currentCompany?.companyName || ""}
@@ -135,29 +271,26 @@ ${resumeProfile.currentCompany?.companyName || ""}
 Current Designation:
 ${resumeProfile.currentCompany?.designation || ""}
 
+Current Company Duration:
+${resumeProfile.currentCompany?.duration || ""}
+
 Previous Companies:
-${
-  Array.isArray(resumeProfile.previousCompanies)
-    ? resumeProfile.previousCompanies
-        .map(
-          (item) =>
-            `${item.companyName || ""} - ${item.designation || ""} - ${
-              item.duration || ""
-            }`
-        )
-        .join("\n")
-    : ""
-}
+${previousCompanies}
+
+Complete Employment History:
+${employmentHistory}
+
+Primary Skills:
+${primarySkills}
+
+Secondary Skills:
+${secondarySkills}
 
 Current Project:
 ${resumeProfile.currentProjectName || ""}
 
 Previous Projects:
-${
-  Array.isArray(resumeProfile.previousProjectNames)
-    ? resumeProfile.previousProjectNames.join(", ")
-    : ""
-}
+${previousProjects}
 
 Project Domain:
 ${resumeProfile.projectDomain || ""}
@@ -185,126 +318,190 @@ ${resumeProfile.rolesExplanation || ""}
 `.trim();
   };
 
-const updateQuestionFromTranscript = (payload) => {
-  const text = (payload?.text || "").trim();
+  const updateQuestionFromTranscript = (
+    payload
+  ) => {
+    const text = (
+      payload?.text || ""
+    ).trim();
 
-  if (!text || questionLockedRef.current) {
-    return;
-  }
-
-  /*
-   * After Clear, Deepgram may send one remaining final result
-   * from the previous question. Ignore it.
-   */
-  if (ignoreStaleTranscriptRef.current) {
-    ignoreStaleTranscriptRef.current = false;
-
-    finalTranscriptRef.current = "";
-    interimTranscriptRef.current = "";
-  }
-
-  clearTimeout(silenceTimerRef.current);
-
-  if (payload.isFinal || payload.speechFinal) {
-    const previousFinal = finalTranscriptRef.current.trim();
-
-    /*
-     * Avoid adding the same Deepgram final result twice.
-     */
-    if (!previousFinal.endsWith(text)) {
-      finalTranscriptRef.current = previousFinal
-        ? `${previousFinal} ${text}`
-        : text;
+    if (
+      !text ||
+      questionLockedRef.current
+    ) {
+      return;
     }
 
-    interimTranscriptRef.current = "";
-  } else {
-    /*
-     * Interim text must replace the old interim text,
-     * not append to it.
-     */
-    interimTranscriptRef.current = text;
-  }
+    if (
+      ignoreStaleTranscriptRef.current
+    ) {
+      ignoreStaleTranscriptRef.current =
+        false;
 
-  const completeQuestion = [
-    finalTranscriptRef.current,
-    interimTranscriptRef.current,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
+      finalTranscriptRef.current = "";
+      interimTranscriptRef.current = "";
+    }
 
-  setQuestion(completeQuestion);
+    clearTimeout(
+      silenceTimerRef.current
+    );
 
-  silenceTimerRef.current = setTimeout(() => {
-    questionLockedRef.current = true;
-    interimTranscriptRef.current = "";
+    if (
+      payload.isFinal ||
+      payload.speechFinal
+    ) {
+      const previousFinal =
+        finalTranscriptRef.current.trim();
 
-    setQuestion(finalTranscriptRef.current.trim());
+      if (
+        !previousFinal.endsWith(text)
+      ) {
+        finalTranscriptRef.current =
+          previousFinal
+            ? `${previousFinal} ${text}`
+            : text;
+      }
 
-    console.log("Question Completed");
-  }, 4000);
-};
+      interimTranscriptRef.current = "";
+    } else {
+      interimTranscriptRef.current =
+        text;
+    }
+
+    const completeQuestion = [
+      finalTranscriptRef.current,
+      interimTranscriptRef.current,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    liveQuestionRef.current =
+      completeQuestion;
+
+    setQuestion(completeQuestion);
+
+    silenceTimerRef.current =
+      setTimeout(() => {
+        questionLockedRef.current = true;
+        interimTranscriptRef.current = "";
+
+        const completedQuestion =
+          finalTranscriptRef.current.trim();
+
+        liveQuestionRef.current =
+          completedQuestion;
+
+        setQuestion(completedQuestion);
+
+        console.log(
+          "Question Completed"
+        );
+      }, 4000);
+  };
 
   const openInterviewSocket = () => {
-    return new Promise((resolve, reject) => {
-      if (socketRef.current?.readyState === WebSocket.OPEN) {
-        return resolve(socketRef.current);
-      }
-
-      if (socketRef.current) {
-        try {
-          socketRef.current.close();
-        } catch {
-          console.log("Open");
+    return new Promise(
+      (resolve, reject) => {
+        if (
+          socketRef.current
+            ?.readyState === WebSocket.OPEN
+        ) {
+          return resolve(
+            socketRef.current
+          );
         }
-      }
 
-      const socket = new WebSocket(WS_URL);
-      socketRef.current = socket;
-
-      const timeout = setTimeout(() => {
-        reject(new Error("WebSocket connection timeout"));
-      }, 10000);
-
-      socket.onopen = () => {
-        clearTimeout(timeout);
-        console.log("✅ WebSocket Connected");
-        resolve(socket);
-      };
-
-      socket.onmessage = (event) => {
-        if (!event.data) return;
-
-        try {
-          const payload = JSON.parse(event.data);
-
-          if (payload.type === "transcript") {
-            updateQuestionFromTranscript(payload);
-          } else if (payload.error) {
-            console.error("Deepgram Error:", payload.error);
-          } else if (payload.status) {
-            console.log("Deepgram Status:", payload.status);
+        if (socketRef.current) {
+          try {
+            socketRef.current.close();
+          } catch {
+            console.log(
+              "Previous socket closed"
+            );
           }
-        } catch {
-          updateQuestionFromTranscript({
-            type: "transcript",
-            text: event.data,
-            isFinal: true,
-          });
         }
-      };
 
-      socket.onerror = (error) => {
-        clearTimeout(timeout);
-        console.error("WebSocket Error:", error);
-        reject(error);
-      };
+        const socket =
+          new WebSocket(WS_URL);
 
-      socket.onclose = () => {
-        console.log("WebSocket Closed");
-      };
-    });
+        socketRef.current = socket;
+
+        const timeout = setTimeout(
+          () => {
+            reject(
+              new Error(
+                "WebSocket connection timeout"
+              )
+            );
+          },
+          10000
+        );
+
+        socket.onopen = () => {
+          clearTimeout(timeout);
+
+          console.log(
+            "✅ WebSocket Connected"
+          );
+
+          resolve(socket);
+        };
+
+        socket.onmessage = (event) => {
+          if (!event.data) return;
+
+          try {
+            const payload =
+              JSON.parse(event.data);
+
+            if (
+              payload.type ===
+              "transcript"
+            ) {
+              updateQuestionFromTranscript(
+                payload
+              );
+            } else if (payload.error) {
+              console.error(
+                "Deepgram Error:",
+                payload.error
+              );
+            } else if (
+              payload.status
+            ) {
+              console.log(
+                "Deepgram Status:",
+                payload.status
+              );
+            }
+          } catch {
+            updateQuestionFromTranscript({
+              type: "transcript",
+              text: event.data,
+              isFinal: true,
+            });
+          }
+        };
+
+        socket.onerror = (error) => {
+          clearTimeout(timeout);
+
+          console.error(
+            "WebSocket Error:",
+            error
+          );
+
+          reject(error);
+        };
+
+        socket.onclose = () => {
+          console.log(
+            "WebSocket Closed"
+          );
+        };
+      }
+    );
   };
 
   const closeInterviewSocket = () => {
@@ -312,15 +509,20 @@ const updateQuestionFromTranscript = (payload) => {
       try {
         socketRef.current.close();
       } catch {
-        console.log("Closed");
+        console.log(
+          "Socket already closed"
+        );
       }
     }
 
     socketRef.current = null;
   };
 
-  const handleResumeUpload = async (event) => {
-    const file = event.target.files[0];
+  const handleResumeUpload = async (
+    event
+  ) => {
+    const file =
+      event.target.files[0];
 
     if (!file) return;
 
@@ -328,217 +530,365 @@ const updateQuestionFromTranscript = (payload) => {
       setResumeProcessing(true);
       setResumeName(file.name);
       setResumeProfile(null);
+      setSkills([]);
 
-      // Extract raw text from client-side PDF reader engine
-      const text = await extractPdfText(file);
+      const text =
+        await extractPdfText(file);
+
       setResumeText(text);
 
-      // Trigger the backend API extraction process to structure facts correctly and build professional responses
-      const response = await fetch(`${API_BASE_URL}/resume-summary`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ resumeText: text }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/resume-summary`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            resumeText: text,
+          }),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error("Unable to parse professional profile via AI extraction endpoint.");
+        throw new Error(
+          "Unable to create resume profile"
+        );
       }
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!data.resumeProfile) {
-        throw new Error("AI extraction failed to generate professional profiles.");
+        throw new Error(
+          "Resume profile is empty"
+        );
       }
 
-      setResumeProfile(data.resumeProfile);
-      setSkills(data.resumeProfile.primarySkills || []);
+      setResumeProfile(
+        data.resumeProfile
+      );
 
-      showToast("Resume uploaded and AI professional profile created successfully!", "success");
-    } catch (err) {
-      console.error(err);
-      showToast("Unable to process Resume. Please try again with another file format.", "error");
+      setSkills(
+        Array.isArray(
+          data.resumeProfile
+            .primarySkills
+        )
+          ? data.resumeProfile
+              .primarySkills
+          : []
+      );
+
+      console.log(
+        "Resume Profile:",
+        data.resumeProfile
+      );
+
+      showToast(
+        "Resume uploaded and professional profile created successfully!",
+        "success"
+      );
+    } catch (error) {
+      console.error(error);
+
+      showToast(
+        "Unable to process resume. Please try another PDF.",
+        "error"
+      );
+
       setResumeName("");
+      setResumeText("");
+      setResumeProfile(null);
+      setSkills([]);
     } finally {
       setResumeProcessing(false);
     }
   };
 
-  const startInterviewMode = async () => {
-    setQuestion("");
-    setAnswerData(null);
+  const startInterviewMode =
+    async () => {
+      setQuestion("");
+      setAnswerData(null);
 
-    questionLockedRef.current = false;
-    ignoreStaleTranscriptRef.current = false;
+      questionLockedRef.current =
+        false;
 
-    liveQuestionRef.current = "";
-    finalTranscriptRef.current = "";
-    interimTranscriptRef.current = "";
+      ignoreStaleTranscriptRef.current =
+        false;
 
-    clearTimeout(silenceTimerRef.current);
+      liveQuestionRef.current = "";
+      finalTranscriptRef.current = "";
+      interimTranscriptRef.current = "";
 
-    try {
-      setIsInterviewRunning(true);
+      clearTimeout(
+        silenceTimerRef.current
+      );
 
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: true,
-      });
+      try {
+        setIsInterviewRunning(true);
 
-      screenStreamRef.current = stream;
+        const stream =
+          await navigator.mediaDevices.getDisplayMedia(
+            {
+              video: true,
+              audio: true,
+            }
+          );
 
-      const audioTrack = stream.getAudioTracks()[0];
+        screenStreamRef.current =
+          stream;
 
-      if (!audioTrack) {
-        showToast("Please select a Chrome tab and enable 'Share tab audio' checkbox.", "error");
-        setIsInterviewRunning(false);
-        stream.getTracks().forEach((track) => track.stop());
-        return;
-      }
+        const audioTrack =
+          stream.getAudioTracks()[0];
 
-      const socket = await openInterviewSocket();
+        if (!audioTrack) {
+          showToast(
+            "Select a Chrome tab and enable Share tab audio.",
+            "error"
+          );
 
-      audioTrack.onended = () => {
-        console.log("Audio Track Ended");
-        stopInterviewMode();
-      };
+          setIsInterviewRunning(false);
 
-      const audioContext = new AudioContext({
-        sampleRate: 48000,
-      });
+          stream
+            .getTracks()
+            .forEach((track) =>
+              track.stop()
+            );
 
-      audioContextRef.current = audioContext;
-
-      const source = audioContext.createMediaStreamSource(stream);
-      const destination = audioContext.createMediaStreamDestination();
-
-      source.connect(destination);
-
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-        ? "audio/webm;codecs=opus"
-        : "audio/webm";
-
-      const recorder = new MediaRecorder(destination.stream, {
-        mimeType,
-      });
-
-      mediaRecorderRef.current = recorder;
-
-      recorder.ondataavailable = (event) => {
-        if (
-          event.data &&
-          event.data.size > 0 &&
-          socket.readyState === WebSocket.OPEN
-        ) {
-          socket.send(event.data);
+          return;
         }
-      };
 
-      recorder.onstop = () => {
-        console.log("Recorder Stopped");
-      };
+        const socket =
+          await openInterviewSocket();
 
-      recorder.onerror = (e) => {
-        console.error("Recorder Error", e);
-      };
+        audioTrack.onended = () => {
+          stopInterviewMode();
+        };
 
-      recorder.start(100);
-    } catch (err) {
-      console.error(err);
-      showToast("Unable to start interview audio. Please verify share permissions.", "error");
-      stopInterviewMode();
-    }
-  };
+        const audioContext =
+          new AudioContext({
+            sampleRate: 48000,
+          });
 
-  const streamAnswer = async (payload, fallbackMessage) => {
+        audioContextRef.current =
+          audioContext;
+
+        const source =
+          audioContext.createMediaStreamSource(
+            stream
+          );
+
+        const destination =
+          audioContext.createMediaStreamDestination();
+
+        source.connect(destination);
+
+        const mimeType =
+          MediaRecorder.isTypeSupported(
+            "audio/webm;codecs=opus"
+          )
+            ? "audio/webm;codecs=opus"
+            : "audio/webm";
+
+        const recorder =
+          new MediaRecorder(
+            destination.stream,
+            {
+              mimeType,
+            }
+          );
+
+        mediaRecorderRef.current =
+          recorder;
+
+        recorder.ondataavailable = (
+          event
+        ) => {
+          if (
+            event.data &&
+            event.data.size > 0 &&
+            socket.readyState ===
+              WebSocket.OPEN
+          ) {
+            socket.send(event.data);
+          }
+        };
+
+        recorder.onstop = () => {
+          console.log(
+            "Recorder Stopped"
+          );
+        };
+
+        recorder.onerror = (
+          error
+        ) => {
+          console.error(
+            "Recorder Error:",
+            error
+          );
+        };
+
+        recorder.start(100);
+      } catch (error) {
+        console.error(error);
+
+        showToast(
+          "Unable to start interview audio. Check sharing permissions.",
+          "error"
+        );
+
+        stopInterviewMode();
+      }
+    };
+
+  const streamAnswer = async (
+    payload,
+    fallbackMessage
+  ) => {
     try {
       answerAbortRef.current?.abort();
-      answerAbortRef.current = new AbortController();
+
+      answerAbortRef.current =
+        new AbortController();
 
       setLoading(true);
       setAnswerData("");
 
-      const response = await fetch(`${API_BASE_URL}/answer`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        signal: answerAbortRef.current.signal,
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/answer`,
+        {
+          method: "POST",
 
-      if (!response.ok || !response.body) {
-        throw new Error("Failed to generate answer");
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          signal:
+            answerAbortRef.current.signal,
+
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (
+        !response.ok ||
+        !response.body
+      ) {
+        throw new Error(
+          "Failed to generate answer"
+        );
       }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
+      const reader =
+        response.body.getReader();
+
+      const decoder =
+        new TextDecoder();
+
       let fullText = "";
 
       while (true) {
-        const { done, value } = await reader.read();
+        const {
+          done,
+          value,
+        } = await reader.read();
 
         if (done) break;
 
-        const chunk = decoder.decode(value, {
-          stream: true,
-        });
+        const chunk =
+          decoder.decode(value, {
+            stream: true,
+          });
 
         fullText += chunk;
+
         setAnswerData(fullText);
       }
-    } catch (err) {
-      if (err.name === "AbortError") return;
+    } catch (error) {
+      if (
+        error.name === "AbortError"
+      ) {
+        return;
+      }
 
-      console.error(err);
-      setAnswerData(fallbackMessage);
+      console.error(error);
+
+      setAnswerData(
+        fallbackMessage
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const generateSelfIntroAnswer = async () => {
-    const introQuestion =
-      "Introduce yourself and present an overview of your professional profile.";
+  const generateSelfIntroAnswer =
+    async () => {
+      const introQuestion =
+        "Tell me about yourself";
 
-    await streamAnswer(
-      {
-        question: introQuestion,
-        resumeText: buildResumeContext(),
-        company: "Do not use company dropdown for self introduction",
-        interviewLevel,
-        interviewType,
-      },
-      "Unable to generate self introduction right now."
-    );
-  };
+      await streamAnswer(
+        {
+          question: introQuestion,
 
-  const startInterviewFlow = async () => {
-    if (resumeProcessing) {
-      showToast("Resume profile is still being generated. Please wait...", "info");
-      return;
-    }
+          resumeText:
+            buildResumeContext(),
 
-    if (!resumeProfile) {
-      showToast("Please upload a resume first and wait until the AI profile completes.", "info");
-      return;
-    }
+          company:
+            "Ignore target company for self introduction",
 
-    setInterviewStarted(true);
-    setShowConfig(false);
+          interviewLevel,
 
-    await startInterviewMode();
+          interviewType,
+        },
 
-    setTimeout(() => {
-      generateSelfIntroAnswer();
-    }, 700);
-  };
+        "Unable to generate self introduction right now."
+      );
+    };
+
+  const startInterviewFlow =
+    async () => {
+      if (resumeProcessing) {
+        showToast(
+          "Resume profile is still being generated. Please wait.",
+          "info"
+        );
+
+        return;
+      }
+
+      if (!resumeProfile) {
+        showToast(
+          "Upload a resume and wait until profile generation completes.",
+          "info"
+        );
+
+        return;
+      }
+
+      setInterviewStarted(true);
+      setShowConfig(false);
+
+      await startInterviewMode();
+
+      setTimeout(() => {
+        generateSelfIntroAnswer();
+      }, 500);
+    };
 
   const stopInterviewMode = () => {
+    clearTimeout(
+      silenceTimerRef.current
+    );
+
     if (
       mediaRecorderRef.current &&
-      mediaRecorderRef.current.state !== "inactive"
+      mediaRecorderRef.current.state !==
+        "inactive"
     ) {
       mediaRecorderRef.current.stop();
     }
@@ -547,54 +897,80 @@ const updateQuestionFromTranscript = (payload) => {
 
     if (
       audioContextRef.current &&
-      audioContextRef.current.state !== "closed"
+      audioContextRef.current.state !==
+        "closed"
     ) {
       audioContextRef.current.close();
     }
 
     audioContextRef.current = null;
 
-    screenStreamRef.current?.getTracks().forEach((track) => track.stop());
+    screenStreamRef.current
+      ?.getTracks()
+      .forEach((track) =>
+        track.stop()
+      );
+
     screenStreamRef.current = null;
 
     closeInterviewSocket();
+
     setIsInterviewRunning(false);
   };
 
-  const clearQuestionAndAnswer = () => {
-    clearTimeout(silenceTimerRef.current);
+  const clearQuestionAndAnswer =
+    () => {
+      clearTimeout(
+        silenceTimerRef.current
+      );
 
-    questionLockedRef.current = false;
-    ignoreStaleTranscriptRef.current = true;
+      questionLockedRef.current =
+        false;
 
-    liveQuestionRef.current = "";
-    finalTranscriptRef.current = "";
-    interimTranscriptRef.current = "";
+      ignoreStaleTranscriptRef.current =
+        true;
 
-    setQuestion("");
-    setAnswerData(null);
+      liveQuestionRef.current = "";
+      finalTranscriptRef.current = "";
+      interimTranscriptRef.current = "";
 
-    if (textareaRef.current) {
-      textareaRef.current.scrollTop = 0;
-    }
-  };
+      setQuestion("");
+
+      if (textareaRef.current) {
+        textareaRef.current.scrollTop =
+          0;
+      }
+    };
 
   const generateAnswer = async () => {
     questionLockedRef.current = true;
 
     if (!question.trim()) {
-      showToast("Question panel is currently empty.", "info");
+      showToast(
+        "Question panel is empty.",
+        "info"
+      );
+
       return;
     }
 
     await streamAnswer(
       {
         question,
-        resumeText: buildResumeContext(),
-        company: company === "Others" ? customCompany : company,
+
+        resumeText:
+          buildResumeContext(),
+
+        company:
+          company === "Others"
+            ? customCompany
+            : company,
+
         interviewLevel,
+
         interviewType,
       },
+
       "Unable to generate answer right now. Please try again."
     );
   };
@@ -620,7 +996,9 @@ const updateQuestionFromTranscript = (payload) => {
   }
 
   if (!user) {
-    return <Login setUser={setUser} />;
+    return (
+      <Login setUser={setUser} />
+    );
   }
 
   return (
@@ -636,13 +1014,16 @@ const updateQuestionFromTranscript = (payload) => {
 
       <main
         className={`app-container ${
-          interviewStarted ? "interview-active" : "config-active"
+          interviewStarted
+            ? "interview-active"
+            : "config-active"
         }`}
       >
-        {/* Floating Toast Notification System */}
         {toast.visible && (
           <div
-            className={`app-toast app-toast-${toast.type || "info"}`}
+            className={`app-toast app-toast-${
+              toast.type || "info"
+            }`}
           >
             {toast.message}
           </div>
@@ -653,29 +1034,47 @@ const updateQuestionFromTranscript = (payload) => {
             <UploadResume
               resumeName={
                 resumeProcessing
-                  ? "Processing Profile via AI Extraction Engine..."
+                  ? "Processing Profile..."
                   : resumeName
               }
-              handleResumeUpload={handleResumeUpload}
+              handleResumeUpload={
+                handleResumeUpload
+              }
               skills={skills}
               company={company}
               setCompany={setCompany}
-              customCompany={customCompany}
-              setCustomCompany={setCustomCompany}
-              interviewLevel={interviewLevel}
-              setInterviewLevel={setInterviewLevel}
-              interviewType={interviewType}
-              setInterviewType={setInterviewType}
+              customCompany={
+                customCompany
+              }
+              setCustomCompany={
+                setCustomCompany
+              }
+              interviewLevel={
+                interviewLevel
+              }
+              setInterviewLevel={
+                setInterviewLevel
+              }
+              interviewType={
+                interviewType
+              }
+              setInterviewType={
+                setInterviewType
+              }
             />
 
             <div className="config-start-row">
               <button
-                disabled={resumeProcessing}
-                onClick={startInterviewFlow}
+                disabled={
+                  resumeProcessing
+                }
+                onClick={
+                  startInterviewFlow
+                }
                 className="start-interview-btn"
               >
                 {resumeProcessing
-                  ? "⏳ Generating AI Profile..."
+                  ? "⏳ Generating Profile..."
                   : "🚀 Start AI Interview"}
               </button>
             </div>
@@ -683,25 +1082,33 @@ const updateQuestionFromTranscript = (payload) => {
         )}
 
         {interviewStarted && (
-          <>
-            <div className="main-layout">
-              <QuestionPanel
-                question={question}
-                setQuestion={setQuestion}
-                textareaRef={textareaRef}
-                isInterviewRunning={isInterviewRunning}
-                loading={loading}
-                generateAnswer={generateAnswer}
-                clearQuestionAndAnswer={clearQuestionAndAnswer}
-              />
+          <div className="main-layout">
+            <QuestionPanel
+              question={question}
+              setQuestion={setQuestion}
+              textareaRef={
+                textareaRef
+              }
+              isInterviewRunning={
+                isInterviewRunning
+              }
+              loading={loading}
+              generateAnswer={
+                generateAnswer
+              }
+              clearQuestionAndAnswer={
+                clearQuestionAndAnswer
+              }
+              stopInterviewMode={
+                stopInterviewMode
+              }
+            />
 
-              <AnswerPanel answerData={answerData} loading={loading} />
-            </div>
-
-            {isInterviewRunning && (
-              <InterviewStatus stopInterviewMode={stopInterviewMode} />
-            )}
-          </>
+            <AnswerPanel
+              answerData={answerData}
+              loading={loading}
+            />
+          </div>
         )}
       </main>
     </>
