@@ -128,8 +128,35 @@ ${primarySkills}
 Secondary Skills:
 ${secondarySkills}
 
-Project Name:
-${resumeProfile.projectName || ""}
+Current Company:
+${resumeProfile.currentCompany?.companyName || ""}
+
+Current Designation:
+${resumeProfile.currentCompany?.designation || ""}
+
+Previous Companies:
+${
+  Array.isArray(resumeProfile.previousCompanies)
+    ? resumeProfile.previousCompanies
+        .map(
+          (item) =>
+            `${item.companyName || ""} - ${item.designation || ""} - ${
+              item.duration || ""
+            }`
+        )
+        .join("\n")
+    : ""
+}
+
+Current Project:
+${resumeProfile.currentProjectName || ""}
+
+Previous Projects:
+${
+  Array.isArray(resumeProfile.previousProjectNames)
+    ? resumeProfile.previousProjectNames.join(", ")
+    : ""
+}
 
 Project Domain:
 ${resumeProfile.projectDomain || ""}
@@ -169,12 +196,10 @@ const updateQuestionFromTranscript = (payload) => {
    * from the previous question. Ignore it.
    */
   if (ignoreStaleTranscriptRef.current) {
-    if (payload.isFinal || payload.speechFinal) {
-      return;
-    }
-
-    // A new interim result means a new question has started.
     ignoreStaleTranscriptRef.current = false;
+
+    finalTranscriptRef.current = "";
+    interimTranscriptRef.current = "";
   }
 
   clearTimeout(silenceTimerRef.current);
