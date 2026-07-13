@@ -57,6 +57,17 @@ function QuestionPanel({
           🗑 Clear
         </button>
 
+                <button
+          type="button"
+          disabled={loading || !question.trim()}
+          onClick={generateAnswer}
+          className="generate-btn"
+        >
+          {loading
+            ? "⚡ Generating..."
+            : "✨ Generate AI Answer"}
+        </button>
+
         <button
           type="button"
           onClick={stopInterviewMode}
@@ -70,16 +81,6 @@ function QuestionPanel({
           ⏹ Stop
         </button>
 
-        <button
-          type="button"
-          disabled={loading || !question.trim()}
-          onClick={generateAnswer}
-          className="generate-btn"
-        >
-          {loading
-            ? "⚡ Generating..."
-            : "✨ Generate AI Answer"}
-        </button>
       </div>
     </div>
   );
