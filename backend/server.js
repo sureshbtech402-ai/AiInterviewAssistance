@@ -1,3 +1,4 @@
+
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -7,982 +8,640 @@ import multer from "multer";
 import fs from "fs";
 import http from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import {
-  createClient,
-  LiveTranscriptionEvents,
-} from "@deepgram/sdk";
-
-import {
-  buildInterviewPrompt,
-  getCleanQuestion,
-} from "./promptBuilder.js";
+import { createClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 
 const app = express();
 const server = http.createServer(app);
 const upload = multer({ dest: "uploads/" });
 
 const PORT = process.env.PORT || 5000;
-
-const OPENAI_MODEL =
-  process.env.OPENAI_MODEL || "gpt-4o-mini";
-
-const ALLOWED_ORIGIN =
-  process.env.ALLOWED_ORIGIN || "*";
-
-const allowedOrigins =
-  ALLOWED_ORIGIN === "*"
-    ? true
-    : ALLOWED_ORIGIN
-        .split(",")
-        .map((origin) => origin.trim())
-        .filter(Boolean);
-
-/* =====================================================
-   MIDDLEWARE
-===================================================== */
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: ALLOWED_ORIGIN === "*" ? true : ALLOWED_ORIGIN.split(","),
     credentials: false,
   })
 );
 
-app.use(
-  express.json({
-    limit: "10mb",
-  })
-);
+app.use(express.json({ limit: "10mb" }));
 
-/* =====================================================
-   DEEPGRAM CLIENT
-===================================================== */
-
-const deepgram = createClient(
-  process.env.DEEPGRAM_API_KEY
-);
-
-/* =====================================================
-   HEALTH ROUTES
-===================================================== */
+const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 
 app.get("/", (req, res) => {
-  res.send(
-    "AI Interview Assistant Backend Running 🚀"
-  );
+  res.send("AI Interview Assistant Backend Running 🚀");
 });
 
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
-    deepgram: Boolean(
-      process.env.DEEPGRAM_API_KEY
-    ),
-    openai: Boolean(
-      process.env.OPENAI_API_KEY
-    ),
+    deepgram: Boolean(process.env.DEEPGRAM_API_KEY),
+    openai: Boolean(process.env.OPENAI_API_KEY),
     model: OPENAI_MODEL,
   });
 });
 
-/* =====================================================
-   DEEPGRAM LIVE WEBSOCKET
-===================================================== */
-
-const wss = new WebSocketServer({
-  server,
-});
+const wss = new WebSocketServer({ server });
 
 wss.on("connection", (client) => {
   console.log("React WebSocket Connected");
 
   if (!process.env.DEEPGRAM_API_KEY) {
-    console.error(
-      "Missing DEEPGRAM_API_KEY"
-    );
-
-    if (
-      client.readyState === WebSocket.OPEN
-    ) {
-      client.send(
-        JSON.stringify({
-          type: "error",
-          error:
-            "Missing DEEPGRAM_API_KEY",
-        })
-      );
-    }
-
+    console.error("Missing DEEPGRAM_API_KEY");
+    client.send(JSON.stringify({ error: "Missing DEEPGRAM_API_KEY" }));
     client.close();
     return;
   }
 
   let deepgramReady = false;
   let closedByClient = false;
-
   const pendingAudio = [];
 
-  const dgConnection =
-    deepgram.listen.live({
-      model: "nova-3",
-      language: "en-US",
-
-      punctuate: true,
-      smart_format: true,
-
-      interim_results: true,
-
-      endpointing: 250,
-      vad_events: true,
-      utterance_end_ms: 1000,
-
-      encoding: "opus",
-      container: "webm",
-    });
-
-  const sendToClient = (payload) => {
-    if (
-      client.readyState === WebSocket.OPEN
-    ) {
-      client.send(
-        JSON.stringify(payload)
-      );
-    }
-  };
+  const dgConnection = deepgram.listen.live({
+    model: "nova-3",
+    language: "en-US",
+    punctuate: true,
+    smart_format: true,
+    interim_results: true,
+    endpointing: 250,
+    vad_events: true,
+    utterance_end_ms: 1000,
+    encoding: "opus",
+    container: "webm",
+  });
 
   const keepAlive = setInterval(() => {
     try {
-      if (
-        deepgramReady &&
-        typeof dgConnection.keepAlive ===
-          "function"
-      ) {
+      if (deepgramReady && typeof dgConnection.keepAlive === "function") {
         dgConnection.keepAlive();
       }
-    } catch (error) {
-      console.error(
-        "Deepgram keepAlive error:",
-        error
-      );
+    } catch (err) {
+      console.error("Deepgram keepAlive error:", err);
     }
   }, 5000);
 
-  dgConnection.on(
-    LiveTranscriptionEvents.Open,
-    () => {
-      console.log("Deepgram Connected");
-
-      deepgramReady = true;
-
-      sendToClient({
-        type: "status",
-        status: "deepgram_connected",
-      });
-
-      while (
-        pendingAudio.length > 0
-      ) {
-        const chunk =
-          pendingAudio.shift();
-
-        try {
-          dgConnection.send(chunk);
-        } catch (error) {
-          console.error(
-            "Deepgram buffered send error:",
-            error
-          );
-        }
-      }
+  const sendToClient = (payload) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(payload));
     }
-  );
+  };
 
-  client.on(
-    "message",
-    (audioChunk) => {
-      if (
-        !audioChunk ||
-        audioChunk.length === 0
-      ) {
-        return;
-      }
+  dgConnection.on(LiveTranscriptionEvents.Open, () => {
+    console.log("Deepgram Connected");
+    deepgramReady = true;
+    sendToClient({ type: "status", status: "deepgram_connected" });
 
+    while (pendingAudio.length > 0) {
+      const chunk = pendingAudio.shift();
       try {
-        if (
-          deepgramReady &&
-          dgConnection.getReadyState() ===
-            1
-        ) {
-          dgConnection.send(audioChunk);
-        } else {
-          pendingAudio.push(
-            audioChunk
-          );
-
-          if (
-            pendingAudio.length > 50
-          ) {
-            pendingAudio.shift();
-          }
-        }
-      } catch (error) {
-        console.error(
-          "Deepgram send error:",
-          error
-        );
+        dgConnection.send(chunk);
+      } catch (err) {
+        console.error("Deepgram buffered send error:", err);
       }
     }
-  );
+  });
 
-  dgConnection.on(
-    LiveTranscriptionEvents.Transcript,
-    (data) => {
-      const transcript =
-        data?.channel?.alternatives?.[0]
-          ?.transcript || "";
+  client.on("message", (audioChunk) => {
+    if (!audioChunk || audioChunk.length === 0) return;
 
-      if (!transcript.trim()) {
-        return;
+    try {
+      if (deepgramReady && dgConnection.getReadyState() === 1) {
+        dgConnection.send(audioChunk);
+      } else {
+        pendingAudio.push(audioChunk);
+        if (pendingAudio.length > 50) pendingAudio.shift();
       }
-
-      const isFinal = Boolean(
-        data?.is_final
-      );
-
-      const speechFinal = Boolean(
-        data?.speech_final
-      );
-
-      console.log(
-        `${
-          isFinal
-            ? "Final"
-            : "Interim"
-        } Transcript:`,
-        transcript
-      );
-
-      sendToClient({
-        type: "transcript",
-        text: transcript,
-        isFinal,
-        speechFinal,
-      });
+    } catch (err) {
+      console.error("Deepgram send error:", err);
     }
-  );
+  });
 
-  dgConnection.on(
-    LiveTranscriptionEvents.Error,
-    (error) => {
-      console.error(
-        "Deepgram Error:",
-        error
-      );
+  dgConnection.on(LiveTranscriptionEvents.Transcript, (data) => {
+    const transcript = data?.channel?.alternatives?.[0]?.transcript || "";
+    if (!transcript.trim()) return;
 
-      sendToClient({
-        type: "error",
-        error:
-          "Deepgram transcription error",
-      });
+    const isFinal = Boolean(data?.is_final);
+    const speechFinal = Boolean(data?.speech_final);
+
+    console.log(`${isFinal ? "Final" : "Interim"} Transcript:`, transcript);
+
+    sendToClient({
+      type: "transcript",
+      text: transcript,
+      isFinal,
+      speechFinal,
+    });
+  });
+
+  dgConnection.on(LiveTranscriptionEvents.Error, (err) => {
+    console.error("Deepgram Error:", err);
+    sendToClient({ type: "error", error: "Deepgram transcription error" });
+  });
+
+  dgConnection.on(LiveTranscriptionEvents.Close, () => {
+    console.log("Deepgram Closed");
+    deepgramReady = false;
+    clearInterval(keepAlive);
+
+    if (!closedByClient && client.readyState === WebSocket.OPEN) {
+      sendToClient({ type: "status", status: "deepgram_closed" });
     }
-  );
-
-  dgConnection.on(
-    LiveTranscriptionEvents.Close,
-    () => {
-      console.log("Deepgram Closed");
-
-      deepgramReady = false;
-
-      clearInterval(keepAlive);
-
-      if (
-        !closedByClient &&
-        client.readyState ===
-          WebSocket.OPEN
-      ) {
-        sendToClient({
-          type: "status",
-          status: "deepgram_closed",
-        });
-      }
-    }
-  );
+  });
 
   client.on("close", () => {
-    console.log(
-      "React WebSocket Closed"
-    );
-
+    console.log("React WebSocket Closed");
     closedByClient = true;
-
     clearInterval(keepAlive);
 
     try {
       dgConnection.finish();
-    } catch (error) {
-      console.error(
-        "Deepgram finish error:",
-        error
-      );
+    } catch (err) {
+      console.error("Deepgram finish error:", err);
     }
   });
 
-  client.on("error", (error) => {
-    console.error(
-      "React WebSocket Error:",
-      error
-    );
+  client.on("error", (err) => {
+    console.error("React WebSocket Error:", err);
   });
 });
 
-/* =====================================================
-   PRERECORDED TRANSCRIPTION FALLBACK
-===================================================== */
-
-app.post(
-  "/transcribe",
-  upload.single("audio"),
-  async (req, res) => {
-    try {
-      if (!req.file) {
-        return res
-          .status(400)
-          .json({
-            text:
-              "No audio file received",
-          });
-      }
-
-      if (
-        !process.env
-          .DEEPGRAM_API_KEY
-      ) {
-        return res
-          .status(500)
-          .json({
-            text:
-              "DEEPGRAM_API_KEY is missing",
-          });
-      }
-
-      const audioBuffer =
-        fs.readFileSync(
-          req.file.path
-        );
-
-      const { result, error } =
-        await deepgram.listen.prerecorded.transcribeFile(
-          audioBuffer,
-          {
-            model: "nova-3",
-            language: "en-US",
-            punctuate: true,
-            smart_format: true,
-          }
-        );
-
-      if (error) {
-        throw error;
-      }
-
-      const text =
-        result?.results
-          ?.channels?.[0]
-          ?.alternatives?.[0]
-          ?.transcript || "";
-
-      res.json({
-        text,
-      });
-    } catch (error) {
-      console.error(
-        "Transcription Error:",
-        error
-      );
-
-      res.status(500).json({
-        text:
-          "Transcription Error",
-      });
-    } finally {
-      if (
-        req.file?.path &&
-        fs.existsSync(
-          req.file.path
-        )
-      ) {
-        fs.unlinkSync(
-          req.file.path
-        );
-      }
+app.post("/transcribe", upload.single("audio"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ text: "No audio file received" });
     }
+
+    const audioBuffer = fs.readFileSync(req.file.path);
+
+    const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
+      audioBuffer,
+      {
+        model: "nova-3",
+        language: "en-US",
+        punctuate: true,
+        smart_format: true,
+      }
+    );
+
+    fs.unlinkSync(req.file.path);
+
+    if (error) throw error;
+
+    const text =
+      result?.results?.channels?.[0]?.alternatives?.[0]?.transcript || "";
+
+    res.json({ text });
+  } catch (err) {
+    console.error("Transcription Error:", err);
+    res.status(500).json({ text: "Transcription Error" });
   }
-);
+});
 
-/* =====================================================
-   RESUME SUMMARY
-===================================================== */
+app.post("/resume-summary", async (req, res) => {
+  try {
+    const { resumeText } = req.body;
 
-app.post(
-  "/resume-summary",
-  async (req, res) => {
-    try {
-      const { resumeText } =
-        req.body || {};
-
-      if (
-        !resumeText ||
-        !resumeText.trim()
-      ) {
-        return res
-          .status(400)
-          .json({
-            resumeProfile: null,
-            error:
-              "Resume text is empty",
-          });
-      }
-
-      if (
-        !process.env
-          .OPENAI_API_KEY
-      ) {
-        return res
-          .status(500)
-          .json({
-            resumeProfile: null,
-            error:
-              "OPENAI_API_KEY is missing",
-          });
-      }
-
-      const resumePrompt = `
-You are a strict resume fact-extraction engine.
-
-Extract only information explicitly written in the resume.
-
-Do not:
-- invent facts
-- infer missing experience
-- calculate experience unless clearly stated
-- invent company names
-- invent project names
-- invent clients
-- invent technologies
-- invent metrics
-- invent achievements
-- invent responsibilities
-
-When information is unavailable, return an empty string or empty array.
-
-Employment rules:
-- Identify the current company using "Present", "Current", or the latest employment period.
-- Keep the current company separately.
-- Store every previous company separately.
-- Keep employment history in reverse chronological order.
-- Preserve exact company names, roles, and durations.
-- If only one company is present, return an empty previousCompanies array.
-
-Project rules:
-- Store the current or most recent project as currentProjectName.
-- Store all older projects in previousProjectNames.
-- Never create project information that is not present.
-
-Resume Content:
-${resumeText}
-
-Return only one valid JSON object with this exact structure:
-
-{
-  "candidateName": "",
-  "location": "",
-  "candidateSummary": "",
-  "experience": "",
-  "currentCompany": {
-    "companyName": "",
-    "designation": "",
-    "duration": ""
-  },
-  "previousCompanies": [
-    {
-      "companyName": "",
-      "designation": "",
-      "duration": ""
+    if (!resumeText) {
+      return res.status(400).json({ resumeProfile: null });
     }
-  ],
-  "employmentHistory": [
+
+    const prompt = `
+    You are an elite resume extraction and interview preparation engine.
+
+    First, extract ONLY facts explicitly present in the resume.
+    Do NOT guess, infer, or invent details (no fake company names, years, projects, or metrics).
+    If any value is missing, keep it empty.
+
+    Second, when writing the conversational fields ("selfIntroduction", "projectExplanation", "rolesExplanation"), you must adhere to these CRITICAL SPOKEN TONE RULES:
+    1. EXTREMELY NATURAL SPOKEN FLOW: Formulate the "selfIntroduction" field to match this exact template structure based strictly on the candidate's real resume details:
+       "Thank you for giving me this opportunity to introduce myself. My name is [Candidate Name], and I am from [Location/Native Place if in resume]. I have around [Years] years of experience as a [Primary Role, e.g., Java Backend Developer] and currently work at [Current Company Name, e.g., Tata Consultancy Services]. My technical skills include [Core Tech Stack list, e.g., Java, Spring Boot, Microservices, Hibernate, SQL, REST APIs, Kafka, Docker, Kubernetes, Git, and Maven]. Currently, I am working on the [Project Name, e.g., ING Digitization] project for a [Domain, e.g., banking] client, where I [Core Responsibilities, e.g., develop REST APIs, implement business logic, and work with Spring Data JPA and microservices]. I enjoy learning new technologies and solving technical problems. I am looking for an opportunity where I can contribute, learn, and grow professionally. Thank you."
+       If any of these details (like Location or Company Name) are not present in the resume, omit those specific statements naturally without leaving blank templates.
+    2. BAN WEAK FILLERS: Do NOT start any sentence or bullet point with words like "So,", "Basically,", "Mainly,", "Actually,", "Like,", or "As such,".
+    3. ACTION VERB MANDATE: For roles and responsibilities, every single point must begin directly with a strong, active technical verb (e.g., "Implemented...", "Developed...", "Architected...", "Optimized..."). No pronouns like "I" or "We" inside bullet points.
+
+    Resume Content:
+    ${resumeText}
+
+    Return the data matching this exact JSON schema:
     {
-      "companyName": "",
-      "designation": "",
-      "duration": "",
-      "isCurrent": false
+      "candidateSummary": "A brief professional summary of the candidate.",
+      "experience": "Total experience extracted.",
+      "primarySkills": ["List of core skills"],
+      "secondarySkills": ["List of supportive skills"],
+      "currentProjectName": "Major project name",
+      "previousProjectName": "previous project name",
+      "projectDomain": "Project domain",
+      "projectSummary": "Brief overview of the project",
+      "rolesAndResponsibilities": ["Responsibility 1 starting with active verb", "Responsibility 2 starting with active verb"],
+      "toolsAndTechnologies": ["Tech stack list"],
+      "achievements": ["Explicit achievements if any"],
+      "selfIntroduction": "A highly natural, professional spoken self-introduction matching the exact requested flow. Clear, smooth, and welcoming. Do not use robotic or forced high-falutin openers.",
+      "projectExplanation": "A 2-3 line spoken-ready, professional explanation of the project context and technical transition.",
+      "rolesExplanation": "A professional spoken description of core technical ownership starting with action verbs."
     }
-  ],
-  "primarySkills": [],
-  "secondarySkills": [],
-  "currentProjectName": "",
-  "previousProjectNames": [],
-  "projectDomain": "",
-  "projectSummary": "",
-  "rolesAndResponsibilities": [],
-  "toolsAndTechnologies": [],
-  "achievements": [],
-  "selfIntroduction": "",
-  "projectExplanation": "",
-  "rolesExplanation": ""
-}
 `;
 
-      const response = await fetch(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-
-          headers: {
-            Authorization:
-              `Bearer ${process.env.OPENAI_API_KEY}`,
-
-            "Content-Type":
-              "application/json",
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        response_format: { type: "json_object" }, 
+        messages: [
+          {
+            role: "user",
+            content: prompt,
           },
+        ],
+        temperature: 0.0, // Strict, deterministic extraction
+      }),
+    });
 
-          body: JSON.stringify({
-            model: OPENAI_MODEL,
+    const data = await response.json();
+    console.log("========== OPENAI RESPONSE ==========");
+    console.log(JSON.stringify(data, null, 2));
+    console.log("=====================================");
 
-            response_format: {
-              type: "json_object",
-            },
-
-            messages: [
-              {
-                role: "system",
-
-                content:
-                  "Extract resume facts exactly. Never guess or invent missing information.",
-              },
-
-              {
-                role: "user",
-                content:
-                  resumePrompt,
-              },
-            ],
-
-            temperature: 0,
-          }),
-        }
-      );
-
-      const data =
-        await response.json();
-
-      if (!response.ok) {
-        console.error(
-          "Resume Summary OpenAI Error:",
-          data
-        );
-
-        return res
-          .status(response.status)
-          .json({
-            resumeProfile: null,
-            error:
-              data?.error?.message ||
-              "Resume extraction failed",
-          });
-      }
-
-      const outputText =
-        data?.choices?.[0]
-          ?.message?.content
-          ?.trim() || "";
-
-      if (!outputText) {
-        console.error(
-          "Empty resume extraction response"
-        );
-
-        return res
-          .status(500)
-          .json({
-            resumeProfile: null,
-            error:
-              "Resume extraction returned empty data",
-          });
-      }
-
-      let resumeProfile;
-
-      try {
-        resumeProfile =
-          JSON.parse(outputText);
-      } catch (parseError) {
-        console.error(
-          "Resume JSON Parse Error:",
-          parseError
-        );
-
-        console.error(
-          "Raw Resume Output:",
-          outputText
-        );
-
-        return res
-          .status(500)
-          .json({
-            resumeProfile: null,
-            error:
-              "Unable to parse resume profile",
-          });
-      }
-
-      console.log(
-        "Resume profile created successfully"
-      );
-
-      res.json({
-        resumeProfile,
-      });
-    } catch (error) {
-      console.error(
-        "Resume Summary Error:",
-        error
-      );
-
-      res.status(500).json({
+    if (!response.ok) {
+      console.error("Resume Summary OpenAI Error:", data);
+      return res.json({
         resumeProfile: null,
-        error:
-          "Unable to create resume profile",
       });
     }
+
+    const text = data.choices[0].message.content.trim();
+    console.log("OUTPUT TEXT:");
+    console.log(text);
+
+    const resumeProfile = JSON.parse(text);
+    res.json({ resumeProfile });
+
+  } catch (err) {
+    console.error("Resume Summary Error:", err);
+    res.status(500).json({
+      resumeProfile: null,
+    });
   }
-);
+});
 
-/* =====================================================
-   OPENAI STREAM HELPERS
-===================================================== */
+function getCleanQuestion(question) {
+  if (!question) return "";
+  if (typeof question === "string") return question;
+  if (typeof question === "object") {
+    return question.question || question.text || question.transcript || JSON.stringify(question);
+  }
+  return String(question);
+}
 
-function extractDeltaFromOpenAIEvent(
-  event
-) {
-  if (
-    !event ||
-    typeof event !== "object"
-  ) {
-    return "";
+function isSpecialQuestion(question = "") {
+  const q = getCleanQuestion(question).toLowerCase().trim();
+  if (!q) return false;
+
+  return (
+    q.includes("tell me about yourself") ||
+    q.includes("tell me about you") ||
+    q.includes("about yourself") ||
+    q.includes("about you") ||
+    q.includes("your self") ||
+    q.includes("yourself") ||
+    q.includes("introduce yourself") ||
+    q.includes("self introduction") ||
+    q.includes("explain your project") ||
+    q.includes("about your project") ||
+    q.includes("current project") ||
+    q.includes("roles and responsibilities") ||
+    q.includes("responsibilities") ||
+    q.includes("daily activities") ||
+    q.includes("project architecture")
+  );
+}
+
+function isCodingQuestion(question) {
+  const cleanQ = getCleanQuestion(question).toLowerCase().trim();
+  if (!cleanQ) return false;
+
+  const codingKeywords = [
+    "code", "program", "write a", "implement", "coding", "function", "snippet", 
+    "algorithm", "query", "sql", "database schema", "class", "method", "compile", 
+    "regex", "syntax"
+  ];
+  return codingKeywords.some(keyword => cleanQ.includes(keyword));
+}
+
+function buildSpecialPrompt({
+  question,
+  resumeText,
+  interviewLevel,
+  interviewType,
+}) {
+  const cleanQ = getCleanQuestion(question);
+  return `You are an elite corporate technical coach. Translate the candidate's resume details into an exceptionally natural, warm, and highly polished spoken self-introduction.
+
+Resume Profile Context:
+${resumeText || "Resume profile not available"}
+
+Interview Parameters: Level: ${interviewLevel || "Mid Level"}, Type: ${interviewType || "Technical"}
+Question: ${cleanQ}
+
+CRITICAL RULES FOR THE SELF-INTRODUCTION:
+1. EXTREMELY NATURAL FLOW (MATCH THIS EXACT STYLE): 
+   "Thank you for giving me this opportunity to introduce myself. My name is Suresh Chinnamadula, and I am from Anantapur, Andhra Pradesh. I have around 4 years of experience as a Java Backend Developer and currently work at Tata Consultancy Services. My technical skills include Java, Spring Boot, Microservices, Hibernate, SQL, REST APIs, Apache Kafka, Docker, Kubernetes, Git, and Maven. Currently, I am working on the ING Digitization project for a banking client, where I develop REST APIs, implement business logic, and work with Spring Data JPA and microservices. I enjoy learning new technologies and solving technical problems. I am looking for an opportunity where I can contribute, learn, and grow professionally. Thank you."
+   Make sure it matches this structure exactly, naturally filling in the brackets with actual facts from the provided Resume Context.
+2. BAN WEAK FILLERS: Absolutely never use words like "So,", "Basically,", "Mainly,", "Actually,", "Like,", or "As such,".
+3. TECHNICAL ACTION BULLETS: In the "Roles and Responsibilities" section, create exactly 3 high-impact bullet points demonstrating technical ownership. Every single bullet point MUST begin directly with a strong, active technical verb (e.g., "Implemented...", "Developed...", "Architected...", "Optimized...").
+4. STRICT NO PRONOUNS RULE FOR BULLETS: Absolutely never start bullet points with personal pronouns or conversational descriptors (do NOT start with "I...", "We...", "My...", "Mainly...", "Also...", "Additionally..."). Start directly with the technical verb!
+
+Return exactly this Markdown structure and nothing else:
+
+## 🎯 Self Introduction
+[Insert the highly natural, specific, conversational spoken response here]
+
+## ⭐ Roles and Responsibilities
+- [Active Technical Verb]...
+- [Active Technical Verb]...
+- [Active Technical Verb]...`;
+}
+
+function buildCodingPrompt({
+  question,
+  resumeText,
+}) {
+  const cleanQ = getCleanQuestion(question);
+  return `You are an elite coding interviewer. 
+Analyze the candidate's primary technical stack from the Resume Context below.
+
+Resume Context:
+${resumeText || "Resume profile not available"}
+
+CRITICAL CODING LANGUAGE RULE:
+1. Identify the candidate's primary programming/backend language from their resume skills (e.g., Java, SQL, JavaScript, C++, Python).
+2. You MUST write the complete code solution ONLY in their primary language. 
+   - For example, if they are a Java Backend Developer, write the solution in Java.
+   - If it is a database or query question, write it in SQL.
+   - Do NOT write Python code if their resume specifies Java. Do NOT write JavaScript/Node.js if they are a C++ developer.
+   - Only deviate if the question explicitly asks for a specific programming language (e.g., "Write this in Python").
+
+Question: ${cleanQ}
+
+INSTRUCTIONS:
+1. Provide ONLY the complete, working, and well-commented code block under the "## 💻 Code" section.
+2. Provide the complexity analysis and a 4-5 sentence spoken-ready explanation of how the code is structured under "### How the Code is Written".
+3. Do NOT include any "Best Interview Ready Answer", "Real-Time Use", "Project Related Answer", or other conceptual headings. Keep it completely isolated to code.
+
+Return exactly this Markdown structure:
+
+## 💻 Code
+[Provide the complete working Simple logic code block here in their primary language]
+
+### How the Code is Written
+[Concise 3-4 sentence explanation of the logic, approach, and how it executes optimal data management]`;
+}
+
+function buildConceptPrompt({
+  question,
+  resumeText,
+  interviewLevel,
+  interviewType,
+  company,
+}) {
+  const cleanQ = getCleanQuestion(question);
+  return `You are a professional technical interview simulator. Deliver a highly structured, direct technical response for a conceptual technical question.
+
+Resume Profile Context:
+${resumeText || "Resume profile not available"}
+Target Company Context: ${company || "Target Company"}
+Target Level: ${interviewLevel || "Mid Level"}
+Target Type: ${interviewType || "Technical"}
+
+Question: ${cleanQ}
+
+INSTRUCTIONS FOR "BEST INTERVIEW READY ANSWER" (🎯 Best Interview Ready Answer):
+- provide sentence indian spoken-ready explanation.
+- Start directly with the main definition of the core concept. Make it highly clear, clean, and conversational.
+- If the question asks about a specific annotation, keyword, framework, or concept (like @SpringBootApplication), start with a direct definition highlighted with an emoji: 👉 "[Concept] is...".
+- EXAMPLE FORMAT: 👉 "@SpringBootApplication is the main starting annotation that enables a Spring Boot application. It combines @Configuration, @EnableAutoConfiguration, and @ComponentScan, which helps in configuring the application automatically and scanning all Spring components."
+- Immediately follow that definition with direct, simple bullet points explaining each sub-component (e.g., explaining @Configuration, @EnableAutoConfiguration, and @ComponentScan) in very simple words.
+- Ensure the total explanation is extremely direct, punchy, conversational, and finishes within 100-120 words.
+- BAN WEAK FILLERS: Do NOT start sentences or clauses with "So,", "Basically,", "Mainly,", or "Actually,".
+
+INSTRUCTIONS FOR KEY TAKEAWAYS (⭐ Real-Time Use):
+- provide sentence indian spoken-ready explanation.
+- Provide 3-4 high-impact technical bullet points.
+- Highlight core technical keywords in **bold**.
+- Every bullet point MUST start directly with a strong, active technical verb (e.g., "Leveraged...", "Designed...", "Decoupled...", "Optimized..."). STRICTLY BAN starting with pronouns like "I", "We", "My", "Also", or "Additionally".
+
+INSTRUCTIONS FOR PROJECT LINK (📄 Project Related Answer):
+- provide sentence indian spoken-ready explanation.
+- Provide a brief 3-4 line conversational application tying this technical concept directly to a technology or responsibility listed in the resume (e.g., ING Digitization, Spring Boot).
+
+Return exactly this Markdown structure:
+
+## 🎯 Best Interview Ready Answer
+[Your direct definition starting with a 👉 emoji, followed immediately by simple bullet points breaking down each sub-component in simple words]
+
+## ⭐ Real-Time Use
+- [Strong Active Verb]...
+- [Strong Active Verb]...
+
+## 📄 Project Related Answer
+[Provide a short 3-4 line conversational application tying this concept directly to a technology or responsibility listed in the resume]`;
+}
+
+function extractDeltaFromOpenAIEvent(event) {
+  if (!event || typeof event !== "object") return "";
+
+  if (event.choices && Array.isArray(event.choices) && event.choices[0]) {
+    const delta = event.choices[0].delta;
+    return delta?.content || "";
   }
 
-  if (
-    Array.isArray(
-      event.choices
-    ) &&
-    event.choices[0]?.delta
-  ) {
-    return (
-      event.choices[0].delta
-        .content || ""
-    );
+  if (event.type === "response.output_text.delta") {
+    return event.delta || "";
+  }
+
+  if (event.type === "response.message.delta") {
+    const content = event.delta?.content || [];
+    return content.map((item) => item?.text || item?.delta || "").join("");
   }
 
   return "";
 }
 
-function writeStreamError(
-  res,
-  message
-) {
-  if (!res.headersSent) {
-    res
-      .status(500)
-      .send(message);
+app.post("/answer", async (req, res) => {
+  const { question, resumeText, interviewLevel, company, interviewType, history } =
+    req.body || {};
 
-    return;
+  const cleanQ = getCleanQuestion(question);
+
+  if (!cleanQ || !cleanQ.trim()) {
+    return res.status(400).send("Question is empty");
   }
 
-  res.write(
-    `\n\n${message}`
-  );
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(500).send("OPENAI_API_KEY is missing");
+  }
 
-  res.end();
-}
-
-/* =====================================================
-   STREAMING ANSWER ROUTE
-===================================================== */
-
-app.post(
-  "/answer",
-  async (req, res) => {
-    const {
-      question,
-      resumeText,
-      interviewLevel,
-      company,
-      interviewType,
-      history,
-    } = req.body || {};
-
-    const cleanQuestion =
-      getCleanQuestion(question);
-
-    if (!cleanQuestion) {
-      return res
-        .status(400)
-        .send(
-          "Question is empty"
-        );
-    }
-
-    if (
-      !process.env
-        .OPENAI_API_KEY
-    ) {
-      return res
-        .status(500)
-        .send(
-          "OPENAI_API_KEY is missing"
-        );
-    }
-
-    try {
-      const prompt =
-        buildInterviewPrompt({
-          question:
-            cleanQuestion,
-
-          resumeText,
-
-          interviewLevel,
-
-          company,
-
-          interviewType,
-        });
-
-      res.status(200);
-
-      res.setHeader(
-        "Content-Type",
-        "text/event-stream; charset=utf-8"
-      );
-
-      res.setHeader(
-        "Cache-Control",
-        "no-cache, no-transform"
-      );
-
-      res.setHeader(
-        "Connection",
-        "keep-alive"
-      );
-
-      res.setHeader(
-        "X-Accel-Buffering",
-        "no"
-      );
-
-      res.flushHeaders?.();
-
-      const messages = [
-        {
-          role: "system",
-
-          content:
-            "Give accurate, natural interview answers. Use only verified resume facts. Never invent candidate details.",
-        },
-      ];
-
-      if (
-        Array.isArray(history)
-      ) {
-        history
-          .slice(-6)
-          .forEach((turn) => {
-            if (
-              !turn?.content
-            ) {
-              return;
-            }
-
-            messages.push({
-              role:
-                turn.role ===
-                "assistant"
-                  ? "assistant"
-                  : "user",
-
-              content: String(
-                turn.content
-              ),
-            });
-          });
-      }
-
-      messages.push({
-        role: "user",
-        content: prompt,
+  try {
+    let prompt = "";
+    
+    // Choose the isolated prompt context based on input characteristics
+    if (isSpecialQuestion(cleanQ)) {
+      prompt = buildSpecialPrompt({
+        question: cleanQ,
+        resumeText,
+        interviewLevel,
+        interviewType,
       });
+    } else if (isCodingQuestion(cleanQ)) {
+      prompt = buildCodingPrompt({
+        question: cleanQ,
+        resumeText,
+      });
+    } else {
+      prompt = buildConceptPrompt({
+        question: cleanQ,
+        resumeText,
+        interviewLevel,
+        interviewType,
+        company,
+      });
+    }
 
-      const openaiResponse =
-        await fetch(
-          "https://api.openai.com/v1/chat/completions",
-          {
-            method: "POST",
+    res.status(200);
+    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders?.();
 
-            headers: {
-              Authorization:
-                `Bearer ${process.env.OPENAI_API_KEY}`,
+    // Inject history to maintain conversational memory for follow-up questions
+    const messages = [];
+    messages.push({
+      role: "system",
+      content: "You are an elite technical interview simulator. Ground all your responses strictly in the facts provided in the resume context."
+    });
 
-              "Content-Type":
-                "application/json",
-            },
+    if (Array.isArray(history) && history.length > 0) {
+      history.forEach((turn) => {
+        messages.push({
+          role: turn.role === "assistant" ? "assistant" : "user",
+          content: turn.content,
+        });
+      });
+    }
 
-            body: JSON.stringify({
-              model:
-                OPENAI_MODEL,
+    // Push prompt instructions as the immediate next instruction
+    messages.push({
+      role: "user",
+      content: prompt,
+    });
 
-              messages,
+    const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: OPENAI_MODEL,
+        messages,
+        stream: true,
+        temperature: 0.7, // Adds natural variation for natural-sounding speech delivery
+      }),
+    });
 
-              stream: true,
+    if (!openaiResponse.ok || !openaiResponse.body) {
+      const errorText = await openaiResponse.text();
+      console.error("OpenAI Stream Error:", errorText);
+      res.write("Unable to generate answer right now. Please try again.");
+      return res.end();
+    }
 
-              temperature:
-                0.45,
-            }),
-          }
-        );
-
-      if (
-        !openaiResponse.ok ||
-        !openaiResponse.body
-      ) {
-        const errorText =
-          await openaiResponse.text();
-
-        console.error(
-          "OpenAI Stream Error:",
-          errorText
-        );
-
-        res.write(
-          "Unable to generate answer right now. Please try again."
-        );
-
-        return res.end();
-      }
-
-      const reader =
-        openaiResponse.body.getReader();
-
-      const decoder =
-        new TextDecoder();
-
+    if (typeof openaiResponse.body.getReader === "function") {
+      const reader = openaiResponse.body.getReader();
+      const decoder = new TextDecoder();
       let buffer = "";
 
       while (true) {
-        const {
-          done,
-          value,
-        } = await reader.read();
+        const { done, value } = await reader.read();
+        if (done) break;
 
-        if (done) {
-          break;
-        }
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() || "";
 
-        buffer +=
-          decoder.decode(value, {
-            stream: true,
-          });
+        for (const part of parts) {
+          const lines = part
+            .split("\n")
+            .filter((line) => line.startsWith("data:"));
 
-        const parts =
-          buffer.split("\n\n");
-
-        buffer =
-          parts.pop() || "";
-
-        for (
-          const part of parts
-        ) {
-          const lines =
-            part
-              .split("\n")
-              .filter((line) =>
-                line.startsWith(
-                  "data:"
-                )
-              );
-
-          for (
-            const line of lines
-          ) {
-            const eventData =
-              line
-                .replace(
-                  /^data:\s*/,
-                  ""
-                )
-                .trim();
-
-            if (
-              !eventData ||
-              eventData ===
-                "[DONE]"
-            ) {
-              continue;
-            }
+          for (const line of lines) {
+            const data = line.replace(/^data:\s*/, "").trim();
+            if (!data || data === "[DONE]") continue;
 
             try {
-              const event =
-                JSON.parse(
-                  eventData
-                );
-
-              const delta =
-                extractDeltaFromOpenAIEvent(
-                  event
-                );
-
+              const event = JSON.parse(data);
+              const delta = extractDeltaFromOpenAIEvent(event);
               if (delta) {
                 res.write(delta);
                 res.flush?.();
               }
-            } catch (
-              parseError
-            ) {
-              console.error(
-                "OpenAI stream parse error:",
-                parseError
-              );
+            } catch (err) {
+              console.error("OpenAI stream parse error:", err);
             }
           }
         }
       }
+    } else if (typeof openaiResponse.body[Symbol.asyncIterator] === "function") {
+      const decoder = new TextDecoder();
+      let buffer = "";
 
+      for await (const chunk of openaiResponse.body) {
+        buffer += decoder.decode(chunk, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() || "";
+
+        for (const part of parts) {
+          const lines = part
+            .split("\n")
+            .filter((line) => line.startsWith("data:"));
+
+          for (const line of lines) {
+            const data = line.replace(/^data:\s*/, "").trim();
+            if (!data || data === "[DONE]") continue;
+
+            try {
+              const event = JSON.parse(data);
+              const delta = extractDeltaFromOpenAIEvent(event);
+              if (delta) {
+                res.write(delta);
+                res.flush?.();
+              }
+            } catch (err) {
+              console.error("OpenAI stream parse error:", err);
+            }
+          }
+        }
+      }
+    }
+
+    res.end();
+  } catch (err) {
+    console.error("Answer Stream Error:", err);
+
+    if (!res.headersSent) {
+      res.status(500).send("Server Error while generating answer");
+    } else {
+      res.write("\n\nServer Error while generating answer.");
       res.end();
-    } catch (error) {
-      console.error(
-        "Answer Stream Error:",
-        error
-      );
-
-      writeStreamError(
-        res,
-        "Server Error while generating answer."
-      );
     }
   }
-);
-
-/* =====================================================
-   START SERVER
-===================================================== */
+});
 
 server.listen(PORT, () => {
-  console.log(
-    `Server running on port ${PORT}`
-  );
-
-  console.log(
-    `OpenAI model: ${OPENAI_MODEL}`
-  );
+  console.log(`Server running on port ${PORT}`);
 });
