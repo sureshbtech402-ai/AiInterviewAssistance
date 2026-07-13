@@ -8,6 +8,7 @@ function QuestionPanel({
   loading,
   generateAnswer,
   clearQuestionAndAnswer,
+  stopInterviewMode,
 }) {
   return (
     <div className="question-panel">
@@ -54,6 +55,19 @@ function QuestionPanel({
           onClick={clearQuestionAndAnswer}
         >
           🗑 Clear
+        </button>
+
+        <button
+          type="button"
+          onClick={stopInterviewMode}
+          disabled={!isInterviewRunning}
+          className={
+            isInterviewRunning
+              ? "stop-btn"
+              : "stop-btn disabled"
+          }
+        >
+          ⏹ Stop
         </button>
 
         <button
