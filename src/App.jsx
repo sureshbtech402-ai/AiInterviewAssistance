@@ -18,7 +18,7 @@ import ResumeSummaryCard from "./components/ResumeSummaryCard";
 
 import { extractPdfText } from "./pdfReader";
 import "./styles/app.css";
-import "./styles/resumeSummaryCard.css";
+import "./styles/resumesummarycard.css";
 
 const trimTrailingSlash = (value) =>
   (value || "").replace(/\/+$/, "");
