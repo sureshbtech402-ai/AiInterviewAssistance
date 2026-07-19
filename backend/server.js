@@ -460,13 +460,7 @@ RULES:
 Return exactly:
 
 ## 🎯 Self Introduction
-[One natural spoken introduction]
-
-## 📄 Project Explanation
-[Explain the current project and previous project only when available, in 5 short sentences.]
-
-## 🔧 Roles & Responsibilities
-[Explain the core responsibilities in 5 short sentences.]`;
+[One natural spoken introduction]`;
 }
 
 
@@ -566,20 +560,14 @@ Return exactly this useful structure:
 
 ## 🧩 Main Components
 - **Component:** Brief purpose
-- Add 4 to 7 relevant components
-
-## 🔄 Step-by-Step Working Flow
-1. Explain the request or event flow clearly.
-2. Continue until response, storage, or processing is completed.
+- Add 7 to 10 relevant components
 
 ## ✅ Advantages
 - Add 3 to 5 meaningful advantages.
 
-## 💡 Real-Time Example
-[Give one simple domain-neutral or suitable business example.]
-
-## 📄 Project Connection
-[Connect naturally with the resume only when supported. Otherwise say how the concept can generally be applied without claiming direct experience.]`;
+## 🔄 Step-by-Step Working Flow
+1. Explain the request or event flow clearly.
+2. Continue until response, storage, or processing is completed.`;
 }
 
 function buildConceptPrompt({ question, resumeText }) {
@@ -682,12 +670,15 @@ app.post("/answer", async (req, res) => {
 Give direct, natural, easy-to-speak answers in simple Indian English.
 Use Markdown headings, bullets, numbering, and **bold keywords** exactly as requested by the active prompt.
 Never invent resume or project facts.
+Use the recent conversation messages to understand follow-up questions.
+When the new question is short, such as "why", "how", "explain more", "what about that", or "give an example", connect it to the immediately previous question and answer.
+Do not repeat the complete previous answer. Continue from the relevant point and answer only the follow-up.
 For architecture questions, provide sufficient depth, components, flow, considerations, advantages, example, and project connection.
 For coding questions, provide the simplest working code.`
     });
 
     if (Array.isArray(history) && history.length > 0) {
-      const recentHistory = history.slice(-4);
+      const recentHistory = history.slice(-6);
 
       recentHistory.forEach((turn) => {
         messages.push({
