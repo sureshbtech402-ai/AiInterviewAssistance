@@ -230,7 +230,7 @@ SELF-INTRODUCTION FLOW — FOLLOW THIS ORDER:
 7. End naturally with learning interest and professional growth.
 
 SELF-INTRODUCTION RULES:
-- Keep it between 110 and 150 words.
+- Keep it between 140 and 160 words.
 - Use short and easy-to-speak sentences.
 - Use "currently" and "previously" exactly in the correct project context.
 - Do not call a major/current project a previous project.
@@ -341,21 +341,6 @@ function isSelfIntroductionQuestion(question = "") {
   );
 }
 
-function isProjectQuestion(question = "") {
-  const q = getCleanQuestion(question).toLowerCase().trim();
-  if (!q) return false;
-
-  return (
-    q.includes("explain your project") ||
-    q.includes("about your project") ||
-    q.includes("current project") ||
-    q.includes("previous project") ||
-    q.includes("roles and responsibilities") ||
-    q.includes("responsibilities") ||
-    q.includes("daily activities") ||
-    q.includes("project architecture")
-  );
-}
 
 function isCodingQuestion(question) {
   const q = getCleanQuestion(question).toLowerCase().trim();
@@ -466,7 +451,7 @@ FOLLOW THIS EXACT FLOW:
 RULES:
 - Use only facts from the resume context.
 - Never invent a previous project or company.
-- Keep it between 110 and 150 words.
+- Keep it between 140 and 160 words.
 - Use short, easy-to-speak sentences.
 - Sound confident and professional, not robotic.
 - Do not use Markdown bold inside this introduction because it should read as one clean speech.
@@ -475,45 +460,15 @@ RULES:
 Return exactly:
 
 ## 🎯 Self Introduction
-[One natural spoken introduction]`;
+[One natural spoken introduction]
+
+## 📄 Project Explanation
+[Explain the current project and previous project only when available, in 5 short sentences.]
+
+## 🔧 Roles & Responsibilities
+[Explain the core responsibilities in 5 short sentences.]`;
 }
 
-function buildProjectPrompt({ question, resumeText }) {
-  const cleanQ = getCleanQuestion(question);
-
-  return `You are helping a candidate answer a project-related live interview question.
-
-Structured Resume Context:
-${resumeText || "Resume details are not available"}
-
-Question:
-${cleanQ}
-
-RULES:
-- Answer in first person using natural Indian spoken English.
-- Use only facts available in the resume.
-- Clearly distinguish the **current project** and **previous project**.
-- Never invent architecture, project modules, technologies, or responsibilities.
-- Highlight important technical keywords using Markdown bold, for example **Spring Boot**, **Microservices**, **REST APIs**, and **Spring Data JPA**.
-- Keep project explanations between 140 and 220 words when the question is broad.
-- Use short paragraphs and meaningful subtopics.
-
-Return this structure as applicable:
-
-## 🎯 Project Explanation
-[Natural spoken project explanation]
-
-## 🔧 My Responsibilities
-- [3 to 5 concise resume-supported responsibilities]
-
-## 🧰 Technologies Used
-- [Only relevant technologies from the resume]
-
-If a previous project is explicitly available, add:
-
-## ⏮️ Previous Project
-[Short natural explanation]`;
-}
 
 function buildCodingPrompt({ question }) {
   const cleanQ = getCleanQuestion(question);
@@ -617,9 +572,6 @@ Return exactly this useful structure:
 1. Explain the request or event flow clearly.
 2. Continue until response, storage, or processing is completed.
 
-## 🛡️ Important Design Considerations
-- Cover relevant topics such as **security**, **scalability**, **fault tolerance**, **data consistency**, **logging**, **monitoring**, or **deployment**.
-
 ## ✅ Advantages
 - Add 3 to 5 meaningful advantages.
 
@@ -659,11 +611,11 @@ ANSWER LENGTH:
 
 Return exactly:
 
-## 🎯 Interview Answer
+## 🎯 Best Interview Answer
 [Direct natural spoken answer with important keywords bolded]
 
-## 📌 Quick Points
-- [3 to 5 concise points with important keywords bolded]`;
+## 📌 Real-Time-Use
+- [3 to 5 concise Real-Time-Use points with important keywords bolded]`;
 }
 
 function extractDeltaFromOpenAIEvent(event) {
@@ -705,8 +657,6 @@ app.post("/answer", async (req, res) => {
     
     if (isSelfIntroductionQuestion(cleanQ)) {
       prompt = buildSelfIntroductionPrompt({ question: cleanQ, resumeText });
-    } else if (isProjectQuestion(cleanQ)) {
-      prompt = buildProjectPrompt({ question: cleanQ, resumeText });
     } else if (isCodingQuestion(cleanQ)) {
       prompt = buildCodingPrompt({ question: cleanQ });
     } else if (isScenarioQuestion(cleanQ)) {
@@ -768,7 +718,7 @@ For coding questions, provide the simplest working code.`
           ? 650
           : isArchitectureQuestion(cleanQ)
             ? 1000
-            : isScenarioQuestion(cleanQ) || isProjectQuestion(cleanQ)
+            : isScenarioQuestion(cleanQ)
               ? 650
               : 450,
       }),
