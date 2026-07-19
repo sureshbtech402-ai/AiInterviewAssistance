@@ -560,7 +560,7 @@ Return exactly this useful structure:
 
 ## 🧩 Main Components
 - **Component:** Brief purpose
-- Add 7 to 10 relevant components
+- Add 7 to 9 relevant components
 
 ## ✅ Advantages
 - Add 3 to 5 meaningful advantages.
