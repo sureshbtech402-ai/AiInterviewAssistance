@@ -202,48 +202,66 @@ app.post("/resume-summary", async (req, res) => {
   try {
     const { resumeText } = req.body;
 
-    if (!resumeText) {
+    if (!resumeText || !String(resumeText).trim()) {
       return res.status(400).json({ resumeProfile: null });
     }
 
-    const prompt = `
-You are a resume extraction and interview preparation assistant.
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ resumeProfile: null });
+    }
 
-Extract only facts explicitly present in the resume. Do not guess or invent company names, experience, projects, tools, metrics, responsibilities, or achievements. Keep missing values empty.
+    const prompt = `
+You are a strict resume extraction and interview preparation assistant.
+
+Extract ONLY facts explicitly available in the resume. Never guess or invent company names, experience, projects, domains, tools, responsibilities, achievements, metrics, or dates. Keep missing values as an empty string or empty array.
 
 Resume Content:
 ${resumeText}
 
-Create one recommended self-introduction in simple, natural Indian spoken English. It should sound like the candidate is speaking directly in an interview.
+Create ONE recommended self-introduction in simple, natural Indian spoken English. It must sound like the candidate is directly answering in a live interview, not like a resume summary.
 
-SELF-INTRODUCTION STYLE:
-- Start naturally with: "Hi, I am [Name]."
-- Mention total experience, primary role, and current company only when present.
-- Mention the strongest relevant technologies from the resume without making the list too long.
-- Briefly mention the current or major project, domain, and core responsibilities when present.
-- End naturally with interest in learning, solving technical problems, and professional growth.
-- Keep it between 100 and 130 words.
+SELF-INTRODUCTION FLOW — FOLLOW THIS ORDER:
+1. Start with: "Hi, I am [Candidate Name]."
+2. Mention total experience, primary role, and current company when available.
+3. Mention the strongest core technologies from the resume.
+4. Say: "Currently, I am working on..." and explain the current project, domain/client type, and main responsibilities.
+5. Say: "Previously, I worked on..." and briefly explain the previous project and responsibilities ONLY when a genuine previous project exists in the resume.
+6. Mention collaboration, development, testing, deployment, or support activities only when supported by the resume.
+7. End naturally with learning interest and professional growth.
+
+SELF-INTRODUCTION RULES:
+- Keep it between 110 and 150 words.
+- Use short and easy-to-speak sentences.
+- Use "currently" and "previously" exactly in the correct project context.
+- Do not call a major/current project a previous project.
+- Never invent a previous project just to complete the format.
 - Do not use difficult corporate words.
 - Do not begin sentences with "So", "Basically", "Actually", or "Mainly".
 
-For rolesAndResponsibilities, each point must start with a clear action verb such as Developed, Implemented, Integrated, Fixed, Deployed, or Tested.
+For responsibilities, every point must begin with an action verb such as Developed, Implemented, Integrated, Fixed, Deployed, Tested, Designed, Configured, or Maintained.
 
 Return exactly one valid JSON object using this schema:
 {
-  "candidateSummary": "Brief factual professional summary",
+  "candidateName": "Candidate name",
   "experience": "Total experience exactly as found",
+  "currentCompany": "Current company",
+  "primaryRole": "Primary role",
   "primarySkills": ["Core skills"],
   "secondarySkills": ["Supporting skills"],
-  "currentProjectName": "Current or major project name",
-  "previousProjectName": "Previous project name if available",
-  "projectDomain": "Project domain",
-  "projectSummary": "Brief factual project overview",
-  "rolesAndResponsibilities": ["Action-oriented responsibility"],
+  "currentProjectName": "Current project name",
+  "currentProjectDomain": "Current project domain or client type",
+  "currentProjectSummary": "Brief factual current project overview",
+  "currentProjectResponsibilities": ["Current project responsibility"],
+  "previousProjectName": "Previous project name if explicitly available",
+  "previousProjectDomain": "Previous project domain if explicitly available",
+  "previousProjectSummary": "Brief factual previous project overview",
+  "previousProjectResponsibilities": ["Previous project responsibility"],
   "toolsAndTechnologies": ["Tools and technologies"],
   "achievements": ["Only explicit achievements"],
-  "selfIntroduction": "One recommended natural interview-ready introduction",
-  "projectExplanation": "Natural 3 to 5 sentence spoken project explanation",
-  "rolesExplanation": "Natural spoken explanation of the candidate's core responsibilities"
+  "candidateSummary": "Brief factual professional summary",
+  "selfIntroduction": "One recommended natural interview-ready introduction following the exact flow",
+  "projectExplanation": "Natural spoken explanation covering current project and previous project only when available",
+  "rolesExplanation": "Natural spoken explanation of core responsibilities"
 }
 `;
 
@@ -255,15 +273,20 @@ Return exactly one valid JSON object using this schema:
       },
       body: JSON.stringify({
         model: OPENAI_MODEL,
-        response_format: { type: "json_object" }, 
+        response_format: { type: "json_object" },
         messages: [
+          {
+            role: "system",
+            content:
+              "Extract resume facts accurately and return only valid JSON. Never invent missing details.",
+          },
           {
             role: "user",
             content: prompt,
           },
         ],
         temperature: 0.1,
-        max_completion_tokens: 1200
+        max_completion_tokens: 1500,
       }),
     });
 
@@ -274,23 +297,19 @@ Return exactly one valid JSON object using this schema:
 
     if (!response.ok) {
       console.error("Resume Summary OpenAI Error:", data);
-      return res.json({
-        resumeProfile: null,
-      });
+      return res.status(response.status).json({ resumeProfile: null });
     }
 
-    const text = data.choices[0].message.content.trim();
-    console.log("OUTPUT TEXT:");
-    console.log(text);
+    const text = data?.choices?.[0]?.message?.content?.trim();
+    if (!text) {
+      return res.status(500).json({ resumeProfile: null });
+    }
 
     const resumeProfile = JSON.parse(text);
     res.json({ resumeProfile });
-
   } catch (err) {
     console.error("Resume Summary Error:", err);
-    res.status(500).json({
-      resumeProfile: null,
-    });
+    res.status(500).json({ resumeProfile: null });
   }
 });
 
@@ -298,12 +317,17 @@ function getCleanQuestion(question) {
   if (!question) return "";
   if (typeof question === "string") return question;
   if (typeof question === "object") {
-    return question.question || question.text || question.transcript || JSON.stringify(question);
+    return (
+      question.question ||
+      question.text ||
+      question.transcript ||
+      JSON.stringify(question)
+    );
   }
   return String(question);
 }
 
-function isSpecialQuestion(question = "") {
+function isSelfIntroductionQuestion(question = "") {
   const q = getCleanQuestion(question).toLowerCase().trim();
   if (!q) return false;
 
@@ -311,14 +335,21 @@ function isSpecialQuestion(question = "") {
     q.includes("tell me about yourself") ||
     q.includes("tell me about you") ||
     q.includes("about yourself") ||
-    q.includes("about you") ||
-    q.includes("your self") ||
-    q.includes("yourself") ||
     q.includes("introduce yourself") ||
     q.includes("self introduction") ||
+    q.includes("your self")
+  );
+}
+
+function isProjectQuestion(question = "") {
+  const q = getCleanQuestion(question).toLowerCase().trim();
+  if (!q) return false;
+
+  return (
     q.includes("explain your project") ||
     q.includes("about your project") ||
     q.includes("current project") ||
+    q.includes("previous project") ||
     q.includes("roles and responsibilities") ||
     q.includes("responsibilities") ||
     q.includes("daily activities") ||
@@ -331,17 +362,18 @@ function isCodingQuestion(question) {
   if (!q) return false;
 
   const strongCodingPatterns = [
-    /\bwrite (a|an|the)?\s*(java|python|javascript|sql)?\s*(program|code|function|method|query)\b/,
+    /\bwrite\s+(a|an|the)?\s*(java|python|javascript|sql)?\s*(program|code|function|method|query)\b/,
     /\bwrite code\b/,
     /\bwrite a program\b/,
-    /\bimplement (a|an|the)?\b/,
+    /\bimplement\s+(a|an|the)?\s*(program|algorithm|function|method|solution|code)\b/,
     /\bsolve (this|the) coding\b/,
     /\bfind (the )?(second highest|duplicate|duplicates|unique|largest|smallest)\b/,
-    /\breverse (a|the)?\s*(string|number|array)\b/,
+    /\breverse (a|the)?\s*(string|number|array|list)\b/,
     /\bremove duplicates\b/,
     /\bsort (a|the)?\s*(array|list|string)\b/,
     /\busing streams?\b/,
-    /\bsql query\b/
+    /\bsql query\b/,
+    /\bprint (only )?(unique|duplicate|duplicates)\b/,
   ];
 
   return strongCodingPatterns.some((pattern) => pattern.test(q));
@@ -372,42 +404,115 @@ function isScenarioQuestion(question) {
     /\bclient escalation\b/,
     /\bfailed transaction\b/,
     /\bdata inconsistency\b/,
-    /\bmicroservice failure\b/
+    /\bmicroservice failure\b/,
+    /\bdeadline\b/,
   ];
 
   return scenarioPatterns.some((pattern) => pattern.test(q));
 }
 
-function buildSpecialPrompt({ question, resumeText }) {
+function isArchitectureQuestion(question) {
+  const q = getCleanQuestion(question).toLowerCase().trim();
+  if (!q) return false;
+
+  const architecturePatterns = [
+    /\barchitecture\b/,
+    /\bsystem design\b/,
+    /\bdesign pattern\b/,
+    /\bend[- ]to[- ]end flow\b/,
+    /\brequest flow\b/,
+    /\bauthentication flow\b/,
+    /\bauthorization flow\b/,
+    /\bdeployment flow\b/,
+    /\bcommunication flow\b/,
+    /\bmicroservice communication\b/,
+    /\bhow .* works internally\b/,
+    /\bcomponents of\b/,
+    /\bhigh level design\b/,
+    /\blow level design\b/,
+    /\bscalability\b/,
+    /\bfault tolerance\b/,
+    /\bapi gateway\b/,
+    /\bservice discovery\b/,
+    /\bcircuit breaker\b/,
+    /\bevent[- ]driven\b/,
+  ];
+
+  return architecturePatterns.some((pattern) => pattern.test(q));
+}
+
+function buildSelfIntroductionPrompt({ question, resumeText }) {
   const cleanQ = getCleanQuestion(question);
 
-  return `You are helping a candidate answer a live interview question.
+  return `You are helping a candidate answer a live interview self-introduction question.
 
-Resume context:
+Structured Resume Context:
+${resumeText || "Resume details are not available"}
+
+Question:
+${cleanQ}
+
+Give exactly ONE recommended self-introduction in natural Indian spoken English.
+
+FOLLOW THIS EXACT FLOW:
+1. "Hi, I am [Name]."
+2. Total experience, primary role, and current company.
+3. Core technical skills.
+4. "Currently, I am working on..." followed by the current project, domain, and main responsibilities.
+5. "Previously, I worked on..." followed by the previous project and responsibilities, only when explicitly available.
+6. Collaboration/development/deployment activities only when supported.
+7. Learning interest and career objective.
+
+RULES:
+- Use only facts from the resume context.
+- Never invent a previous project or company.
+- Keep it between 110 and 150 words.
+- Use short, easy-to-speak sentences.
+- Sound confident and professional, not robotic.
+- Do not use Markdown bold inside this introduction because it should read as one clean speech.
+- Do not start with "So", "Basically", "Actually", or "Mainly".
+
+Return exactly:
+
+## 🎯 Self Introduction
+[One natural spoken introduction]`;
+}
+
+function buildProjectPrompt({ question, resumeText }) {
+  const cleanQ = getCleanQuestion(question);
+
+  return `You are helping a candidate answer a project-related live interview question.
+
+Structured Resume Context:
 ${resumeText || "Resume details are not available"}
 
 Question:
 ${cleanQ}
 
 RULES:
-- Answer in first person, as if the candidate is speaking directly to the interviewer.
-- Use simple, natural Indian spoken English.
-- Use only facts available in the resume context.
-- Never invent companies, experience, projects, technologies, or responsibilities.
-- Use short, easy-to-speak sentences.
-- Sound confident, friendly, and professional.
-- Do not use difficult corporate words.
-- Do not start with "So", "Basically", "Actually", or "Mainly".
+- Answer in first person using natural Indian spoken English.
+- Use only facts available in the resume.
+- Clearly distinguish the **current project** and **previous project**.
+- Never invent architecture, project modules, technologies, or responsibilities.
+- Highlight important technical keywords using Markdown bold, for example **Spring Boot**, **Microservices**, **REST APIs**, and **Spring Data JPA**.
+- Keep project explanations between 140 and 220 words when the question is broad.
+- Use short paragraphs and meaningful subtopics.
 
-If the question is about self-introduction:
-- Return only the heading "## 🎯 Self Introduction" followed by one recommended introduction.
-- Follow this natural flow: name, experience and role, current company, core technologies, project and responsibilities, learning interest, and career goal.
-- Keep it between 100 and 130 words.
+Return this structure as applicable:
 
-If the question is about project, architecture, daily activities, or responsibilities:
-- Return "## 🎯 Interview Answer" with a natural spoken explanation.
-- Add "## 📌 Key Responsibilities" only when useful, with maximum 3 short points.
-- Keep the complete response between 100 and 170 words.`;
+## 🎯 Project Explanation
+[Natural spoken project explanation]
+
+## 🔧 My Responsibilities
+- [3 to 5 concise resume-supported responsibilities]
+
+## 🧰 Technologies Used
+- [Only relevant technologies from the resume]
+
+If a previous project is explicitly available, add:
+
+## ⏮️ Previous Project
+[Short natural explanation]`;
 }
 
 function buildCodingPrompt({ question }) {
@@ -422,12 +527,13 @@ RULES:
 - Use Java unless the interviewer explicitly requests another language.
 - Give the simplest complete working solution.
 - Prefer normal loops and basic collections.
-- Use Java Streams only when the question asks for streams.
+- Use Java Streams only when the question explicitly asks for streams.
 - Avoid advanced logic unless required.
 - Use simple variable names.
 - Include required imports and a main method when needed.
 - Keep comments minimal.
 - Do not provide multiple solutions unless requested.
+- Bold the important explanation keywords such as **approach**, **loop**, **condition**, and **time complexity**.
 
 Return only this format:
 
@@ -437,7 +543,7 @@ Return only this format:
 \`\`\`
 
 ## 🎤 How to Explain
-[Explain the logic naturally in 3 to 4 short sentences. Mention time complexity only when useful.]`;
+[Explain the logic naturally in 3 to 5 short sentences.]`;
 }
 
 function buildScenarioPrompt({ question, resumeText }) {
@@ -445,26 +551,26 @@ function buildScenarioPrompt({ question, resumeText }) {
 
   return `You are helping a Java Backend Developer answer a scenario-based live interview question.
 
-Candidate Resume Summary:
+Structured Resume Context:
 ${resumeText || "Resume summary is not available"}
 
 Interview Question:
 ${cleanQ}
 
 TASK:
-Understand the scenario, find the closest matching experience in the resume, and create a meaningful answer the candidate can speak directly.
+Understand the scenario, check the resume context for the closest matching experience, and create a meaningful answer the candidate can speak directly.
 
 RULES:
 - Use simple, natural Indian spoken English.
 - Use "I", "my team", and "in my project" naturally.
 - Use only facts available in the resume.
-- Never invent incidents, tools, numbers, achievements, client names, or results.
-- When the resume supports the scenario, connect it naturally with the relevant project, responsibility, and technology.
-- When the exact scenario is not present, clearly say: "I have not faced the exact same situation, but based on my project experience, I would handle it in this way."
+- Never invent incidents, tools, numbers, achievements, clients, or results.
+- When the resume supports the scenario, connect it with the relevant project, responsibility, and technology.
+- When the exact incident is not present, clearly say: "I have not faced the exact same situation, but based on my project experience, I would handle it in this way."
 - Explain the situation, responsibility, technical actions, result or expected outcome, and prevention or learning.
-- Do not label the response as STAR unless the question asks for STAR format.
+- Highlight important technical actions and technologies using Markdown bold.
+- Keep the answer between 140 and 220 words.
 - Do not start with "So", "Basically", "Actually", or "Mainly".
-- Keep it between 120 and 180 words.
 
 Return exactly:
 
@@ -472,7 +578,56 @@ Return exactly:
 [Natural spoken interview answer]
 
 ## 📌 Key Actions
-- [Maximum 3 short technical actions]`;
+- [3 to 4 short technical actions with important keywords bolded]`;
+}
+
+function buildArchitecturePrompt({ question, resumeText }) {
+  const cleanQ = getCleanQuestion(question);
+
+  return `You are helping a Java Backend Developer answer a broad architecture, design, or end-to-end flow question in a live interview.
+
+Candidate Resume Context:
+${resumeText || "Resume summary is not available"}
+
+Question:
+${cleanQ}
+
+ARCHITECTURE ANSWER RULES:
+- First answer the general concept correctly for ANY business domain. Do not restrict the answer only to the candidate's project domain.
+- Explain enough subtopics so the candidate can continue speaking when the interviewer asks deeper questions.
+- Use simple, natural Indian spoken English.
+- Highlight every important component, technology, flow step, advantage, and technical keyword using Markdown bold.
+- Do not only list component names; briefly explain what each component does.
+- Explain communication, data handling, security, fault tolerance, scalability, monitoring, and deployment when they are relevant to the asked architecture.
+- Connect to the candidate's project only in the final project section and only when supported by the resume.
+- Never invent project-specific components.
+- Keep the answer around 300 to 450 words depending on complexity.
+- Avoid repeated content and difficult corporate wording.
+
+Return exactly this useful structure:
+
+## 🎯 Definition
+[Direct spoken definition with important keywords bolded]
+
+## 🧩 Main Components
+- **Component:** Brief purpose
+- Add 4 to 7 relevant components
+
+## 🔄 Step-by-Step Working Flow
+1. Explain the request or event flow clearly.
+2. Continue until response, storage, or processing is completed.
+
+## 🛡️ Important Design Considerations
+- Cover relevant topics such as **security**, **scalability**, **fault tolerance**, **data consistency**, **logging**, **monitoring**, or **deployment**.
+
+## ✅ Advantages
+- Add 3 to 5 meaningful advantages.
+
+## 💡 Real-Time Example
+[Give one simple domain-neutral or suitable business example.]
+
+## 📄 Project Connection
+[Connect naturally with the resume only when supported. Otherwise say how the concept can generally be applied without claiming direct experience.]`;
 }
 
 function buildConceptPrompt({ question, resumeText }) {
@@ -480,35 +635,35 @@ function buildConceptPrompt({ question, resumeText }) {
 
   return `You are helping a Java Backend Developer answer a live technical interview question.
 
-Candidate context:
+Candidate Context:
 ${resumeText || "Java Backend Developer with Spring Boot and Microservices experience"}
 
-Interview question:
+Interview Question:
 ${cleanQ}
 
-SPEAKING STYLE:
+RULES:
 - Answer exactly as the candidate can speak directly to the interviewer.
 - Use simple and natural Indian spoken English.
-- Start directly with the definition or main answer.
-- Use natural phrases such as "It is used to", "For example", "The main difference is", and "In my project" only when suitable.
-- Use "I" naturally for genuine project experience.
-- Do not use difficult or exaggerated corporate words.
+- Start directly with the definition or main difference.
+- Highlight all important technical terms and differences using Markdown bold.
+- For comparison questions, explain both concepts clearly and then state the main difference.
+- Mention project usage only when the resume genuinely supports it.
+- Never invent project usage.
+- Do not use difficult or exaggerated words.
 - Do not start with "So", "Basically", "Actually", or "Mainly".
-- Do not invent project usage. Mention the project only when the resume supports it.
 
 ANSWER LENGTH:
-- Small concept, annotation, keyword, or difference: 60 to 100 words.
-- Project or practical explanation: 100 to 150 words.
-- Architecture or end-to-end flow: maximum 220 words.
+- Small concept, annotation, keyword, collection, or difference: 90 to 140 words.
+- Practical or project-related concept: 120 to 180 words.
 - Do not repeat the same information.
 
 Return exactly:
 
 ## 🎯 Interview Answer
-[Direct natural spoken answer]
+[Direct natural spoken answer with important keywords bolded]
 
 ## 📌 Quick Points
-- [Maximum 3 short points]`;
+- [3 to 5 concise points with important keywords bolded]`;
 }
 
 function extractDeltaFromOpenAIEvent(event) {
@@ -548,26 +703,18 @@ app.post("/answer", async (req, res) => {
   try {
     let prompt = "";
     
-    // Choose the isolated prompt context based on input characteristics
-    if (isSpecialQuestion(cleanQ)) {
-      prompt = buildSpecialPrompt({
-        question: cleanQ,
-        resumeText,
-      });
+    if (isSelfIntroductionQuestion(cleanQ)) {
+      prompt = buildSelfIntroductionPrompt({ question: cleanQ, resumeText });
+    } else if (isProjectQuestion(cleanQ)) {
+      prompt = buildProjectPrompt({ question: cleanQ, resumeText });
     } else if (isCodingQuestion(cleanQ)) {
-      prompt = buildCodingPrompt({
-        question: cleanQ,
-      });
+      prompt = buildCodingPrompt({ question: cleanQ });
     } else if (isScenarioQuestion(cleanQ)) {
-      prompt = buildScenarioPrompt({
-        question: cleanQ,
-        resumeText,
-      });
+      prompt = buildScenarioPrompt({ question: cleanQ, resumeText });
+    } else if (isArchitectureQuestion(cleanQ)) {
+      prompt = buildArchitecturePrompt({ question: cleanQ, resumeText });
     } else {
-      prompt = buildConceptPrompt({
-        question: cleanQ,
-        resumeText,
-      });
+      prompt = buildConceptPrompt({ question: cleanQ, resumeText });
     }
 
     res.status(200);
@@ -583,8 +730,9 @@ app.post("/answer", async (req, res) => {
       role: "system",
       content: `You are a live interview answer assistant.
 Give direct, natural, easy-to-speak answers in simple Indian English.
-Keep answers concise and meaningful.
-Use only resume-supported facts for project claims.
+Use Markdown headings, bullets, numbering, and **bold keywords** exactly as requested by the active prompt.
+Never invent resume or project facts.
+For architecture questions, provide sufficient depth, components, flow, considerations, advantages, example, and project connection.
 For coding questions, provide the simplest working code.`
     });
 
@@ -615,8 +763,14 @@ For coding questions, provide the simplest working code.`
         model: OPENAI_MODEL,
         messages,
         stream: true,
-        temperature: 0.35,
-        max_completion_tokens: isCodingQuestion(cleanQ) ? 500 : 350
+        temperature: 0.3,
+        max_completion_tokens: isCodingQuestion(cleanQ)
+          ? 650
+          : isArchitectureQuestion(cleanQ)
+            ? 1000
+            : isScenarioQuestion(cleanQ) || isProjectQuestion(cleanQ)
+              ? 650
+              : 450,
       }),
     });
 
