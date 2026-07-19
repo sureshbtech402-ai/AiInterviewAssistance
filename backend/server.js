@@ -215,7 +215,7 @@ app.post("/resume-summary", async (req, res) => {
 
     Second, when writing the conversational fields ("selfIntroduction", "projectExplanation", "rolesExplanation"), you must adhere to these CRITICAL SPOKEN TONE RULES:
     1. EXTREMELY NATURAL SPOKEN FLOW: Formulate the "selfIntroduction" field to match this exact template structure based strictly on the candidate's real resume details:
-       "Thank you for giving me this opportunity to introduce myself. My name is [Candidate Name], and I am from [Location/Native Place if in resume]. I have around [Years] years of experience as a [Primary Role, e.g., Java Backend Developer] and currently work at [Current Company Name, e.g., Tata Consultancy Services]. My technical skills include [Core Tech Stack list, e.g., Java, Spring Boot, Microservices, Hibernate, SQL, REST APIs, Kafka, Docker, Kubernetes, Git, and Maven]. Currently, I am working on the [Project Name, e.g., ING Digitization] project for a [Domain, e.g., banking] client, where I [Core Responsibilities, e.g., develop REST APIs, implement business logic, and work with Spring Data JPA and microservices]. I enjoy learning new technologies and solving technical problems. I am looking for an opportunity where I can contribute, learn, and grow professionally. Thank you."
+       "I am [Candidate Name], I have around [Years] years of experience as a [Primary Role, e.g., Java Backend Developer] and currently work at [Current Company Name, e.g., Tata Consultancy Services]. I have Experience in [Core Tech Stack list, e.g., Java, Spring Boot, Microservices, Hibernate, SQL, REST APIs, Kafka, Docker, Kubernetes, Git, and Maven]. Currently, I am working on the [Project Name, e.g., ING Digitization] project for a [Domain, e.g., banking] client, where I [Core Responsibilities, e.g., develop REST APIs, implement business logic, and work with Spring Data JPA and microservices]. I enjoy learning new technologies and solving technical problems. I am looking for an opportunity where I can contribute, learn, and grow professionally."
        If any of these details (like Location or Company Name) are not present in the resume, omit those specific statements naturally without leaving blank templates.
     2. BAN WEAK FILLERS: Do NOT start any sentence or bullet point with words like "So,", "Basically,", "Mainly,", "Actually,", "Like,", or "As such,".
     3. ACTION VERB MANDATE: For roles and responsibilities, every single point must begin directly with a strong, active technical verb (e.g., "Implemented...", "Developed...", "Architected...", "Optimized..."). No pronouns like "I" or "We" inside bullet points.
@@ -349,7 +349,7 @@ Question: ${cleanQ}
 
 CRITICAL RULES FOR THE SELF-INTRODUCTION:
 1. EXTREMELY NATURAL FLOW (MATCH THIS EXACT STYLE): 
-   "Thank you for giving me this opportunity to introduce myself. My name is Suresh Chinnamadula, and I am from Anantapur, Andhra Pradesh. I have around 4 years of experience as a Java Backend Developer and currently work at Tata Consultancy Services. My technical skills include Java, Spring Boot, Microservices, Hibernate, SQL, REST APIs, Apache Kafka, Docker, Kubernetes, Git, and Maven. Currently, I am working on the ING Digitization project for a banking client, where I develop REST APIs, implement business logic, and work with Spring Data JPA and microservices. I enjoy learning new technologies and solving technical problems. I am looking for an opportunity where I can contribute, learn, and grow professionally. Thank you."
+   "I am Suresh Chinnamadula, I have around 4 years of experience as a Java Backend Developer and I am currently working in TCS. I have experience in Java, Spring Boot, Microservices, Hibernate, SQL, REST APIs, Apache Kafka, Docker, Kubernetes, Git, and Maven. Currently, I am working on the ING Digitization project for a banking client, where I develop REST APIs, implement business logic, and work with Spring Data JPA and microservices. I enjoy learning new technologies and solving technical problems. I am looking for an opportunity where I can contribute, learn, and grow professionally."
    Make sure it matches this structure exactly, naturally filling in the brackets with actual facts from the provided Resume Context.
 2. BAN WEAK FILLERS: Absolutely never use words like "So,", "Basically,", "Mainly,", "Actually,", "Like,", or "As such,".
 3. TECHNICAL ACTION BULLETS: In the "Roles and Responsibilities" section, create exactly 3 high-impact bullet points demonstrating technical ownership. Every single bullet point MUST begin directly with a strong, active technical verb (e.g., "Implemented...", "Developed...", "Architected...", "Optimized...").
@@ -358,12 +358,15 @@ CRITICAL RULES FOR THE SELF-INTRODUCTION:
 Return exactly this Markdown structure and nothing else:
 
 ## 🎯 Self Introduction
-[Insert the highly natural, specific, conversational spoken response here]
+[Insert the highly natural, specific, conversational indian spoken response here]
 
 ## ⭐ Roles and Responsibilities
-- [Active Technical Verb]...
-- [Active Technical Verb]...
-- [Active Technical Verb]...`;
+- [Active Technical Verb with conversational indian spoken response here]...
+- [Active Technical Verb with conversational indian spoken response here]...
+- [Active Technical Verb with conversational indian spoken response here]...
+- [Active Technical Verb with conversational indian spoken response here]...
+- [Active Technical Verb with conversational indian spoken response here]...
+- [Active Technical Verb with conversational indian spoken response here]...`;
 }
 
 function buildCodingPrompt({
@@ -388,8 +391,8 @@ CRITICAL CODING LANGUAGE RULE:
 Question: ${cleanQ}
 
 INSTRUCTIONS:
-1. Provide ONLY the complete, working, and well-commented code block under the "## 💻 Code" section.
-2. Provide the complexity analysis and a 4-5 sentence spoken-ready explanation of how the code is structured under "### How the Code is Written".
+1. Provide ONLY the complete, working, Simple logic, and well-commented code block under the "## 💻 Code" section.
+2. Provide the 4-5 sentence spoken-ready explanation of how the code is Written under "### How the Code is Written".
 3. Do NOT include any "Best Interview Ready Answer", "Real-Time Use", "Project Related Answer", or other conceptual headings. Keep it completely isolated to code.
 
 Return exactly this Markdown structure:
@@ -398,7 +401,7 @@ Return exactly this Markdown structure:
 [Provide the complete working Simple logic code block here in their primary language]
 
 ### How the Code is Written
-[Concise 3-4 sentence explanation of the logic, approach, and how it executes optimal data management]`;
+[Provide 4-5 sentence explanation of how the logic is Written, approach, and how it executes in a clear, natural, and conversational indian spoken tone]`;
 }
 
 function buildConceptPrompt({
@@ -419,36 +422,100 @@ Target Type: ${interviewType || "Technical"}
 
 Question: ${cleanQ}
 
-INSTRUCTIONS FOR "BEST INTERVIEW READY ANSWER" (🎯 Best Interview Ready Answer):
-- provide sentence indian spoken-ready explanation.
-- Start directly with the main definition of the core concept. Make it highly clear, clean, and conversational.
-- If the question asks about a specific annotation, keyword, framework, or concept (like @SpringBootApplication), start with a direct definition highlighted with an emoji: 👉 "[Concept] is...".
-- EXAMPLE FORMAT: 👉 "@SpringBootApplication is the main starting annotation that enables a Spring Boot application. It combines @Configuration, @EnableAutoConfiguration, and @ComponentScan, which helps in configuring the application automatically and scanning all Spring components."
-- Immediately follow that definition with direct, simple bullet points explaining each sub-component (e.g., explaining @Configuration, @EnableAutoConfiguration, and @ComponentScan) in very simple words.
-- Ensure the total explanation is extremely direct, punchy, conversational, and finishes within 100-120 words.
-- BAN WEAK FILLERS: Do NOT start sentences or clauses with "So,", "Basically,", "Mainly,", or "Actually,".
+  INSTRUCTIONS FOR "BEST INTERVIEW READY ANSWER" (🎯 Best Interview Ready Answer):
 
-INSTRUCTIONS FOR KEY TAKEAWAYS (⭐ Real-Time Use):
-- provide sentence indian spoken-ready explanation.
-- Provide 3-4 high-impact technical bullet points.
-- Highlight core technical keywords in **bold**.
-- Every bullet point MUST start directly with a strong, active technical verb (e.g., "Leveraged...", "Designed...", "Decoupled...", "Optimized..."). STRICTLY BAN starting with pronouns like "I", "We", "My", "Also", or "Additionally".
+  - Provide Indian spoken interview-ready explanations.
+  - Detect whether the interview question is:
+    1. Small Technical Concept
+    2. Architecture / Design Pattern / System Design / End-to-End Flow
+    3. Project Experience
 
-INSTRUCTIONS FOR PROJECT LINK (📄 Project Related Answer):
-- provide sentence indian spoken-ready explanation.
-- Provide a brief 3-4 line conversational application tying this technical concept directly to a technology or responsibility listed in the resume (e.g., ING Digitization, Spring Boot).
+  - If the question is a Small Technical Concept (annotations, keywords, exceptions, collections, Spring concepts, APIs, Hibernate, etc.):
+    - Start directly with the main definition of the core concept.
+    - If the question is about a specific annotation, keyword, framework, or concept (like @SpringBootApplication), start with:
+      👉 "[Concept] is..."
+    - Immediately explain each important sub-component using simple bullet points.
+    - Keep the explanation within 100-120 words.
+    - Make it conversational and easy to speak in an interview.
 
-Return exactly this Markdown structure:
+  - If the question is about an Architecture, Design Pattern, System Design, Authentication Flow, Communication Flow, Deployment Flow, or any broad technical topic, DO NOT limit the answer to 100-120 words.
 
-## 🎯 Best Interview Ready Answer
-[Your direct definition starting with a 👉 emoji, followed immediately by simple bullet points breaking down each sub-component in simple words]
+    Instead explain in this order:
 
-## ⭐ Real-Time Use
-- [Strong Active Verb]...
-- [Strong Active Verb]...
+    👉 Definition
+    👉 Main Components
+    👉 Step-by-Step Working Flow
+    👉 Advantages
+    👉 Real-Time Example
+    👉 Project Usage (if applicable)
 
-## 📄 Project Related Answer
-[Provide a short 3-4 line conversational application tying this concept directly to a technology or responsibility listed in the resume]`;
+  - For architecture questions, explain each component briefly instead of only listing names.
+
+  - Keep architecture answers around 250-400 words depending on the complexity of the topic.
+
+  - Use simple Indian spoken English suitable for interviews.
+
+  - Start directly with the explanation. Never give unnecessary introductions.
+
+  - BAN WEAK FILLERS:
+    Do NOT start sentences with:
+    "So,"
+    "Basically,"
+    "Actually,"
+    "Mainly,"
+
+  - Highlight important technical keywords using **bold** formatting.
+
+  ------------------------------------------------------------
+
+  INSTRUCTIONS FOR KEY TAKEAWAYS (⭐ Real-Time Use)
+
+  - Provide Indian spoken interview-ready explanations.
+  - Provide 3-4 high-impact technical bullet points.
+  - Highlight important technical keywords in **bold**.
+  - Every bullet must start with a strong action verb.
+
+  Examples:
+  - Designed...
+  - Leveraged...
+  - Optimized...
+  - Implemented...
+  - Configured...
+  - Integrated...
+  - Secured...
+  - Deployed...
+
+  Do NOT start with:
+  - I
+  - We
+  - My
+  - Also
+  - Additionally
+
+  ------------------------------------------------------------
+
+  INSTRUCTIONS FOR PROJECT LINK (📄 Project Related Answer)
+
+  - Provide Indian spoken interview-ready explanations.
+  - Connect the concept directly with my resume whenever possible.
+  - If the concept was used in my project, explain how it was used in ING Digitization using Spring Boot, Microservices, WebClient, JPA, Docker, Kubernetes, REST APIs, or related technologies.
+  - Keep it conversational in 3-4 lines.
+
+  ------------------------------------------------------------
+
+  Return exactly this Markdown structure:
+
+  ## 🎯 Best Interview Ready Answer
+  [Provide the answer based on the detected question type.]
+
+  ## ⭐ Real-Time Use
+  - ...
+  - ...
+  - ...
+  - ...
+
+  ## 📄 Project Related Answer
+  [Provide a short conversational project-related explanation whenever applicable.]`;
 }
 
 function extractDeltaFromOpenAIEvent(event) {

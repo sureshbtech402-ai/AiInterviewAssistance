@@ -17,59 +17,6 @@ function UploadResume({
 
   return (
     <section className="interview-setup">
-      <div className="setup-hero">
-        <div className="setup-hero-content">
-          <div className="setup-badge">
-            <span className="setup-badge-dot"></span>
-            AI Interview Preparation
-          </div>
-
-          <h1 className="setup-heading">
-            Let&apos;s ace your next interview
-            <span className="setup-heading-icon"> 🚀</span>
-          </h1>
-
-          <p className="setup-description">
-            Upload your resume, choose your interview preferences and start a
-            personalised AI-powered interview session.
-          </p>
-
-          <div className="setup-features">
-            <div className="setup-feature">
-              <span className="setup-feature-icon">🎤</span>
-              Live speech recognition
-            </div>
-
-            <div className="setup-feature">
-              <span className="setup-feature-icon">🤖</span>
-              AI interview answers
-            </div>
-
-            <div className="setup-feature">
-              <span className="setup-feature-icon">📄</span>
-              Resume-based responses
-            </div>
-          </div>
-        </div>
-
-        <div className="setup-robot-card">
-          <div className="robot-glow"></div>
-
-          <div className="robot-icon">🤖</div>
-
-          <h3>AI Interview Assistant</h3>
-
-          <p>
-            Your profile will be analysed and used to provide personalised
-            interview-ready answers.
-          </p>
-
-          <div className="assistant-status">
-            <span className="assistant-status-dot"></span>
-            Ready to assist
-          </div>
-        </div>
-      </div>
 
       <div className="config-card">
         <div className="config-card-header">

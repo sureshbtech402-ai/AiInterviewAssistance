@@ -9,8 +9,7 @@ function AnswerPanel({ answerData, loading }) {
       ? answerData
       : "";
 
-  const hasAnswer =
-    answerText.trim().length > 0;
+  const hasAnswer = answerText.trim().length > 0;
 
   const copyAnswer = () => {
     navigator.clipboard.writeText(answerText || "");
@@ -18,85 +17,33 @@ function AnswerPanel({ answerData, loading }) {
 
   return (
     <div className="answer-panel">
-
-      {/* HEADER */}
-
       <div className="answer-header">
-
-        <div className="answer-title-wrapper">
-
-          <div className="answer-icon">
-            🤖
-          </div>
-
-          <div>
-
-            <h2 className="answer-title">
-              AI Interview Answer
-            </h2>
-
-            <p className="answer-subtitle">
-              Live interview-ready response
-            </p>
-
-          </div>
-
-        </div>
-
-        {loading && hasAnswer && (
-
-          <div className="streaming-badge">
-
-            <span className="stream-dot"></span>
-
-            Streaming
-
-          </div>
-
-        )}
-
+        <h2 className="answer-title">
+          Interview Answer
+        </h2>
       </div>
 
-      {/* BODY */}
-
       <div className="answer-body">
-
         {loading && !hasAnswer ? (
-
           <div className="loading-container">
-
             <div className="loader"></div>
 
             <div className="loading-text">
               AI is thinking...
             </div>
-
           </div>
-
         ) : !hasAnswer ? (
-
           <div className="empty-container">
-
-            <div className="empty-icon">
-              🤖
-            </div>
-
-            <h3>
-              AI is waiting...
-            </h3>
+            <h3>AI is waiting...</h3>
 
             <p>
               Ask a question or click
-              <b> Generate AI Answer </b>
+              <b> Generate Answer </b>
               to receive an interview-ready response.
             </p>
-
           </div>
-
         ) : (
-
           <div className="stream-card">
-
             <ReactMarkdown
               components={{
                 h1: ({ children }) => (
@@ -141,7 +88,6 @@ function AnswerPanel({ answerData, loading }) {
                   children,
                   ...props
                 }) {
-
                   const match =
                     /language-(\w+)/.exec(className || "");
 
@@ -149,78 +95,53 @@ function AnswerPanel({ answerData, loading }) {
                     String(children).replace(/\n$/, "");
 
                   if (!inline && match) {
-
                     return (
-
                       <SyntaxHighlighter
                         style={oneDark}
                         language={match[1]}
                         PreTag="div"
                         customStyle={{
-                          borderRadius: "16px",
-                          fontSize: "15px",
-                          padding: "22px",
-                          margin: "20px 0",
-                          lineHeight: "1.7",
+                          borderRadius: "12px",
+                          fontSize: "14px",
+                          padding: "16px",
+                          margin: "14px 0",
+                          lineHeight: "1.6",
                         }}
                         {...props}
                       >
-
                         {codeText}
-
                       </SyntaxHighlighter>
-
                     );
-
                   }
 
                   return (
-
                     <code
                       className="inline-code"
                       {...props}
                     >
-
                       {children}
-
                     </code>
-
                   );
-
                 },
-
               }}
             >
-
               {answerText}
-
             </ReactMarkdown>
-
           </div>
-
         )}
-
       </div>
 
-      {/* FOOTER */}
-
       {hasAnswer && (
-
         <div className="copy-footer">
-
           <button
+            type="button"
             className="copy-btn"
             onClick={copyAnswer}
           >
-
             📋 Copy
-
           </button>
-
         </div>
-
       )}
-
     </div>
   );
 }
