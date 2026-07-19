@@ -49,11 +49,6 @@ function App() {
   const [answerData, setAnswerData] =
     useState(null);
 
-  const [
-    conversationHistory,
-    setConversationHistory,
-  ] = useState([]);
-
   const [loading, setLoading] =
     useState(false);
 
@@ -117,7 +112,6 @@ function App() {
   const textareaRef = useRef(null);
 
   const answerAbortRef = useRef(null);
-  const conversationHistoryRef = useRef([]);
   const silenceTimerRef = useRef(null);
   const liveQuestionRef = useRef("");
   const questionLockedRef = useRef(false);
@@ -173,120 +167,157 @@ function App() {
       );
     }
 
-    const formatList = (value) =>
-      Array.isArray(value)
-        ? value
-            .map((item) =>
-              String(item || "").trim()
-            )
+    const primarySkills = Array.isArray(
+      resumeProfile.primarySkills
+    )
+      ? resumeProfile.primarySkills.join(", ")
+      : "";
+
+    const secondarySkills = Array.isArray(
+      resumeProfile.secondarySkills
+    )
+      ? resumeProfile.secondarySkills.join(
+          ", "
+        )
+      : "";
+
+    const responsibilities =
+      Array.isArray(
+        resumeProfile.rolesAndResponsibilities
+      )
+        ? resumeProfile.rolesAndResponsibilities.join(
+            "\n- "
+          )
+        : "";
+
+    const tools = Array.isArray(
+      resumeProfile.toolsAndTechnologies
+    )
+      ? resumeProfile.toolsAndTechnologies.join(
+          ", "
+        )
+      : "";
+
+    const achievements = Array.isArray(
+      resumeProfile.achievements
+    )
+      ? resumeProfile.achievements.join(
+          "\n- "
+        )
+      : "";
+
+    const previousCompanies =
+      Array.isArray(
+        resumeProfile.previousCompanies
+      )
+        ? resumeProfile.previousCompanies
+            .map((item) => {
+              return [
+                item.companyName || "",
+                item.designation || "",
+                item.duration || "",
+              ]
+                .filter(Boolean)
+                .join(" | ");
+            })
             .filter(Boolean)
-            .map((item) => `- ${item}`)
             .join("\n")
+        : "";
+
+    const employmentHistory =
+      Array.isArray(
+        resumeProfile.employmentHistory
+      )
+        ? resumeProfile.employmentHistory
+            .map((item) => {
+              return [
+                item.isCurrent
+                  ? "Current"
+                  : "Previous",
+                item.companyName || "",
+                item.designation || "",
+                item.duration || "",
+              ]
+                .filter(Boolean)
+                .join(" | ");
+            })
+            .filter(Boolean)
+            .join("\n")
+        : "";
+
+    const previousProjects =
+      Array.isArray(
+        resumeProfile.previousProjectNames
+      )
+        ? resumeProfile.previousProjectNames.join(
+            ", "
+          )
         : "";
 
     return `
 Candidate Name:
 ${resumeProfile.candidateName || ""}
 
-Total Experience:
-${resumeProfile.experience || ""}
-
-Current Company:
-${resumeProfile.currentCompany || ""}
-
-Primary Role:
-${resumeProfile.primaryRole || ""}
-
-Primary Skills:
-${formatList(resumeProfile.primarySkills)}
-
-Secondary Skills:
-${formatList(resumeProfile.secondarySkills)}
-
-Current Project Name:
-${resumeProfile.currentProjectName || ""}
-
-Current Project Domain:
-${resumeProfile.currentProjectDomain || ""}
-
-Current Project Summary:
-${resumeProfile.currentProjectSummary || ""}
-
-Current Project Responsibilities:
-${formatList(
-  resumeProfile.currentProjectResponsibilities
-)}
-
-Previous Project Name:
-${resumeProfile.previousProjectName || ""}
-
-Previous Project Domain:
-${resumeProfile.previousProjectDomain || ""}
-
-Previous Project Summary:
-${resumeProfile.previousProjectSummary || ""}
-
-Previous Project Responsibilities:
-${formatList(
-  resumeProfile.previousProjectResponsibilities
-)}
-
-Tools and Technologies:
-${formatList(
-  resumeProfile.toolsAndTechnologies
-)}
-
-Achievements:
-${formatList(resumeProfile.achievements)}
+Location:
+${resumeProfile.location || ""}
 
 Candidate Summary:
 ${resumeProfile.candidateSummary || ""}
 
-Prepared Self Introduction:
+Total Experience:
+${resumeProfile.experience || ""}
+
+Current Company:
+${resumeProfile.currentCompany?.companyName || ""}
+
+Current Designation:
+${resumeProfile.currentCompany?.designation || ""}
+
+Current Company Duration:
+${resumeProfile.currentCompany?.duration || ""}
+
+Previous Companies:
+${previousCompanies}
+
+Complete Employment History:
+${employmentHistory}
+
+Primary Skills:
+${primarySkills}
+
+Secondary Skills:
+${secondarySkills}
+
+Current Project:
+${resumeProfile.currentProjectName || ""}
+
+Previous Projects:
+${previousProjects}
+
+Project Domain:
+${resumeProfile.projectDomain || ""}
+
+Project Summary:
+${resumeProfile.projectSummary || ""}
+
+Roles and Responsibilities:
+- ${responsibilities}
+
+Tools and Technologies:
+${tools}
+
+Achievements:
+- ${achievements}
+
+Self Introduction:
 ${resumeProfile.selfIntroduction || ""}
 
-Prepared Project Explanation:
+Project Explanation:
 ${resumeProfile.projectExplanation || ""}
 
-Prepared Roles and Responsibilities:
+Roles Explanation:
 ${resumeProfile.rolesExplanation || ""}
 `.trim();
-  };
-
-  const saveConversationTurn = (
-    askedQuestion,
-    generatedAnswer
-  ) => {
-    const cleanQuestion = String(
-      askedQuestion || ""
-    ).trim();
-
-    const cleanAnswer = String(
-      generatedAnswer || ""
-    ).trim();
-
-    if (!cleanQuestion || !cleanAnswer) {
-      return;
-    }
-
-    const updatedHistory = [
-      ...conversationHistoryRef.current,
-      {
-        role: "user",
-        content: cleanQuestion,
-      },
-      {
-        role: "assistant",
-        content: cleanAnswer,
-      },
-    ].slice(-8);
-
-    conversationHistoryRef.current =
-      updatedHistory;
-
-    setConversationHistory(
-      updatedHistory
-    );
   };
 
   const updateQuestionFromTranscript = (
@@ -780,8 +811,6 @@ ${resumeProfile.rolesExplanation || ""}
 
         setAnswerData(fullText);
       }
-
-      return fullText.trim();
     } catch (error) {
       if (
         error.name === "AbortError"
@@ -794,8 +823,6 @@ ${resumeProfile.rolesExplanation || ""}
       setAnswerData(
         fallbackMessage
       );
-
-      return "";
     } finally {
       setLoading(false);
     }
@@ -806,31 +833,22 @@ ${resumeProfile.rolesExplanation || ""}
       const introQuestion =
         "Tell me about yourself";
 
-      const generatedAnswer =
-        await streamAnswer(
-          {
-            question: introQuestion,
+      await streamAnswer(
+        {
+          question: introQuestion,
 
-            resumeText:
-              buildResumeContext(),
+          resumeText:
+            buildResumeContext(),
 
-            company:
-              "Ignore target company for self introduction",
+          company:
+            "Ignore target company for self introduction",
 
-            interviewLevel,
+          interviewLevel,
 
-            interviewType,
+          interviewType,
+        },
 
-            history:
-              conversationHistoryRef.current,
-          },
-
-          "Unable to generate self introduction right now."
-        );
-
-      saveConversationTurn(
-        introQuestion,
-        generatedAnswer
+        "Unable to generate self introduction right now."
       );
     };
 
@@ -853,9 +871,6 @@ ${resumeProfile.rolesExplanation || ""}
 
         return;
       }
-
-      conversationHistoryRef.current = [];
-      setConversationHistory([]);
 
       setInterviewStarted(true);
       setShowConfig(false);
@@ -941,36 +956,24 @@ ${resumeProfile.rolesExplanation || ""}
       return;
     }
 
-    const askedQuestion =
-      question.trim();
+    await streamAnswer(
+      {
+        question,
 
-    const generatedAnswer =
-      await streamAnswer(
-        {
-          question: askedQuestion,
+        resumeText:
+          buildResumeContext(),
 
-          resumeText:
-            buildResumeContext(),
+        company:
+          company === "Others"
+            ? customCompany
+            : company,
 
-          company:
-            company === "Others"
-              ? customCompany
-              : company,
+        interviewLevel,
 
-          interviewLevel,
+        interviewType,
+      },
 
-          interviewType,
-
-          history:
-            conversationHistoryRef.current,
-        },
-
-        "Unable to generate answer right now. Please try again."
-      );
-
-    saveConversationTurn(
-      askedQuestion,
-      generatedAnswer
+      "Unable to generate answer right now. Please try again."
     );
   };
 
