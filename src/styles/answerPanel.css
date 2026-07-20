@@ -126,7 +126,7 @@
     width: 100%;
     min-height: max-content;
 
-    padding: 24px 26px 80px;
+    padding: 24px 26px 24px;
 
     border: 1px solid rgba(148, 163, 184, 0.1);
     border-radius: 14px;
@@ -140,6 +140,18 @@
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
 
     animation: fadeUp 0.25s ease;
+}
+
+/*
+ * Extra scroll space allows the final answer section
+ * to move completely to the top of the visible panel.
+ */
+.stream-card::after {
+    content: "";
+    display: block;
+    width: 100%;
+    height: clamp(420px, 68vh, 760px);
+    pointer-events: none;
 }
 
 .markdown-h1,
@@ -407,7 +419,11 @@
     }
 
     .stream-card {
-        padding: 18px 17px 70px;
+        padding: 18px 17px 18px;
+    }
+
+    .stream-card::after {
+        height: clamp(320px, 62vh, 560px);
     }
 
     .markdown-h1 {
