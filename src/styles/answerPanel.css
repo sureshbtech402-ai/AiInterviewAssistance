@@ -1,4 +1,5 @@
 .answer-panel {
+    position: relative;
     height: 100%;
     min-height: 0;
 
@@ -22,40 +23,85 @@
 }
 
 .answer-header {
-    min-height: 48px;
+    min-height: 56px;
     flex-shrink: 0;
 
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 14px;
 
-    padding: 8px 16px;
+    padding: 8px 18px;
 
     border-bottom: 1px solid rgba(148, 163, 184, 0.12);
 
     background: linear-gradient(
         90deg,
-        rgba(15, 23, 42, 0.96),
-        rgba(24, 18, 48, 0.84)
+        rgba(15, 23, 42, 0.98),
+        rgba(24, 18, 48, 0.9)
     );
 }
 
 .answer-title {
     margin: 0;
+
     color: #f8fafc;
-    font-size: 20px;
+
+    font-size: 22px;
     font-weight: 850;
     line-height: 1.2;
 }
 
+.answer-scroll-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.answer-scroll-btn {
+    min-width: 74px;
+    height: 36px;
+
+    padding: 0 11px;
+
+    border: 1px solid rgba(147, 197, 253, 0.24);
+    border-radius: 9px;
+
+    background: rgba(30, 41, 59, 0.92);
+    color: #dbeafe;
+
+    font-size: 13px;
+    font-weight: 800;
+
+    cursor: pointer;
+    user-select: none;
+
+    transition:
+        transform 0.18s ease,
+        background 0.18s ease;
+}
+
+.answer-scroll-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(51, 65, 85, 0.98);
+}
+
 .answer-body {
-    flex: 1;
+    position: relative;
+
+    flex: 1 1 auto;
     min-height: 0;
+    height: 0;
 
-    padding: 12px;
+    padding: 12px 24px 12px 12px;
 
-    overflow-y: scroll;
-    overflow-x: auto;
-    overscroll-behavior: contain;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
 
     background: linear-gradient(
         180deg,
@@ -64,22 +110,23 @@
     );
 
     scroll-behavior: smooth;
-    scrollbar-gutter: stable;
+    scrollbar-gutter: stable both-edges;
+
     cursor: text;
     user-select: text;
     -webkit-user-select: text;
 }
 
 .answer-body:focus {
-    outline: 2px solid rgba(96, 165, 250, 0.45);
-    outline-offset: -2px;
+    outline: 2px solid rgba(96, 165, 250, 0.5);
+    outline-offset: -3px;
 }
 
 .stream-card {
-    min-height: 100%;
     width: 100%;
+    min-height: max-content;
 
-    padding: 22px;
+    padding: 24px 26px 80px;
 
     border: 1px solid rgba(148, 163, 184, 0.1);
     border-radius: 14px;
@@ -99,8 +146,11 @@
 .markdown-h2,
 .markdown-h3 {
     position: relative;
-    margin: 22px 0 14px;
+
+    margin: 26px 0 15px;
+
     color: #facc15;
+
     font-weight: 900;
     letter-spacing: -0.2px;
 }
@@ -112,43 +162,60 @@
 }
 
 .markdown-h1 {
-    font-size: 28px;
+    font-size: 32px;
 }
 
 .markdown-h2 {
-    font-size: 25px;
+    font-size: 29px;
 }
 
 .markdown-h3 {
-    font-size: 22px;
+    font-size: 25px;
 }
 
 .markdown-h2::after,
 .markdown-h3::after {
     content: "";
+
     display: block;
-    width: 48px;
-    height: 3px;
-    margin-top: 7px;
+
+    width: 52px;
+    height: 4px;
+
+    margin-top: 8px;
+
     border-radius: 999px;
-    background: linear-gradient(90deg, #8b5cf6, #2563eb);
+
+    background: linear-gradient(
+        90deg,
+        #8b5cf6,
+        #2563eb
+    );
 }
 
 .markdown-p {
-    margin: 0 0 16px;
+    margin: 0 0 18px;
+
     color: #f8fafc;
-    font-size: 18px;
+
+    font-size: 21px;
     font-weight: 450;
     line-height: 1.82;
+
     cursor: text;
+    user-select: text;
 }
 
 .markdown-li {
-    margin-bottom: 10px;
+    margin-bottom: 12px;
+
     color: #f8fafc;
-    font-size: 18px;
-    line-height: 1.75;
+
+    font-size: 21px;
+    line-height: 1.78;
+
     cursor: text;
+    user-select: text;
 }
 
 .markdown-li::marker {
@@ -162,79 +229,109 @@
 
 .inline-code {
     padding: 3px 7px;
+
     border: 1px solid rgba(56, 189, 248, 0.16);
     border-radius: 6px;
+
     background: #1e293b;
     color: #38bdf8;
-    font-size: 0.94em;
+
+    font-size: 0.95em;
 }
 
 .loading-container,
 .empty-container {
     height: 100%;
     min-height: 220px;
+
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+
     text-align: center;
+
     color: #94a3b8;
 }
 
 .loading-text {
     margin-top: 14px;
+
     color: #60a5fa;
-    font-size: 18px;
+
+    font-size: 19px;
     font-weight: 850;
 }
 
 .empty-container h3 {
     margin: 0 0 8px;
+
     color: #f8fafc;
-    font-size: 22px;
+
+    font-size: 23px;
     font-weight: 850;
 }
 
 .empty-container p {
-    max-width: 420px;
+    max-width: 520px;
+
     margin: 0;
+
     color: #94a3b8;
-    font-size: 16px;
+
+    font-size: 17px;
     line-height: 1.7;
 }
 
 .loader {
     width: 42px;
     height: 42px;
+
     border: 4px solid #1e293b;
     border-top-color: #8b5cf6;
     border-right-color: #2563eb;
     border-radius: 50%;
+
     animation: spin 0.8s linear infinite;
 }
 
 .copy-footer {
     min-height: 52px;
     flex-shrink: 0;
+
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    padding: 7px 12px;
+
+    padding: 7px 18px;
+
     border-top: 1px solid rgba(148, 163, 184, 0.12);
+
     background: rgba(15, 23, 42, 0.97);
 }
 
 .copy-btn {
-    min-width: 90px;
+    min-width: 94px;
     height: 38px;
+
     padding: 0 14px;
+
     border: 1px solid rgba(196, 181, 253, 0.2);
     border-radius: 9px;
-    background: linear-gradient(100deg, #2563eb, #7c3aed);
+
+    background: linear-gradient(
+        100deg,
+        #2563eb,
+        #7c3aed
+    );
+
     color: white;
-    font-size: 13px;
+
+    font-size: 14px;
     font-weight: 850;
+
     cursor: pointer;
+
     transition: 0.2s;
 }
 
@@ -242,9 +339,14 @@
     transform: translateY(-1px);
 }
 
+.answer-body {
+    scrollbar-width: auto;
+    scrollbar-color: #7c8da4 #0f172a;
+}
+
 .answer-body::-webkit-scrollbar {
-    width: 12px;
-    height: 10px;
+    width: 16px;
+    height: 12px;
 }
 
 .answer-body::-webkit-scrollbar-track {
@@ -253,13 +355,16 @@
 }
 
 .answer-body::-webkit-scrollbar-thumb {
-    background: #64748b;
-    border: 2px solid #0f172a;
+    min-height: 60px;
+
+    background: #7c8da4;
+
+    border: 3px solid #0f172a;
     border-radius: 999px;
 }
 
 .answer-body::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+    background: #a5b4c7;
 }
 
 @keyframes fadeUp {
@@ -282,24 +387,43 @@
 
 @media (max-width: 760px) {
     .answer-header {
-        min-height: 44px;
-        padding: 7px 13px;
+        min-height: 52px;
+        padding: 7px 11px;
     }
 
     .answer-title {
         font-size: 18px;
     }
 
+    .answer-scroll-btn {
+        min-width: 52px;
+        height: 34px;
+        padding: 0 8px;
+        font-size: 11px;
+    }
+
     .answer-body {
-        padding: 9px;
+        padding: 9px 17px 9px 9px;
     }
 
     .stream-card {
-        padding: 16px;
+        padding: 18px 17px 70px;
+    }
+
+    .markdown-h1 {
+        font-size: 26px;
+    }
+
+    .markdown-h2 {
+        font-size: 24px;
+    }
+
+    .markdown-h3 {
+        font-size: 22px;
     }
 
     .markdown-p,
     .markdown-li {
-        font-size: 17px;
+        font-size: 18px;
     }
 }
