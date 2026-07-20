@@ -560,14 +560,20 @@ Return exactly this useful structure:
 
 ## 🧩 Main Components
 - **Component:** Brief purpose
-- Add 7 to 9 relevant components
+- Add 4 to 7 relevant components
+
+## 🔄 Step-by-Step Working Flow
+1. Explain the request or event flow clearly.
+2. Continue until response, storage, or processing is completed.
 
 ## ✅ Advantages
 - Add 3 to 5 meaningful advantages.
 
-## 🔄 Step-by-Step Working Flow
-1. Explain the request or event flow clearly.
-2. Continue until response, storage, or processing is completed.`;
+## 💡 Real-Time Example
+[Give one simple domain-neutral or suitable business example.]
+
+## 📄 Project Connection
+[Connect naturally with the resume only when supported. Otherwise say how the concept can generally be applied without claiming direct experience.]`;
 }
 
 function buildConceptPrompt({ question, resumeText }) {
@@ -686,6 +692,33 @@ For coding questions, provide the simplest working code.`
           content: String(turn.content || "").slice(0, 1500),
         });
       });
+    }
+
+    const recentUserQuestion = Array.isArray(history)
+      ? [...history]
+          .reverse()
+          .find((turn) => turn?.role === "user")?.content
+      : "";
+
+    const recentAssistantAnswer = Array.isArray(history)
+      ? [...history]
+          .reverse()
+          .find((turn) => turn?.role === "assistant")?.content
+      : "";
+
+    if (recentUserQuestion || recentAssistantAnswer) {
+      prompt = `${prompt}
+
+FOLLOW-UP CONTEXT:
+Previous question: ${String(
+        recentUserQuestion || ""
+      ).slice(0, 1200)}
+
+Previous answer: ${String(
+        recentAssistantAnswer || ""
+      ).slice(0, 1800)}
+
+IMPORTANT: If the current question refers to the previous topic using words like "it", "that", "this", "why", "how", "more", "example", or is otherwise incomplete by itself, answer it as a continuation of the previous question. Do not restart from the beginning.`;
     }
 
     // Push prompt instructions as the immediate next instruction

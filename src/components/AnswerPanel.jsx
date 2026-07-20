@@ -1,15 +1,36 @@
+import { useEffect, useRef } from "react";
 import "../styles/answerPanel.css";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 function AnswerPanel({ answerData, loading }) {
+  const answerBodyRef = useRef(null);
+  const previousAnswerRef = useRef("");
+
   const answerText =
     typeof answerData === "string"
       ? answerData
       : "";
 
   const hasAnswer = answerText.trim().length > 0;
+
+  useEffect(() => {
+    const previousAnswer = previousAnswerRef.current;
+
+    if (
+      answerText &&
+      answerText !== previousAnswer &&
+      !answerText.startsWith(previousAnswer)
+    ) {
+      answerBodyRef.current?.scrollTo({
+        top: 0,
+        behavior: "auto",
+      });
+    }
+
+    previousAnswerRef.current = answerText;
+  }, [answerText]);
 
   const copyAnswer = () => {
     navigator.clipboard.writeText(answerText || "");
@@ -23,7 +44,12 @@ function AnswerPanel({ answerData, loading }) {
         </h2>
       </div>
 
-      <div className="answer-body">
+      <div
+        ref={answerBodyRef}
+        className="answer-body"
+        tabIndex={0}
+        aria-label="Interview answer content"
+      >
         {loading && !hasAnswer ? (
           <div className="loading-container">
             <div className="loader"></div>
@@ -102,10 +128,10 @@ function AnswerPanel({ answerData, loading }) {
                         PreTag="div"
                         customStyle={{
                           borderRadius: "12px",
-                          fontSize: "14px",
-                          padding: "16px",
+                          fontSize: "16px",
+                          padding: "18px",
                           margin: "14px 0",
-                          lineHeight: "1.6",
+                          lineHeight: "1.7",
                         }}
                         {...props}
                       >
