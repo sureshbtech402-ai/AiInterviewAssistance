@@ -1,48 +1,42 @@
 export async function pipeOpenAIStream(stream, res) {
   const decoder = new TextDecoder();
-
   let buffer = "";
+  let completeAnswer = "";
 
   for await (const chunk of stream) {
     buffer += decoder.decode(chunk, { stream: true });
 
-    const events = buffer.split("\n\n");
+    const events = buffer.split(/\r?\n\r?\n/);
     buffer = events.pop() || "";
 
     for (const event of events) {
-      const line = event
-        .split("\n")
-        .find((l) => l.startsWith("data:"));
+      const dataLine = event
+        .split(/\r?\n/)
+        .find((line) => line.startsWith("data:"));
 
-      if (!line) continue;
+      if (!dataLine) continue;
 
-      const data = line.replace("data:", "").trim();
+      const data = dataLine.slice(5).trim();
 
       if (data === "[DONE]") {
-        res.write("data: [DONE]\n\n");
         res.end();
-        return;
+        return completeAnswer;
       }
 
       try {
-        const json = JSON.parse(data);
-
-        const delta =
-          json?.choices?.[0]?.delta?.content || "";
+        const payload = JSON.parse(data);
+        const delta = payload?.choices?.[0]?.delta?.content || "";
 
         if (delta) {
-          res.write(
-            `data: ${JSON.stringify({
-              text: delta,
-            })}\n\n`
-          );
+          completeAnswer += delta;
+          res.write(delta);
         }
-      } catch (err) {
-        console.error("Stream Parse Error:", err);
+      } catch (error) {
+        console.error("OpenAI stream parse error:", error);
       }
     }
   }
 
-  res.write("data: [DONE]\n\n");
   res.end();
+  return completeAnswer;
 }

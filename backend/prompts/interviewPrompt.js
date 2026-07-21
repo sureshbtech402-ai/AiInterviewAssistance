@@ -1,148 +1,112 @@
+function formatProjects(projects = []) {
+  if (!Array.isArray(projects) || projects.length === 0) {
+    return "No project information available.";
+  }
+
+  return projects
+    .map((project, index) => {
+      const responsibilities = Array.isArray(project?.responsibilities)
+        ? project.responsibilities.join("; ")
+        : "";
+
+      return [
+        `Project ${index + 1}: ${project?.name || ""}`,
+        `Domain: ${project?.domain || ""}`,
+        `Summary: ${project?.summary || ""}`,
+        `Responsibilities: ${responsibilities}`,
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
 export function buildInterviewMessages({
   question,
   profile,
-  history = []
+  history = [],
 }) {
-  const resumeSummary =
-    profile?.resumeSummary || "Resume information is not available.";
-
   const skills = Array.isArray(profile?.skills)
     ? profile.skills.join(", ")
     : "";
 
   const responsibilities = Array.isArray(profile?.responsibilities)
-    ? profile.responsibilities.join("\n- ")
-    : "";
-
-  const projects = Array.isArray(profile?.projects)
-    ? profile.projects
-        .map((project, index) => {
-          const projectResponsibilities = Array.isArray(
-            project?.responsibilities
-          )
-            ? project.responsibilities.join(", ")
-            : "";
-
-          return `
-Project ${index + 1}
-Name: ${project?.name || ""}
-Domain: ${project?.domain || ""}
-Summary: ${project?.summary || ""}
-Responsibilities: ${projectResponsibilities}
-`;
-        })
-        .join("\n")
+    ? profile.responsibilities.join("; ")
     : "";
 
   const systemPrompt = `
-You are a Senior Java and Spring Boot Interview Coach.
-
-Your responsibility is to provide clear, accurate and interview-ready answers.
-
-The candidate should sound like a real professional speaking in an interview.
+You are answering a real technical interview on behalf of the candidate.
+Write the final answer exactly as the candidate should speak to the interviewer.
 
 CANDIDATE PROFILE
-
-Name:
-${profile?.candidateName || ""}
-
-Experience:
-${profile?.experience || ""}
-
-Current Company:
-${profile?.currentCompany || ""}
-
-Primary Role:
-${profile?.primaryRole || ""}
-
-Resume Summary:
-${resumeSummary}
-
-Technical Skills:
-${skills}
-
+Name: ${profile?.candidateName || ""}
+Experience: ${profile?.experience || ""}
+Current company: ${profile?.currentCompany || ""}
+Primary role: ${profile?.primaryRole || ""}
+Resume summary: ${profile?.resumeSummary || ""}
+Skills: ${skills}
 Projects:
-${projects}
+${formatProjects(profile?.projects)}
+Responsibilities: ${responsibilities}
+Prepared self introduction: ${profile?.selfIntroduction || ""}
+Prepared project explanation: ${profile?.projectExplanation || ""}
+Prepared roles explanation: ${profile?.rolesExplanation || ""}
 
-Responsibilities:
-- ${responsibilities}
+MANDATORY ANSWERING STYLE
+- Speak in first person when the question is about the candidate, project, experience, role, troubleshooting, or behaviour.
+- For general technical questions, begin directly, for example: "A HashMap is..." or "In Java, HashMap...".
+- Use simple, confident, professional Indian English.
+- Make the answer natural to speak aloud, not like textbook notes or AI output.
+- Answer the exact question first. Add supporting points only after the direct answer.
+- Keep normal concept answers around 100 to 180 words unless more detail is clearly needed.
+- Use short paragraphs and a few useful bullet points. Do not produce one-word streamed fragments as separate lines.
+- Do not mention prompts, classifications, resume context, or that you are an AI.
+- Never invent experience, project facts, tools, incidents, metrics, or achievements.
+- Use a resume-based project example only when the profile supports it.
+- For coding questions: explain the approach, provide clean code, then mention complexity when relevant.
+- For comparison questions: state the main difference first, then compare clearly.
+- For troubleshooting questions: explain the practical investigation sequence and resolution.
+- For behavioural questions: answer naturally using situation, action, and result without writing those labels unless helpful.
+- For "Tell me about yourself", return the prepared self introduction, improved only for fluency.
+- For project or responsibilities questions, use the supplied project and responsibility details only.
 
-ANSWERING RULES
+FORMAT
+Use Markdown that is easy to read in the interview assistant.
+For a simple concept question, prefer:
 
-1. First understand the exact question.
-2. Answer the question directly.
-3. Do not classify the question in the response.
-4. Do not mention that you are an AI.
-5. Use simple and professional Indian English.
-6. Keep the answer easy to speak in an interview.
-7. Use the candidate's resume only when it is relevant.
-8. Never invent project experience, tools or responsibilities.
-9. For follow-up questions, use the recent conversation context.
-10. Avoid unnecessary theory.
-11. Do not give a very long answer unless the question requires it.
-12. Explain technical topics with a practical example whenever useful.
-13. For project questions, answer as if the candidate is describing their own work.
-14. For behavioural questions, use a natural situation, action and result structure.
-15. For coding questions, provide:
-    - approach
-    - clean code
-    - short explanation
-    - time and space complexity when relevant
-16. For comparison questions, clearly explain the main differences.
-17. For troubleshooting questions, explain the investigation steps in order.
-18. Do not add fake numbers, achievements or production incidents.
-19. Do not repeat the full resume in every answer.
-20. Give only the final interview answer.
+## Answer
+A natural spoken explanation.
 
-RESPONSE FORMAT
+## Key Points
+- Only the most useful points.
 
-Use this format only when it suits the question:
+## Example
+A short practical example when useful.
 
-Definition:
-A direct explanation.
-
-Key Points:
-- Important point
-- Important point
-
-Project Example:
-Explain a relevant example only when the resume supports it.
-
-Interview Tip:
-One short additional point only when useful.
-
-For simple questions, give a direct answer without forcing every heading.
-
-For questions like "Tell me about yourself", use the stored self-introduction.
-
-For questions about the candidate's project, company, role or responsibilities,
-use only the supplied candidate profile.
-
-For technical questions unrelated to the resume, give the correct general answer
-and optionally connect it to the candidate's skills.
-`;
+Do not force every heading. Do not add an "Interview Tip" unless it genuinely improves the answer.
+Return only the final interview-ready answer.
+`.trim();
 
   const messages = [
     {
       role: "system",
-      content: systemPrompt
-    }
+      content: systemPrompt,
+    },
   ];
 
   for (const item of history.slice(-8)) {
-    if (!item?.role || !item?.content) continue;
-
-    if (item.role !== "user" && item.role !== "assistant") continue;
-
-    messages.push({
-      role: item.role,
-      content: String(item.content)
-    });
+    if (
+      (item?.role === "user" || item?.role === "assistant") &&
+      item?.content
+    ) {
+      messages.push({
+        role: item.role,
+        content: String(item.content),
+      });
+    }
   }
 
   messages.push({
     role: "user",
-    content: String(question || "").trim()
+    content: `Interview question: ${String(question || "").trim()}`,
   });
 
   return messages;

@@ -29,9 +29,9 @@ const API_BASE_URL = trimTrailingSlash(
 
 const WS_URL = trimTrailingSlash(
   import.meta.env.VITE_WS_URL ||
-    API_BASE_URL
+    `${API_BASE_URL
       .replace(/^https:/, "wss:")
-      .replace(/^http:/, "ws:")
+      .replace(/^http:/, "ws:")}/listen`
 );
 
 function App() {
@@ -48,11 +48,6 @@ function App() {
   const [answerData, setAnswerData] =
     useState(null);
 
-  const [
-    conversationHistory,
-    setConversationHistory,
-  ] = useState([]);
-
   const [loading, setLoading] =
     useState(false);
 
@@ -60,9 +55,6 @@ function App() {
     interviewStarted,
     setInterviewStarted,
   ] = useState(false);
-
-  const [resumeText, setResumeText] =
-    useState("");
 
   const [resumeName, setResumeName] =
     useState("");
@@ -116,9 +108,7 @@ function App() {
   const textareaRef = useRef(null);
 
   const answerAbortRef = useRef(null);
-  const conversationHistoryRef = useRef([]);
   const silenceTimerRef = useRef(null);
-  const liveQuestionRef = useRef("");
   const questionLockedRef = useRef(false);
 
   const finalTranscriptRef = useRef("");
@@ -162,130 +152,6 @@ function App() {
         visible: false,
       }));
     }, 4500);
-  };
-
-  const buildResumeContext = () => {
-    if (!resumeProfile) {
-      return (
-        resumeText ||
-        "Resume profile not available"
-      );
-    }
-
-    const formatList = (value) =>
-      Array.isArray(value)
-        ? value
-            .map((item) =>
-              String(item || "").trim()
-            )
-            .filter(Boolean)
-            .map((item) => `- ${item}`)
-            .join("\n")
-        : "";
-
-    return `
-Candidate Name:
-${resumeProfile.candidateName || ""}
-
-Total Experience:
-${resumeProfile.experience || ""}
-
-Current Company:
-${resumeProfile.currentCompany || ""}
-
-Primary Role:
-${resumeProfile.primaryRole || ""}
-
-Primary Skills:
-${formatList(resumeProfile.primarySkills)}
-
-Secondary Skills:
-${formatList(resumeProfile.secondarySkills)}
-
-Current Project Name:
-${resumeProfile.currentProjectName || ""}
-
-Current Project Domain:
-${resumeProfile.currentProjectDomain || ""}
-
-Current Project Summary:
-${resumeProfile.currentProjectSummary || ""}
-
-Current Project Responsibilities:
-${formatList(
-  resumeProfile.currentProjectResponsibilities
-)}
-
-Previous Project Name:
-${resumeProfile.previousProjectName || ""}
-
-Previous Project Domain:
-${resumeProfile.previousProjectDomain || ""}
-
-Previous Project Summary:
-${resumeProfile.previousProjectSummary || ""}
-
-Previous Project Responsibilities:
-${formatList(
-  resumeProfile.previousProjectResponsibilities
-)}
-
-Tools and Technologies:
-${formatList(
-  resumeProfile.toolsAndTechnologies
-)}
-
-Achievements:
-${formatList(resumeProfile.achievements)}
-
-Candidate Summary:
-${resumeProfile.candidateSummary || ""}
-
-Prepared Self Introduction:
-${resumeProfile.selfIntroduction || ""}
-
-Prepared Project Explanation:
-${resumeProfile.projectExplanation || ""}
-
-Prepared Roles and Responsibilities:
-${resumeProfile.rolesExplanation || ""}
-`.trim();
-  };
-
-  const saveConversationTurn = (
-    askedQuestion,
-    generatedAnswer
-  ) => {
-    const cleanQuestion = String(
-      askedQuestion || ""
-    ).trim();
-
-    const cleanAnswer = String(
-      generatedAnswer || ""
-    ).trim();
-
-    if (!cleanQuestion || !cleanAnswer) {
-      return;
-    }
-
-    const updatedHistory = [
-      ...conversationHistoryRef.current,
-      {
-        role: "user",
-        content: cleanQuestion,
-      },
-      {
-        role: "assistant",
-        content: cleanAnswer,
-      },
-    ].slice(-8);
-
-    conversationHistoryRef.current =
-      updatedHistory;
-
-    setConversationHistory(
-      updatedHistory
-    );
   };
 
   const updateQuestionFromTranscript = (
@@ -346,9 +212,6 @@ ${resumeProfile.rolesExplanation || ""}
       .join(" ")
       .trim();
 
-    liveQuestionRef.current =
-      completeQuestion;
-
     setQuestion(completeQuestion);
 
     silenceTimerRef.current =
@@ -358,9 +221,6 @@ ${resumeProfile.rolesExplanation || ""}
 
         const completedQuestion =
           finalTranscriptRef.current.trim();
-
-        liveQuestionRef.current =
-          completedQuestion;
 
         setQuestion(completedQuestion);
 
@@ -501,11 +361,12 @@ ${resumeProfile.rolesExplanation || ""}
       setResumeName(file.name);
       setResumeProfile(null);
       setSkills([]);
+      localStorage.removeItem(
+        "sessionId"
+      );
 
       const text =
         await extractPdfText(file);
-
-      setResumeText(text);
 
       const response = await fetch(
         `${API_BASE_URL}/resume-summary`,
@@ -531,10 +392,19 @@ ${resumeProfile.rolesExplanation || ""}
 
       const data = await response.json();
 
-              localStorage.setItem(
-            "sessionId",
-            data.sessionId
+      if (
+        !data.sessionId ||
+        !data.resumeProfile
+      ) {
+        throw new Error(
+          "Backend returned an incomplete resume profile"
         );
+      }
+
+      localStorage.setItem(
+        "sessionId",
+        data.sessionId
+      );
 
       if (!data.resumeProfile) {
         throw new Error(
@@ -574,9 +444,11 @@ ${resumeProfile.rolesExplanation || ""}
       );
 
       setResumeName("");
-      setResumeText("");
       setResumeProfile(null);
       setSkills([]);
+      localStorage.removeItem(
+        "sessionId"
+      );
     } finally {
       setResumeProcessing(false);
     }
@@ -585,7 +457,6 @@ ${resumeProfile.rolesExplanation || ""}
   const startInterviewMode =
     async () => {
       setQuestion("");
-      setAnswerData(null);
 
       questionLockedRef.current =
         false;
@@ -593,7 +464,6 @@ ${resumeProfile.rolesExplanation || ""}
       ignoreStaleTranscriptRef.current =
         false;
 
-      liveQuestionRef.current = "";
       finalTranscriptRef.current = "";
       interimTranscriptRef.current = "";
 
@@ -608,7 +478,11 @@ ${resumeProfile.rolesExplanation || ""}
           await navigator.mediaDevices.getDisplayMedia(
             {
               video: true,
-              audio: true,
+              audio: {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false,
+              },
             }
           );
 
@@ -708,23 +582,34 @@ ${resumeProfile.rolesExplanation || ""}
 
         recorder.start(100);
       } catch (error) {
-        console.error(error);
+        console.error("Interview audio error:", error);
 
-        showToast(
-          "Unable to start interview audio. Check sharing permissions.",
-          "error"
-        );
+        const message =
+          error?.name === "NotAllowedError"
+            ? "Screen sharing was cancelled or blocked. Select a Chrome tab and enable Share tab audio."
+            : error?.message ||
+              "Unable to start interview audio. Select a Chrome tab and enable Share tab audio.";
 
+        showToast(message, "error");
         stopInterviewMode();
       }
     };
 
   const streamAnswer = async (
-    payload,
+    questionText,
     fallbackMessage
   ) => {
     try {
       answerAbortRef.current?.abort();
+
+      const sessionId =
+        localStorage.getItem("sessionId");
+
+      if (!sessionId) {
+        throw new Error(
+          "Resume session is missing. Upload the resume again."
+        );
+      }
 
       answerAbortRef.current =
         new AbortController();
@@ -732,70 +617,84 @@ ${resumeProfile.rolesExplanation || ""}
       setLoading(true);
       setAnswerData("");
 
-      const response = await fetch(`${API_BASE_URL}/answer`,
+      const response = await fetch(
+        `${API_BASE_URL}/answer`,
         {
           method: "POST",
-
           headers: {
-            "Content-Type": "application/json",
-            "x-session-id": localStorage.getItem("sessionId")
+            "Content-Type":
+              "application/json",
+            "x-session-id":
+              sessionId,
           },
-
           signal:
             answerAbortRef.current.signal,
-
-          body: JSON.stringify(payload),
+          body: JSON.stringify({
+            question: questionText,
+          }),
         }
       );
 
-      if (
-        !response.ok ||
-        !response.body
-      ) {
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => ({}));
+
         throw new Error(
-          "Failed to generate answer"
+          errorData.message ||
+            "Failed to generate answer."
+        );
+      }
+
+      if (!response.body) {
+        throw new Error(
+          "Streaming response is unavailable."
         );
       }
 
       const reader =
         response.body.getReader();
-
       const decoder =
         new TextDecoder();
 
       let fullText = "";
 
       while (true) {
-        const {
-          done,
-          value,
-        } = await reader.read();
+        const { done, value } =
+          await reader.read();
 
         if (done) break;
 
-        const chunk =
-          decoder.decode(value, {
-            stream: true,
-          });
+        const text = decoder.decode(
+          value,
+          { stream: true }
+        );
 
-        fullText += chunk;
-
+        fullText += text;
         setAnswerData(fullText);
       }
+
+      fullText += decoder.decode();
+      setAnswerData(fullText);
 
       return fullText.trim();
     } catch (error) {
       if (
         error.name === "AbortError"
       ) {
-        return;
+        return "";
       }
 
-      console.error(error);
-
-      setAnswerData(
-        fallbackMessage
+      console.error(
+        "Answer generation error:",
+        error
       );
+
+      const message =
+        error.message || fallbackMessage;
+
+      setAnswerData(message);
+      showToast(message, "error");
 
       return "";
     } finally {
@@ -803,37 +702,80 @@ ${resumeProfile.rolesExplanation || ""}
     }
   };
 
-  const generateSelfIntroAnswer = async () => {
-    const selfIntroduction = String(
-      resumeProfile?.selfIntroduction || ""
-    ).trim();
-
-    const projectExplanation = String(
+  const createProjectExplanation = () => {
+    const prepared = String(
       resumeProfile?.projectExplanation || ""
     ).trim();
 
-    const rolesExplanation = String(
+    if (prepared) return prepared;
+
+    const projectName =
+      resumeProfile?.currentProjectName ||
+      "my current project";
+
+    const domain =
+      resumeProfile?.currentProjectDomain;
+
+    const summary =
+      resumeProfile?.currentProjectSummary;
+
+    return [
+      `My current project is ${projectName}.`,
+      domain
+        ? `It belongs to the ${domain} domain.`
+        : "",
+      summary || "",
+    ]
+      .filter(Boolean)
+      .join(" ") ||
+      "Project details are not available in the uploaded resume.";
+  };
+
+  const createRolesExplanation = () => {
+    const prepared = String(
       resumeProfile?.rolesExplanation || ""
     ).trim();
 
+    if (prepared) return prepared;
+
+    const responsibilities =
+      resumeProfile?.currentProjectResponsibilities;
+
+    if (
+      Array.isArray(responsibilities) &&
+      responsibilities.length
+    ) {
+      return responsibilities
+        .map((item) => `- ${String(item).trim()}`)
+        .join("\n");
+    }
+
+    return "Roles and responsibilities are not available in the uploaded resume.";
+  };
+
+  const generateSelfIntroAnswer = () => {
+    const selfIntroduction =
+      String(
+        resumeProfile?.selfIntroduction || ""
+      ).trim() ||
+      String(
+        resumeProfile?.candidateSummary || ""
+      ).trim() ||
+      "Self introduction is not available in the uploaded resume.";
+
     const preparedAnswer = `## 🎯 Self Introduction
 
-${selfIntroduction || "Self introduction is not available."}
+${selfIntroduction}
 
 ## 📄 Project Explanation
 
-${projectExplanation || "Project explanation is not available."}
+${createProjectExplanation()}
 
 ## 🔧 Roles & Responsibilities
 
-${rolesExplanation || "Roles and responsibilities are not available."}`;
+${createRolesExplanation()}`;
 
     setAnswerData(preparedAnswer);
-
-    saveConversationTurn(
-      "Tell me about yourself, explain your project, and describe your roles and responsibilities.",
-      preparedAnswer
-    );
   };
 
   const startInterviewFlow =
@@ -856,17 +798,11 @@ ${rolesExplanation || "Roles and responsibilities are not available."}`;
         return;
       }
 
-      conversationHistoryRef.current = [];
-      setConversationHistory([]);
-
       setInterviewStarted(true);
       setShowConfig(false);
 
       await startInterviewMode();
-
-      setTimeout(() => {
-        generateSelfIntroAnswer();
-      }, 500);
+      generateSelfIntroAnswer();
     };
 
   const stopInterviewMode = () => {
@@ -919,7 +855,6 @@ ${rolesExplanation || "Roles and responsibilities are not available."}`;
       ignoreStaleTranscriptRef.current =
         true;
 
-      liveQuestionRef.current = "";
       finalTranscriptRef.current = "";
       interimTranscriptRef.current = "";
 
@@ -946,19 +881,11 @@ ${rolesExplanation || "Roles and responsibilities are not available."}`;
     const askedQuestion =
       question.trim();
 
-    const generatedAnswer =
-      await streamAnswer(
-        {
-          question: askedQuestion,
-        },
-
-        "Unable to generate answer right now. Please try again."
-      );
-
-    saveConversationTurn(
+    await streamAnswer(
       askedQuestion,
-      generatedAnswer
+      "Unable to generate answer right now. Please try again."
     );
+
   };
 
   if (authLoading) {
@@ -993,6 +920,9 @@ ${rolesExplanation || "Roles and responsibilities are not available."}`;
         user={user}
         logout={() => {
           stopInterviewMode();
+          localStorage.removeItem(
+            "sessionId"
+          );
           signOut(auth);
           setUser(null);
         }}

@@ -1,139 +1,72 @@
 import express from "express";
 
-import { getProfile } from "../store/resumeStore.js";
+import { getProfile, hasResume } from "../store/resumeStore.js";
 import { buildInterviewMessages } from "../prompts/interviewPrompt.js";
 import { streamOpenAI } from "../services/openaiService.js";
 import { pipeOpenAIStream } from "../utils/openaiStream.js";
-
 import {
   addUserMessage,
   addAssistantMessage,
-  getHistory
+  getHistory,
 } from "../utils/history.js";
-
 import { getCleanQuestion } from "../utils/question.js";
 
 const router = express.Router();
 
 router.post("/answer", async (req, res) => {
   try {
-
-    //---------------------------------
-    // Session Id
-    //---------------------------------
-
     const sessionId = req.headers["x-session-id"];
 
     if (!sessionId) {
       return res.status(400).json({
         success: false,
-        message: "Missing x-session-id header."
+        message: "Missing x-session-id header.",
       });
     }
 
-    //---------------------------------
-    // Question
-    //---------------------------------
+    if (!hasResume(sessionId)) {
+      return res.status(404).json({
+        success: false,
+        message: "Resume session expired. Upload the resume again.",
+      });
+    }
 
-    const { question } = req.body;
+    const cleanQuestion = getCleanQuestion(req.body?.question);
 
-    if (!question || !question.trim()) {
+    if (!cleanQuestion) {
       return res.status(400).json({
         success: false,
-        message: "Question is required."
+        message: "Question is required.",
       });
     }
 
-    const cleanQuestion = getCleanQuestion(question);
-
-    //---------------------------------
-    // Resume
-    //---------------------------------
-
     const profile = getProfile(sessionId);
-
-    //---------------------------------
-    // Previous Conversation
-    //---------------------------------
-
-    const history = getHistory(sessionId);
-
-    //---------------------------------
-    // Build Prompt
-    //---------------------------------
+    const history = getHistory(sessionId, 8);
 
     const messages = buildInterviewMessages({
       question: cleanQuestion,
       profile,
-      history
+      history,
     });
 
-    //---------------------------------
-    // SSE Headers
-    //---------------------------------
-
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-
-    //---------------------------------
-    // OpenAI Stream
-    //---------------------------------
+    res.status(200);
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.flushHeaders?.();
 
     const stream = await streamOpenAI(messages);
-
-    let completeAnswer = "";
-
-    const originalWrite = res.write.bind(res);
-
-    res.write = (chunk) => {
-      try {
-
-        const text = chunk.toString();
-
-        if (
-          text.startsWith("data:") &&
-          !text.includes("[DONE]")
-        ) {
-
-          const json = JSON.parse(
-            text.replace("data:", "").trim()
-          );
-
-          if (json.text) {
-            completeAnswer += json.text;
-          }
-
-        }
-
-      } catch (err) {
-        // Ignore parsing errors
-      }
-
-      return originalWrite(chunk);
-    };
-
-    //---------------------------------
-    // Send Stream to React
-    //---------------------------------
-
-    await pipeOpenAIStream(stream, res);
-
-    //---------------------------------
-    // Save Conversation
-    //---------------------------------
+    const completeAnswer = await pipeOpenAIStream(stream, res);
 
     addUserMessage(sessionId, cleanQuestion);
     addAssistantMessage(sessionId, completeAnswer);
-
-  } catch (err) {
-
-    console.error("Answer Route Error:", err);
+  } catch (error) {
+    console.error("Answer route error:", error);
 
     if (!res.headersSent) {
       return res.status(500).json({
         success: false,
-        message: err.message
+        message: error.message || "Unable to generate answer.",
       });
     }
 

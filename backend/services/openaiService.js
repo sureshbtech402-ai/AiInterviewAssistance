@@ -43,7 +43,7 @@ export async function streamOpenAI(messages, res) {
       messages,
       stream: true,
       temperature: 0.25,
-      max_completion_tokens: 800,
+      max_completion_tokens: 1200,
     }),
   });
 

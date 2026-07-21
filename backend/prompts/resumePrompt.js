@@ -1,148 +1,75 @@
 export function buildResumePrompt(resumeText) {
   return `
-You are a Senior Technical Recruiter and Interview Coach.
+You are a senior technical recruiter and interview coach.
+Analyze the resume and create a factual interview profile.
 
-Your job is to analyze the candidate's resume and extract ONLY factual information.
+STRICT RULES
+- Use only information supported by the resume.
+- Do not invent companies, projects, technologies, experience, responsibilities, achievements, or metrics.
+- When a value is unavailable, use an empty string or empty array.
+- Return only valid JSON. Do not use markdown or code fences.
 
-VERY IMPORTANT RULES
-
-- Never invent information.
-- Never guess company names.
-- Never guess projects.
-- Never guess experience.
-- Never guess responsibilities.
-- Never add technologies not present.
-- If something is missing return an empty string or empty array.
-
---------------------------------------------------
-
-Resume
-
+RESUME
 ${resumeText}
 
---------------------------------------------------
-
-Generate ONE interview-ready profile.
-
-Return ONLY valid JSON.
-
-Schema:
-
+RETURN THIS EXACT JSON STRUCTURE
 {
-  "candidateName":"",
-  "experience":"",
-  "currentCompany":"",
-  "primaryRole":"",
-
-  "resumeSummary":"",
-
-  "selfIntroduction":"",
-
-  "skills":[
-
+  "candidateName": "",
+  "experience": "",
+  "currentCompany": "",
+  "primaryRole": "",
+  "resumeSummary": "",
+  "selfIntroduction": "",
+  "projectExplanation": "",
+  "rolesExplanation": "",
+  "skills": [],
+  "primarySkills": [],
+  "projects": [
+    {
+      "name": "",
+      "domain": "",
+      "summary": "",
+      "responsibilities": []
+    }
   ],
-
-  "projects":[
-      {
-        "name":"",
-        "domain":"",
-        "summary":"",
-        "responsibilities":[]
-      }
-  ],
-
-  "responsibilities":[]
+  "responsibilities": [],
+  "currentProjectName": "",
+  "currentProjectDomain": "",
+  "currentProjectSummary": "",
+  "currentProjectResponsibilities": []
 }
 
---------------------------------------------------
+WRITING REQUIREMENTS
 
-SELF INTRODUCTION
+selfIntroduction:
+- Write 100 to 130 words.
+- Write exactly as the candidate should speak in an interview.
+- Use simple, confident, professional Indian English.
+- Cover name, experience, current company/role, core skills, current project, key responsibilities, and a short professional closing.
+- Use one natural paragraph. No bullets and no headings.
 
-Write it exactly like the candidate is speaking.
+projectExplanation:
+- Write 120 to 180 words in first person, as the candidate should explain the current or most recent project.
+- Explain the project purpose/domain, major modules or flow, technologies, the candidate's contribution, and how services interact, but only when supported by the resume.
+- Keep it natural and interview-ready.
 
-Use simple Indian English.
+rolesExplanation:
+- Write 100 to 160 words in first person.
+- Summarize the candidate's actual day-to-day responsibilities from the resume.
+- Make it easy to speak aloud and do not invent responsibilities.
 
-Length:
-100-120 words.
+resumeSummary:
+- Write a concise factual summary in 6 to 8 sentences.
 
-Structure:
+skills and primarySkills:
+- Include only technical skills found in the resume.
 
-Hi, I am ...
+projects:
+- Return every identifiable project separately.
 
-Experience...
+currentProject fields:
+- Populate them from the current or most recent project.
 
-Current company...
-
-Core skills...
-
-Current project...
-
-Main responsibilities...
-
-Finish with one professional closing sentence.
-
-Do NOT sound like ChatGPT.
-
-Do NOT use difficult English.
-
-Do NOT use bullet points.
-
---------------------------------------------------
-
-RESUME SUMMARY
-
-Write only 8-10 lines.
-
-Mention
-
-Experience
-
-Role
-
-Skills
-
-Current Project
-
-Main Technologies
-
-Responsibilities
-
---------------------------------------------------
-
-SKILLS
-
-Return only technical skills.
-
---------------------------------------------------
-
-PROJECTS
-
-Return every project separately.
-
-Each project should contain
-
-name
-
-domain
-
-summary
-
-responsibilities
-
---------------------------------------------------
-
-RESPONSIBILITIES
-
-Merge all important responsibilities into one array.
-
---------------------------------------------------
-
-Return ONLY JSON.
-
-No markdown.
-
-No explanation.
-
-No code block.
-`;
+Return only the JSON object.
+`.trim();
 }
