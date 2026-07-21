@@ -1,5 +1,5 @@
 import express from "express";
-import { v4 as uuidv4 } from "uuid";
+import crypto from "node:crypto";
 
 import { askOpenAI } from "../services/openaiService.js";
 import { buildResumePrompt } from "../prompts/resumePrompt.js";
@@ -9,7 +9,6 @@ const router = express.Router();
 
 router.post("/resume-summary", async (req, res) => {
   try {
-
     //----------------------------------------
     // Read Resume Text
     //----------------------------------------
@@ -19,7 +18,7 @@ router.post("/resume-summary", async (req, res) => {
     if (!resumeText || !resumeText.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Resume text is required."
+        message: "Resume text is required.",
       });
     }
 
@@ -27,7 +26,7 @@ router.post("/resume-summary", async (req, res) => {
     // Generate Session ID
     //----------------------------------------
 
-    const sessionId = uuidv4();
+    const sessionId = crypto.randomUUID();
 
     //----------------------------------------
     // Build Prompt
@@ -43,13 +42,13 @@ router.post("/resume-summary", async (req, res) => {
       [
         {
           role: "user",
-          content: prompt
-        }
+          content: prompt,
+        },
       ],
       {
         responseFormat: "json_object",
         temperature: 0.2,
-        maxTokens: 2500
+        maxTokens: 2500,
       }
     );
 
@@ -72,18 +71,15 @@ router.post("/resume-summary", async (req, res) => {
     return res.status(200).json({
       success: true,
       sessionId,
-      profile
+      resumeProfile: profile,
     });
-
   } catch (err) {
-
     console.error("Resume Summary Error:", err);
 
     return res.status(500).json({
       success: false,
-      message: err.message || "Internal Server Error"
+      message: err.message || "Internal Server Error",
     });
-
   }
 });
 
