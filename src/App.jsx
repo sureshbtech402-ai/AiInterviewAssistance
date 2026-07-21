@@ -529,8 +529,12 @@ ${resumeProfile.rolesExplanation || ""}
         );
       }
 
-      const data =
-        await response.json();
+      const data = await response.json();
+
+              localStorage.setItem(
+            "sessionId",
+            data.sessionId
+        );
 
       if (!data.resumeProfile) {
         throw new Error(
@@ -728,14 +732,13 @@ ${resumeProfile.rolesExplanation || ""}
       setLoading(true);
       setAnswerData("");
 
-      const response = await fetch(
-        `${API_BASE_URL}/answer`,
+      const response = await fetch(`${API_BASE_URL}/answer`,
         {
           method: "POST",
 
           headers: {
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
+            "x-session-id": localStorage.getItem("sessionId")
           },
 
           signal:
@@ -947,21 +950,6 @@ ${rolesExplanation || "Roles and responsibilities are not available."}`;
       await streamAnswer(
         {
           question: askedQuestion,
-
-          resumeText:
-            buildResumeContext(),
-
-          company:
-            company === "Others"
-              ? customCompany
-              : company,
-
-          interviewLevel,
-
-          interviewType,
-
-          history:
-            conversationHistoryRef.current,
         },
 
         "Unable to generate answer right now. Please try again."
