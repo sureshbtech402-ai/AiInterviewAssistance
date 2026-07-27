@@ -120,6 +120,7 @@ function App() {
   const silenceTimerRef = useRef(null);
   const liveQuestionRef = useRef("");
   const questionLockedRef = useRef(false);
+  const waitingForNextQuestionRef = useRef(false);
 
   const finalTranscriptRef = useRef("");
   const interimTranscriptRef = useRef("");
@@ -295,6 +296,14 @@ ${resumeProfile.rolesExplanation || ""}
       payload?.text || ""
     ).trim();
 
+    if (waitingForNextQuestionRef.current && text) {
+      waitingForNextQuestionRef.current = false;
+      finalTranscriptRef.current = "";
+      interimTranscriptRef.current = "";
+      liveQuestionRef.current = "";
+      setQuestion("");
+    }
+
     if (
       !text ||
       questionLockedRef.current
@@ -353,7 +362,6 @@ ${resumeProfile.rolesExplanation || ""}
 
     silenceTimerRef.current =
       setTimeout(() => {
-        questionLockedRef.current = true;
         interimTranscriptRef.current = "";
 
         const completedQuestion =
@@ -584,6 +592,9 @@ ${resumeProfile.rolesExplanation || ""}
       setAnswerData(null);
 
       questionLockedRef.current =
+        false;
+
+      waitingForNextQuestionRef.current =
         false;
 
       ignoreStaleTranscriptRef.current =
@@ -971,6 +982,9 @@ ${rolesExplanation || "Roles and responsibilities are not available."}`;
       askedQuestion,
       generatedAnswer
     );
+
+    questionLockedRef.current = false;
+    waitingForNextQuestionRef.current = true;
   };
 
   if (authLoading) {

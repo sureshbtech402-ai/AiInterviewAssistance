@@ -3,6 +3,9 @@
 /**
  * Returns the interview question type.
  */
+/**
+ * Returns the interview question type.
+ */
 export function classifyQuestion(question = "") {
 
     const q = question.toLowerCase().trim();
@@ -24,19 +27,27 @@ export function classifyQuestion(question = "") {
     // Architecture / System Design
     // -----------------------------
     if (
-        q.includes("architecture") ||
+
+        q.includes("project architecture") ||
+        q.includes("application architecture") ||
+        q.includes("system architecture") ||
+        q.includes("overall architecture") ||
+
+        q.includes("design the system") ||
+        q.includes("design a system") ||
         q.includes("system design") ||
+
         q.includes("request flow") ||
-        q.includes("flow") ||
-        q.includes("jwt") ||
-        q.includes("oauth") ||
-        q.includes("api gateway") ||
-        q.includes("microservice") ||
-        q.includes("microservices") ||
-        q.includes("kafka") ||
-        q.includes("redis") ||
-        q.includes("rabbitmq") ||
-        q.includes("load balancer") ||
+        q.includes("application flow") ||
+        q.includes("project flow") ||
+        q.includes("authentication flow") ||
+        q.includes("end to end flow") ||
+
+        q.includes("draw architecture") ||
+        q.includes("draw the architecture") ||
+        q.includes("explain architecture") ||
+        q.includes("high level design") ||
+        q.includes("low level design") ||
         q.includes("sequence diagram")
     ) {
         return "ARCHITECTURE";
@@ -76,9 +87,6 @@ export function classifyQuestion(question = "") {
         q.includes("second highest") ||
         q.includes("duplicate") ||
         q.includes("binary search") ||
-        q.includes("stream") ||
-        q.includes("linked list") ||
-        q.includes("array") ||
         q.includes("leetcode")
     ) {
         return "CODING";
