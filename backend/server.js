@@ -388,7 +388,7 @@ app.post("/resume-summary", async (req, res) => {
 
     End with
 
-    That's all about me.
+    Yeah That's all about my self.
 
     Thank you.
 
@@ -414,23 +414,17 @@ app.post("/resume-summary", async (req, res) => {
 
     ✔ Use simple Indian spoken English.
 
-    ✔ Use short sentences.
+    ✔ Use a mix of short and medium-length sentences.
 
-    ✔ Avoid repeating
+    ✔ Make the introduction conversational, confident, and easy to speak.
 
-    Currently
+    ✔ Keep the introduction between 180 and 220 words.
 
-    Basically
+    ✔ The introduction should take around 90 to 120 seconds when spoken naturally.
 
-    Actually
+    ✔ Do not simply list skills. Explain naturally where and how they are used.
 
-    Moreover
-
-    Furthermore
-
-    Additionally
-
-    ✔ Keep the introduction between 120 and 170 words.
+    ✔ Avoid sounding like you are reading the resume.
 
     ==================================================
     RESPONSIBILITIES
