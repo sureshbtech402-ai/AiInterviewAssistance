@@ -49,7 +49,7 @@ function App() {
     useState(null);
 
   const [
-    conversationHistory,
+    ,
     setConversationHistory,
   ] = useState([]);
 

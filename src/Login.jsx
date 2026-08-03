@@ -57,7 +57,7 @@ function Login({ setUser }) {
             alert("✅ Login Successful");
             setUser(userCredential.user);
 
-        } catch (error) {
+        } catch {
             alert("Invalid Email or Password.");
         }
     };

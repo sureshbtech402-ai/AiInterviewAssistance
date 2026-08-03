@@ -7,68 +7,70 @@
 
 const FOLLOW_UP_PATTERNS = [
 
+    // Why / How
     "why",
-
+    "why is that",
     "how",
-
     "how so",
-
     "how does",
-
     "how did",
+    "internally",
 
+    // Explain
+    "explain",
     "explain more",
-
-    "tell me more",
-
-    "more",
-
-    "elaborate",
-
-    "can you elaborate",
-
+    "explain again",
     "can you explain",
+    "tell me more",
+    "more",
+    "elaborate",
+    "can you elaborate",
+    "deep dive",
+    "go deeper",
 
-    "give an example",
-
+    // Examples
     "example",
-
+    "give an example",
+    "show me",
     "real time example",
-
     "real-time example",
 
-    "what do you mean",
-
+    // Comparison
     "difference",
-
     "compare",
-
     "which one",
 
-    "when should",
-
-    "when would",
-
-    "then what",
-
-    "after that",
-
-    "next",
-
+    // Continuation
     "continue",
-
     "go on",
-
+    "next",
+    "after that",
+    "then what",
     "what happens next",
+    "walk me through",
+    "flow",
+    "step by step",
 
-    "why is that",
+    // Usage
+    "when should",
+    "when would",
+    "what about",
+    "how about",
+    "what if",
 
-    "can you simplify",
+    // Coding Follow-ups
+    "without recursion",
+    "using recursion",
+    "using hashmap",
+    "using streams",
+    "using java 8",
 
+    // Misc
     "in simple words",
-
+    "can you simplify",
+    "briefly",
+    "shortly",
     "one more thing",
-
     "is there any other way"
 
 ];
@@ -77,30 +79,26 @@ const FOLLOW_UP_PATTERNS = [
  * Returns true if question is likely
  * a follow-up question.
  */
-
 export function isFollowUpQuestion(question = "") {
 
     const q = question.toLowerCase().trim();
 
-    if (q.length <= 20) {
-        return true;
+    if (!q) {
+        return false;
     }
 
-    return FOLLOW_UP_PATTERNS.some(pattern => q.includes(pattern));
+    return FOLLOW_UP_PATTERNS.some(pattern =>
+        q.includes(pattern)
+    );
 }
 
 /**
  * Builds previous conversation
  * for GPT.
  */
-
 export function buildConversationHistory(history = []) {
 
-    if (!Array.isArray(history)) {
-        return "";
-    }
-
-    if (history.length === 0) {
+    if (!Array.isArray(history) || history.length === 0) {
         return "";
     }
 
@@ -121,7 +119,6 @@ export function buildConversationHistory(history = []) {
 /**
  * Creates a follow-up prompt.
  */
-
 export function buildFollowUpPrompt({
 
     question,
@@ -132,42 +129,47 @@ export function buildFollowUpPrompt({
 
     return `
 
-Previous Conversation
+=============================
+PREVIOUS CONVERSATION
+=============================
 
 ${historyText}
 
 =============================
-
-The interviewer asked a follow-up question.
-
-Current Question
+FOLLOW-UP QUESTION
+=============================
 
 "${question}"
 
-Instructions
+=============================
+INSTRUCTIONS
+=============================
 
-• Continue naturally.
+The interviewer has asked a follow-up question.
 
-• Do NOT repeat the previous answer.
+• Continue exactly from the previous answer.
 
-• Assume the interviewer already understood your previous explanation.
+• Do NOT restart the topic.
 
-• Add only the new information.
+• Do NOT repeat what has already been explained.
 
-• If asked for an example,
-give one example.
+• Assume the interviewer already understood your previous answer.
 
-• If asked "why",
-explain only the reason.
+• Answer only the new part being asked.
 
-• If asked "how",
-explain only the process.
+• If asked "Why", explain only the reason.
 
-• Keep continuity.
+• If asked "How", explain only the implementation or process.
 
-• Speak naturally.
+• If asked for an example, give one practical example.
 
-• Sound like a real candidate.
+• If asked for a comparison, compare only the requested concepts.
+
+• Keep the conversation natural.
+
+• Speak in simple Indian English.
+
+• Sound like a real software engineer answering in a live interview.
 
 `;
 }

@@ -10,6 +10,7 @@ export function buildSelfIntroductionPrompt({
   interviewType
 }) {
   return `
+
 ${buildCommonSystemPrompt({
   resumeText,
   interviewLevel,
@@ -18,110 +19,239 @@ ${buildCommonSystemPrompt({
 })}
 
 =========================
-SELF INTRODUCTION TASK
+SELF INTRODUCTION
 =========================
 
 The interviewer asked:
 
 "${question}"
 
-Create ONE interview-ready self introduction.
-
-The introduction should sound exactly like the candidate is introducing themselves.
+Generate ONE natural interview-ready self introduction.
 
 Use ONLY the uploaded resume.
 
 Never invent anything.
 
 =========================
+UNDERSTAND THE RESUME FIRST
+=========================
+
+Before generating the introduction, carefully understand the entire resume.
+
+Do NOT simply copy the company designation.
+
+Instead, identify the candidate's actual professional profile based on:
+
+• Skills
+• Technologies
+• Current Project
+• Responsibilities
+• Overall Experience
+
+Examples
+
+If the resume mainly contains
+
+• Java
+• Spring Boot
+• Hibernate
+• REST APIs
+• Microservices
+
+Introduce naturally as
+
+"Java Backend Developer"
+
+If it mainly contains
+
+• Selenium
+• TestNG
+• Automation
+
+Introduce naturally as
+
+"Automation Test Engineer"
+
+If it mainly contains
+
+• React
+• Angular
+
+Introduce naturally as
+
+"Frontend Developer"
+
+If it contains both frontend and backend technologies
+
+Introduce naturally as
+
+"Full Stack Developer"
+
+If it mainly contains
+
+• AWS
+• Docker
+• Kubernetes
+• CI/CD
+
+Introduce naturally as
+
+"DevOps Engineer"
+
+If the candidate is a fresher,
+
+introduce naturally as an Entry Level Software Developer or Recent Graduate.
+
+Do NOT blindly use HR titles like
+
+• Associate System Engineer
+• Programmer Analyst
+• Software Engineer Trainee
+• Graduate Engineer Trainee
+
+unless there is no better technical profile available.
+
+Choose the role that best represents the candidate's real work.
+
+=========================
 FLOW
 =========================
 
+Generate the introduction naturally in this order.
+
 1. Greeting
 
-Example:
+Example
 
 Hi, I am <Candidate Name>.
 
-2. Experience
+2. Professional Introduction
 
-Mention
+Mention naturally
 
+• Technical Profile
+• Current Company
 • Total Experience
 
-• Current Role
+Example
 
-• Current Company
+"I'm currently working as a Java Backend Developer at TCS and I have around 4 years of experience."
 
-(if available)
+3. Core Technical Skills
 
-3. Technical Skills
+Mention only the strongest 6 to 10 skills.
 
-Mention only the strongest skills.
+Do NOT list every technology.
 
-Don't read every technology from the resume.
-
-Choose 5 to 8 important ones.
+Speak naturally.
 
 4. Current Project
 
-Say naturally
+Start naturally with
 
-"Currently I am working on..."
+"Currently, I'm working on..."
 
 Mention
 
-• project
+• Project Name
 
-• domain
+• Client or Domain
 
-• responsibilities
+• What the application does
 
-Keep it simple.
+• Main responsibilities
 
-5. Previous Project
+Explain naturally.
 
-Mention ONLY if it exists.
+5. Previous Company / Previous Project
 
-If there is no previous project,
+Mention ONLY if explicitly available in the resume.
 
-skip this section.
+If not available,
 
-Never invent one.
+skip completely.
 
-6. Closing
+Never invent.
+
+6. Additional Responsibilities
+
+If present in the resume,
+
+mention naturally
+
+• Production Support
+
+• Bug Fixing
+
+• Security Fixes
+
+• REST API Development
+
+• Docker
+
+• Kubernetes
+
+• Agile
+
+• JIRA
+
+• Unit Testing
+
+Only include responsibilities that actually exist in the resume.
+
+7. Career Goal
 
 End naturally.
 
 Example
 
-"I enjoy learning new technologies and I'm looking forward to taking more responsibilities and growing as a developer."
+"Now I'm looking for an opportunity where I can work on more challenging projects, improve my technical skills, and contribute effectively to the organization."
+
+Finish with
+
+"That's all about me.
+
+Thank you."
 
 =========================
 RULES
 =========================
 
-✔ Use simple Indian English.
+✔ Use ONLY the uploaded resume.
 
-✔ Short sentences.
+✔ Never invent companies.
 
-✔ Maximum 120 words.
+✔ Never invent projects.
 
-✔ Don't sound like a resume.
+✔ Never invent responsibilities.
 
-✔ Don't sound memorized.
+✔ Never invent technologies.
 
-✔ Don't use corporate words.
+✔ Never invent achievements.
 
-✔ Never repeat
+✔ Mention previous company or previous project ONLY if available.
 
-Currently...
+✔ Mention only resume-supported responsibilities.
 
-Currently...
+✔ Speak naturally like a real software engineer.
 
-Currently...
+✔ Use simple Indian spoken English.
 
-✔ Don't use
+✔ Don't sound like ChatGPT.
+
+✔ Don't sound like documentation.
+
+✔ Don't sound like reading the resume.
+
+✔ Keep the flow conversational.
+
+✔ Avoid repeating words like
+
+Currently
+
+Basically
+
+Actually
 
 Furthermore
 
@@ -129,21 +259,9 @@ Additionally
 
 Moreover
 
-Basically
+✔ Use short sentences.
 
-Actually
-
-✔ Don't mention every skill.
-
-✔ Never invent projects.
-
-✔ Never invent company names.
-
-✔ Never invent responsibilities.
-
-✔ Speak naturally.
-
-Imagine the candidate is sitting in front of the interviewer.
+✔ Keep the introduction between 120 and 170 words.
 
 =========================
 OUTPUT
@@ -153,7 +271,9 @@ Return ONLY
 
 ## 🎯 Self Introduction
 
-followed by the introduction.
+followed by the complete introduction.
+
+No bullets.
 
 No notes.
 
@@ -161,6 +281,7 @@ No explanation.
 
 No tips.
 
-No bullets.
+The introduction should be ready to speak directly in a real interview.
+
 `;
 }

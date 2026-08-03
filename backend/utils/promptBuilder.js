@@ -1,5 +1,3 @@
-// utils/promptBuilder.js
-
 import { classifyQuestion } from "./questionClassifier.js";
 import {
   isFollowUpQuestion,
@@ -16,131 +14,85 @@ import { buildCodingPrompt } from "../prompts/codingPrompt.js";
 /**
  * Creates the final prompt that will be sent to GPT.
  */
-
 export function buildPrompt({
-
   question,
-
   resumeText,
-
   history = [],
-
   interviewLevel,
-
   company,
-
   interviewType
-
 }) {
+
+  // Prevent errors if question is empty
+  question = (question || "").trim();
 
   // -----------------------------
   // Follow-up Question
   // -----------------------------
-
-  if (history.length > 0 && isFollowUpQuestion(question)) {
-
+  if (
+    question &&
+    Array.isArray(history) && history.length > 0 &&
+    isFollowUpQuestion(question)
+  ) {
     const historyText = buildConversationHistory(history);
 
     return buildFollowUpPrompt({
-
       question,
-
       historyText
-
     });
-
   }
 
   // -----------------------------
   // Classify Question
   // -----------------------------
-
   const questionType = classifyQuestion(question);
 
   switch (questionType) {
 
     case "SELF_INTRO":
-
       return buildSelfIntroductionPrompt({
-
         question,
-
         resumeText,
-
         interviewLevel,
-
         company,
-
         interviewType
-
       });
 
     case "ARCHITECTURE":
-
       return buildArchitecturePrompt({
-
         question,
-
         resumeText,
-
         interviewLevel,
-
         company,
-
         interviewType
-
       });
 
     case "SCENARIO":
-
       return buildScenarioPrompt({
-
         question,
-
         resumeText,
-
         interviewLevel,
-
         company,
-
         interviewType
-
       });
 
     case "CODING":
-
       return buildCodingPrompt({
-
         question,
-
         resumeText,
-
         interviewLevel,
-
         company,
-
         interviewType
-
       });
 
     case "CONCEPT":
-
     default:
-
       return buildConceptPrompt({
-
         question,
-
         resumeText,
-
         interviewLevel,
-
         company,
-
         interviewType
-
       });
-
   }
-
 }

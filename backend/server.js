@@ -11,6 +11,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { createClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 import { buildPrompt } from "./utils/promptBuilder.js";
 import { classifyQuestion } from "./utils/questionClassifier.js";
+import process from "node:process";
 
 const app = express();
 const server = http.createServer(app);
