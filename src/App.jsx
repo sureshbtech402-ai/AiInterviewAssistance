@@ -805,14 +805,13 @@ ${resumeProfile.selfIntroduction || ""}
     }
   };
 
-  const generateSelfIntroAnswer = async () => {
-    const selfIntroduction = String(
-      resumeProfile?.selfIntroduction || ""
-    ).trim();
+  const generateSelfIntroAnswer = () => {
+    const selfIntroduction =
+      String(resumeProfile?.selfIntroduction || "").trim();
 
-    const preparedAnswer = `## 🎯 Self Introduction
-
-    ${selfIntroduction || "Self introduction is not available."}`;
+    const preparedAnswer =
+      "## 🎯 Self Introduction\n\n" +
+      (selfIntroduction || "Self introduction is not available.");
 
     setAnswerData(preparedAnswer);
 
