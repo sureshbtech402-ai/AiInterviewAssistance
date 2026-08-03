@@ -214,59 +214,274 @@ app.post("/resume-summary", async (req, res) => {
     }
 
     const prompt = `
-You are a strict resume extraction and interview preparation assistant.
+    You are a strict resume extraction and interview preparation assistant.
 
-Extract ONLY facts explicitly available in the resume. Never guess or invent company names, experience, projects, domains, tools, responsibilities, achievements, metrics, or dates. Keep missing values as an empty string or empty array.
+    Extract ONLY facts explicitly available in the uploaded resume.
 
-Resume Content:
-${resumeText}
+    Never guess.
+    Never invent.
 
-Create ONE recommended self-introduction in simple, natural Indian spoken English. It must sound like the candidate is directly answering in a live interview, not like a resume summary.
+    If any information is missing, return an empty string ("") or an empty array ([]).
 
-SELF-INTRODUCTION FLOW — FOLLOW THIS ORDER:
-1. Start with: "Hi, I am [Candidate Name]."
-2. Mention total experience, primary role, and current company when available.
-3. Mention the strongest core technologies from the resume.
-4. Say: "Currently, I am working on..." and explain the current project, domain/client type, and main responsibilities.
-5. Say: "Previously, I worked on..." and briefly explain the previous project and responsibilities ONLY when a genuine previous project exists in the resume.
-6. Mention collaboration, development, testing, deployment, or support activities only when supported by the resume.
-7. End with one short and natural sentence about learning and professional growth.
+    Resume Content:
 
-SELF-INTRODUCTION RULES:
-- Keep it between 90 and 120 words.
-- Use short and easy-to-speak sentences.
-- Use "currently" and "previously" only when they sound natural and match the correct project context.
-- Do not call a major/current project a previous project.
-- Never invent a previous project just to complete the format.
-- Do not use difficult corporate words.
-- Do not begin sentences with "So", "Basically", "Actually", or "Mainly".
+    ${resumeText}
 
-For responsibilities, every point must begin with an action verb such as Developed, Implemented, Integrated, Fixed, Deployed, Tested, Designed, Configured, or Maintained.
+    ==================================================
+    SELF INTRODUCTION
+    ==================================================
 
-Return exactly one valid JSON object using this schema:
-{
-  "candidateName": "Candidate name",
-  "experience": "Total experience exactly as found",
-  "currentCompany": "Current company",
-  "primaryRole": "Primary role",
-  "primarySkills": ["Core skills"],
-  "secondarySkills": ["Supporting skills"],
-  "currentProjectName": "Current project name",
-  "currentProjectDomain": "Current project domain or client type",
-  "currentProjectSummary": "Brief factual current project overview",
-  "currentProjectResponsibilities": ["Current project responsibility"],
-  "previousProjectName": "Previous project name if explicitly available",
-  "previousProjectDomain": "Previous project domain if explicitly available",
-  "previousProjectSummary": "Brief factual previous project overview",
-  "previousProjectResponsibilities": ["Previous project responsibility"],
-  "toolsAndTechnologies": ["Tools and technologies"],
-  "achievements": ["Only explicit achievements"],
-  "candidateSummary": "Brief factual professional summary",
-  "selfIntroduction": "One recommended natural interview-ready introduction following the exact flow",
-  "projectExplanation": "Natural spoken explanation covering current project and previous project only when available",
-  "rolesExplanation": "Natural spoken explanation of core responsibilities"
-}
-`;
+    Generate ONE interview-ready self introduction.
+
+    It must sound like a real candidate speaking in an interview.
+
+    Use simple natural Indian spoken English.
+
+    Do NOT sound like ChatGPT.
+
+    Do NOT sound like documentation.
+
+    ==================================================
+    UNDERSTAND THE RESUME FIRST
+    ==================================================
+
+    Before generating the introduction, carefully understand the complete resume.
+
+    Do NOT simply copy the official company designation.
+
+    Instead identify the candidate's actual technical profile based on
+
+    • Skills
+    • Technologies
+    • Current Project
+    • Responsibilities
+    • Overall Experience
+
+    Examples
+
+    Java + Spring Boot + Hibernate + REST APIs + Microservices
+
+    → Java Backend Developer
+
+    Java + Spring MVC
+
+    → Java Developer
+
+    Selenium + TestNG + Automation
+
+    → Automation Test Engineer
+
+    React + Angular
+
+    → Frontend Developer
+
+    React + Spring Boot
+
+    → Full Stack Developer
+
+    AWS + Docker + Kubernetes + CI/CD
+
+    → DevOps Engineer
+
+    If the resume clearly belongs to a fresher
+
+    → Entry Level Software Developer
+
+    Never blindly use HR titles like
+
+    Associate System Engineer
+
+    Programmer Analyst
+
+    Graduate Engineer Trainee
+
+    Software Engineer Trainee
+
+    unless no better technical profile can be identified.
+
+    Choose the role that best represents the candidate's actual work.
+
+    ==================================================
+    SELF INTRODUCTION FLOW
+    ==================================================
+
+    Generate naturally in this order.
+
+    1.
+
+    Start with
+
+    Hi, I am Candidate Name.
+
+    2.
+
+    Mention
+
+    • Technical Profile
+    • Current Company
+    • Total Experience
+
+    Example
+
+    "I am currently working as a Java Backend Developer at TCS and I have around 3 years of experience."
+
+    3.
+
+    Mention only the strongest 6-10 core technologies.
+
+    Speak naturally.
+
+    Do NOT list every technology.
+
+    4.
+
+    Say
+
+    Currently, I am working on...
+
+    Mention
+
+    • Project Name
+    • Domain / Client
+    • What the application does
+    • Main responsibilities
+
+    Explain naturally.
+
+    5.
+
+    If a genuine previous project exists in the resume,
+
+    mention
+
+    Previously I worked on...
+
+    Otherwise skip completely.
+
+    Never invent previous projects.
+
+    6.
+
+    Mention only resume-supported responsibilities such as
+
+    • REST API Development
+    • Spring Boot
+    • Microservices
+    • Bug Fixing
+    • Production Support
+    • Docker
+    • Kubernetes
+    • Security Fixes
+    • Unit Testing
+    • Agile
+    • JIRA
+
+    Only include responsibilities explicitly supported by the resume.
+
+    7.
+
+    Finish naturally.
+
+    Example
+
+    "I am looking for an opportunity where I can work on challenging projects, improve my technical skills, and contribute effectively to the organization."
+
+    End with
+
+    That's all about me.
+
+    Thank you.
+
+    ==================================================
+    RULES
+    ==================================================
+
+    ✔ Use ONLY uploaded resume.
+
+    ✔ Never invent companies.
+
+    ✔ Never invent projects.
+
+    ✔ Never invent experience.
+
+    ✔ Never invent technologies.
+
+    ✔ Never invent achievements.
+
+    ✔ Mention previous project ONLY if explicitly available.
+
+    ✔ Mention only resume-supported responsibilities.
+
+    ✔ Use simple Indian spoken English.
+
+    ✔ Use short sentences.
+
+    ✔ Avoid repeating
+
+    Currently
+
+    Basically
+
+    Actually
+
+    Moreover
+
+    Furthermore
+
+    Additionally
+
+    ✔ Keep the introduction between 120 and 170 words.
+
+    ==================================================
+    RESPONSIBILITIES
+    ==================================================
+
+    Every responsibility must begin with an action verb such as
+
+    Developed
+
+    Implemented
+
+    Integrated
+
+    Designed
+
+    Configured
+
+    Maintained
+
+    Fixed
+
+    Tested
+
+    Deployed
+
+    ==================================================
+    OUTPUT
+    ==================================================
+
+    Return exactly ONE valid JSON object.
+
+    {
+      "candidateName": "Candidate name",
+      "experience": "Total experience exactly as found",
+      "currentCompany": "Current company",
+      "primaryRole": "Detected technical role",
+      "primarySkills": ["Core skills"],
+      "secondarySkills": ["Supporting skills"],
+      "currentProjectName": "Current project name",
+      "currentProjectDomain": "Current project domain or client type",
+      "currentProjectSummary": "Brief factual current project overview",
+      "currentProjectResponsibilities": ["Current project responsibilities"],
+      "previousProjectName": "Previous project name if explicitly available",
+      "previousProjectDomain": "Previous project domain if explicitly available",
+      "previousProjectSummary": "Brief factual previous project overview",
+      "previousProjectResponsibilities": ["Previous project responsibilities"],
+      "toolsAndTechnologies": ["Tools and technologies"],
+      "achievements": ["Only explicit achievements"],
+      "candidateSummary": "Brief factual professional summary",
+      "selfIntroduction": "One complete natural interview-ready self introduction following the exact flow above"
+    }`;
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -391,23 +606,33 @@ app.post("/answer", async (req, res) => {
     res.flushHeaders?.();
 
     const messages = [
-      {
-        role: "system",
-        content: `You are a live interview answer assistant.
+    {
+      role: "system",
+      content: `You are a live interview answer assistant.
 
-Speak as the candidate in simple, natural Indian English.
-Keep the answer easy to speak in a real interview.
-Follow the active prompt's Markdown format exactly.
-Use the uploaded resume as the source of truth.
-Never invent companies, projects, tools, responsibilities, incidents, achievements, numbers, or technologies.
-When the resume does not prove direct experience, explain the concept correctly without claiming project experience.
-Use recent conversation messages only to understand genuine follow-up questions.
-For a follow-up, continue from the previous answer and do not repeat the full explanation.`,
-      },
+        Speak as a real interview candidate using simple, natural Indian spoken English.
+        Follow the active prompt's Markdown format exactly.
+        Use the uploaded resume as the single source of truth for project experience, companies, responsibilities, technologies, and achievements.
+        Never invent companies, projects, tools, responsibilities, numbers, dates, achievements, or incidents.
+        If the resume does not prove direct experience, explain the concept correctly without pretending the candidate worked on it.
+        Use previous conversation history to maintain interview continuity.
+        If the current question is a follow-up:
+        • Continue naturally from the previous answer.
+        • Do not restart the explanation.
+        • Assume the interviewer already knows the previous answer.
+        • Add only the newly requested information.
+        • If asked "why", explain only the reason.
+        • If asked "how", explain only the process.
+        • If asked for an example, provide one practical real-world example.
+        • If asked for differences or comparisons, compare only the requested topics.
+        • Keep the same interview context unless the interviewer changes the topic.
+        If the question is new, answer it independently.
+        Always sound confident, conversational, and interview-ready.`
+      }
     ];
 
     // Keep only recent turns so follow-up memory works without sending too much text.
-    safeHistory.slice(-6).forEach((turn) => {
+    safeHistory.slice(-12).forEach((turn) => {
       if (!turn || !turn.content) return;
 
       messages.push({
@@ -422,11 +647,11 @@ For a follow-up, continue from the previous answer and do not repeat the full ex
     });
 
     const maxTokensByType = {
-      SELF_INTRO: 350,
-      CODING: 750,
-      SCENARIO: 650,
-      ARCHITECTURE: 900,
-      CONCEPT: 500,
+      SELF_INTRO: 450,
+      CODING: 1200,
+      SCENARIO: 900,
+      ARCHITECTURE: 1400,
+      CONCEPT: 700,
     };
 
     const openaiResponse = await fetch(

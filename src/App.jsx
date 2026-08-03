@@ -239,17 +239,11 @@ ${formatList(
 Achievements:
 ${formatList(resumeProfile.achievements)}
 
-Candidate Summary:
+Professional Summary:
 ${resumeProfile.candidateSummary || ""}
 
 Prepared Self Introduction:
 ${resumeProfile.selfIntroduction || ""}
-
-Prepared Project Explanation:
-${resumeProfile.projectExplanation || ""}
-
-Prepared Roles and Responsibilities:
-${resumeProfile.rolesExplanation || ""}
 `.trim();
   };
 
@@ -279,7 +273,7 @@ ${resumeProfile.rolesExplanation || ""}
         role: "assistant",
         content: cleanAnswer,
       },
-    ].slice(-8);
+    ].slice(-20);
 
     conversationHistoryRef.current =
       updatedHistory;
@@ -816,25 +810,9 @@ ${resumeProfile.rolesExplanation || ""}
       resumeProfile?.selfIntroduction || ""
     ).trim();
 
-    const projectExplanation = String(
-      resumeProfile?.projectExplanation || ""
-    ).trim();
-
-    const rolesExplanation = String(
-      resumeProfile?.rolesExplanation || ""
-    ).trim();
-
     const preparedAnswer = `## 🎯 Self Introduction
 
-${selfIntroduction || "Self introduction is not available."}
-
-## 📄 Project Explanation
-
-${projectExplanation || "Project explanation is not available."}
-
-## 🔧 Roles & Responsibilities
-
-${rolesExplanation || "Roles and responsibilities are not available."}`;
+    ${selfIntroduction || "Self introduction is not available."}`;
 
     setAnswerData(preparedAnswer);
 
@@ -972,16 +950,18 @@ ${rolesExplanation || "Roles and responsibilities are not available."}`;
           interviewType,
 
           history:
-            conversationHistoryRef.current,
+            conversationHistoryRef.current.slice(-20),
         },
 
         "Unable to generate answer right now. Please try again."
       );
 
-    saveConversationTurn(
-      askedQuestion,
-      generatedAnswer
-    );
+    if (generatedAnswer?.trim()) {
+        saveConversationTurn(
+            askedQuestion,
+            generatedAnswer
+        );
+    }
 
     questionLockedRef.current = false;
     waitingForNextQuestionRef.current = true;

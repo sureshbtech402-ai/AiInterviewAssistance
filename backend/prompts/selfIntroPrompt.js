@@ -43,9 +43,13 @@ Do NOT simply copy the company designation.
 Instead, identify the candidate's actual professional profile based on:
 
 • Skills
+
 • Technologies
+
 • Current Project
+
 • Responsibilities
+
 • Overall Experience
 
 Examples
@@ -53,9 +57,13 @@ Examples
 If the resume mainly contains
 
 • Java
+
 • Spring Boot
+
 • Hibernate
+
 • REST APIs
+
 • Microservices
 
 Introduce naturally as
@@ -65,7 +73,9 @@ Introduce naturally as
 If it mainly contains
 
 • Selenium
+
 • TestNG
+
 • Automation
 
 Introduce naturally as
@@ -75,6 +85,7 @@ Introduce naturally as
 If it mainly contains
 
 • React
+
 • Angular
 
 Introduce naturally as
@@ -90,28 +101,74 @@ Introduce naturally as
 If it mainly contains
 
 • AWS
+
 • Docker
+
 • Kubernetes
+
 • CI/CD
 
 Introduce naturally as
 
 "DevOps Engineer"
 
+If it mainly contains
+
+• Python
+
+• Spark
+
+• Hadoop
+
+• Kafka
+
+• Airflow
+
+Introduce naturally as
+
+"Data Engineer"
+
+If it mainly contains
+
+• Android
+
+• Kotlin
+
+• Flutter
+
+Introduce naturally as
+
+"Mobile Application Developer"
+
 If the candidate is a fresher,
 
-introduce naturally as an Entry Level Software Developer or Recent Graduate.
+introduce naturally as
+
+"Entry Level Software Developer"
+
+or
+
+"Recent Computer Science Graduate"
 
 Do NOT blindly use HR titles like
 
 • Associate System Engineer
+
 • Programmer Analyst
+
 • Software Engineer Trainee
+
 • Graduate Engineer Trainee
+
+• Software Associate
 
 unless there is no better technical profile available.
 
-Choose the role that best represents the candidate's real work.
+Choose the technical profile that best represents the candidate's actual day-to-day work based on skills, technologies, project, and responsibilities.
+
+Do NOT prefer HR designations over technical roles.
+
+If there is not enough evidence to determine a technical specialization, then use the official designation mentioned in the resume.
 
 =========================
 FLOW
@@ -130,7 +187,9 @@ Hi, I am <Candidate Name>.
 Mention naturally
 
 • Technical Profile
+
 • Current Company
+
 • Total Experience
 
 Example
@@ -163,15 +222,37 @@ Mention
 
 Explain naturally.
 
+If the resume contains only one project,
+
+treat it as the current project.
+
+Do NOT describe the current project as a previous project.
+
+Do NOT invent additional projects.
+
 5. Previous Company / Previous Project
 
 Mention ONLY if explicitly available in the resume.
 
-If not available,
+If the resume contains only one company,
 
-skip completely.
+do NOT say
 
-Never invent.
+"Previously I worked..."
+
+Skip this section completely.
+
+If multiple companies exist,
+
+briefly mention the previous company.
+
+If multiple projects exist,
+
+briefly mention the previous project.
+
+Do NOT treat multiple projects within the same company as different companies.
+
+Never invent previous companies or projects.
 
 6. Additional Responsibilities
 
@@ -198,6 +279,10 @@ mention naturally
 • Unit Testing
 
 Only include responsibilities that actually exist in the resume.
+
+Do NOT force every responsibility.
+
+Mention only the important ones naturally.
 
 7. Career Goal
 
@@ -229,7 +314,13 @@ RULES
 
 ✔ Never invent achievements.
 
-✔ Mention previous company or previous project ONLY if available.
+✔ Mention previous company only if explicitly available.
+
+✔ Mention previous project only if explicitly available.
+
+✔ Never convert the current project into a previous project.
+
+✔ Never convert the current company into a previous company.
 
 ✔ Mention only resume-supported responsibilities.
 
