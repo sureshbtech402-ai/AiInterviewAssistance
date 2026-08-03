@@ -91,7 +91,7 @@ use the primary programming language mentioned in the uploaded resume.
 AFTER THE CODE
 =========================
 
-Explain naturally like a candidate.
+Explain naturally like a candidate, Explain everything in simple indian spoken english.
 
 Example
 
