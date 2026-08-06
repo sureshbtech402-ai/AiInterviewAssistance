@@ -1,50 +1,52 @@
-// utils/followupHandler.js
-
 /**
- * Detect whether the current question
- * is a follow-up to the previous interview question.
+ * utils/followupHandler.js
  */
 
 const FOLLOW_UP_PATTERNS = [
   "why",
   "how",
+  "how so",
+  "how exactly",
   "what if",
   "what about",
   "then",
   "next",
   "continue",
-  "more",
-  "explain",
+  "go on",
+  "tell me more",
+  "can you explain",
+  "explain more",
+  "give an example",
   "example",
-  "difference",
-  "compare",
   "internally",
   "flow",
-  "step by step"
+  "step by step",
+  "after that",
+  "and then",
+  "difference",
+  "compare",
+  "which one",
+  "why is that"
 ];
 
 /**
- * Returns true if the question looks like
- * a follow-up question.
+ * Detects whether the current question
+ * is a follow-up to the previous question.
  */
 export function isFollowUpQuestion(question = "") {
-  const q = question.toLowerCase().trim();
+  const q = question.trim().toLowerCase();
 
   if (!q) {
     return false;
   }
 
-  return FOLLOW_UP_PATTERNS.some(pattern => q.includes(pattern));
+  return FOLLOW_UP_PATTERNS.some((pattern) =>
+    q.startsWith(pattern) || q.includes(pattern)
+  );
 }
 
 /**
- * Builds conversation history.
- *
- * NOTE:
- * buildPrompt.js already sends only the
- * last 9 interview turns.
- *
- * So do NOT slice history here again.
+ * Builds previous conversation.
  */
 export function buildConversationHistory(history = []) {
   if (!Array.isArray(history) || history.length === 0) {
@@ -52,11 +54,11 @@ export function buildConversationHistory(history = []) {
   }
 
   return history
-    .map(item => {
+    .map((item) => {
       const role =
         item.role === "assistant"
-          ? "Assistant"
-          : "User";
+          ? "Candidate"
+          : "Interviewer";
 
       return `${role}: ${item.content}`;
     })
@@ -64,51 +66,111 @@ export function buildConversationHistory(history = []) {
 }
 
 /**
- * Builds GPT follow-up prompt.
+ * Prompt for follow-up questions.
  */
 export function buildFollowUpPrompt({
   question,
-  historyText
+  historyText,
 }) {
   return `
-=========================
-PREVIOUS CONVERSATION
-=========================
+==================================================
+LIVE INTERVIEW
+==================================================
+
+Previous Conversation
 
 ${historyText}
 
-=========================
+==================================================
 FOLLOW-UP QUESTION
-=========================
+==================================================
 
-${question}
+"${question}"
 
-=========================
-INSTRUCTIONS
-=========================
+==================================================
+YOUR ROLE
+==================================================
+
+You ARE the candidate.
 
 The interviewer has asked a follow-up question.
 
-Continue naturally from the previous answer.
+Continue naturally from your previous answer.
 
 Do NOT restart the topic.
 
 Do NOT repeat information already explained.
 
-Answer ONLY what the interviewer is asking now.
+Answer ONLY the newly asked part.
 
-If asked "Why", explain only the reason.
+==================================================
+HOW TO ANSWER
+==================================================
 
-If asked "How", explain only the implementation or process.
+If asked
 
-If asked for an example, provide one practical real-world example.
+"Why"
 
-If asked for a comparison, compare only the requested concepts.
+→ Explain only the reason.
 
-Keep the conversation natural.
+If asked
 
-Use simple Indian spoken English.
+"How"
 
-Sound like a real software engineer answering in a live interview.
+→ Explain only the implementation or internal working.
+
+If asked
+
+"Difference"
+
+→ Compare only those two things.
+
+If asked
+
+"Example"
+
+→ Give only one simple practical example.
+
+If asked
+
+"Internally"
+
+→ Explain the internal flow step by step.
+
+If asked
+
+"What if"
+
+→ Explain how you would handle that situation.
+
+Keep the same interview context.
+
+Do not change the topic unless the interviewer changes it.
+
+==================================================
+STYLE
+==================================================
+
+✔ Natural Indian spoken English.
+
+✔ Interview style.
+
+✔ Human.
+
+✔ Confident.
+
+✔ Short.
+
+✔ Conversational.
+
+Do not sound like ChatGPT.
+
+Do not generate documentation.
+
+Do not generate unnecessary headings.
+
+Return ONLY the interview answer.
+
+Start answering immediately.
 `;
 }

@@ -13,7 +13,6 @@ import { buildCodingPrompt } from "../prompts/codingPrompt.js";
 
 export function buildPrompt({
   question,
-  resumeProfileContext,
   history = [],
   interviewLevel,
   company,
@@ -21,37 +20,32 @@ export function buildPrompt({
 }) {
   const cleanQuestion = String(question || "").trim();
 
-  const profileContext = String(
-    resumeProfileContext || ""
-  ).trim();
+  if (!cleanQuestion) {
+    return "";
+  }
 
-  // ----------------------------
+  // ======================================
   // Follow-up Question
-  // ----------------------------
+  // ======================================
   if (
-    cleanQuestion &&
-    history.length &&
+    history.length > 0 &&
     isFollowUpQuestion(cleanQuestion)
   ) {
-    const historyText = buildConversationHistory(
-      history.slice(-9)
-    );
+    const historyText = buildConversationHistory(history);
 
     return buildFollowUpPrompt({
       question: cleanQuestion,
       historyText,
-      resumeProfileContext: profileContext,
     });
   }
 
-  // ----------------------------
+  // ======================================
   // Detect Question Type
-  // ----------------------------
+  // ======================================
   const questionType = classifyQuestion(cleanQuestion);
 
   const commonPayload = {
     question: cleanQuestion,
-    resumeProfileContext: profileContext,
     interviewLevel,
     company,
     interviewType,

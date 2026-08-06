@@ -158,77 +158,6 @@ function App() {
     }, 4500);
   };
 
-  const buildResumeProfileContext = () => {
-    if (!resumeProfile) {
-      return "Resume profile not available";
-    }
-
-    const formatList = (value) =>
-      Array.isArray(value)
-        ? value
-            .map((item) => String(item || "").trim())
-            .filter(Boolean)
-            .map((item) => `- ${item}`)
-            .join("\n")
-        : "";
-
-    return `
-  Candidate Name:
-  ${resumeProfile.candidateName || ""}
-
-  Total Experience:
-  ${resumeProfile.experience || ""}
-
-  Current Company:
-  ${resumeProfile.currentCompany || ""}
-
-  Primary Role:
-  ${resumeProfile.primaryRole || ""}
-
-  Primary Skills:
-  ${formatList(resumeProfile.primarySkills)}
-
-  Secondary Skills:
-  ${formatList(resumeProfile.secondarySkills)}
-
-  Current Project Name:
-  ${resumeProfile.currentProjectName || ""}
-
-  Current Project Domain:
-  ${resumeProfile.currentProjectDomain || ""}
-
-  Current Project Summary:
-  ${resumeProfile.currentProjectSummary || ""}
-
-  Current Project Responsibilities:
-  ${formatList(resumeProfile.currentProjectResponsibilities)}
-
-  Previous Project Name:
-  ${resumeProfile.previousProjectName || ""}
-
-  Previous Project Domain:
-  ${resumeProfile.previousProjectDomain || ""}
-
-  Previous Project Summary:
-  ${resumeProfile.previousProjectSummary || ""}
-
-  Previous Project Responsibilities:
-  ${formatList(resumeProfile.previousProjectResponsibilities)}
-
-  Tools and Technologies:
-  ${formatList(resumeProfile.toolsAndTechnologies)}
-
-  Achievements:
-  ${formatList(resumeProfile.achievements)}
-
-  Professional Summary:
-  ${resumeProfile.candidateSummary || ""}
-
-  Candidate Self Introduction:
-  ${resumeProfile.selfIntroduction || ""}
-  `.trim();
-  };
-
   const saveConversationTurn = (
     askedQuestion,
     generatedAnswer
@@ -903,8 +832,6 @@ function App() {
       await streamAnswer(
         {
           question: askedQuestion,
-
-          resumeProfileContext: buildResumeProfileContext(),
 
           company:
             company === "Others"
