@@ -1,77 +1,78 @@
-// prompts/architecturePrompt.js
-
 import { buildCommonSystemPrompt } from "./commonPrompt.js";
 
 export function buildArchitecturePrompt({
   question,
-  resumeText,
+  resumeProfileContext,
   interviewLevel,
   company,
-  interviewType
+  interviewType,
 }) {
-
-return `
-
+  return `
 ${buildCommonSystemPrompt({
-    resumeText,
-    interviewLevel,
-    company,
-    interviewType
+  resumeProfileContext,
+  interviewLevel,
+  company,
+  interviewType,
 })}
 
 =========================
 ARCHITECTURE INTERVIEW
 =========================
 
-Interview Question
+Interview Question:
 
-"${question}"
-
-The interviewer is asking about architecture, system design, project flow or application design.
-
-Answer like an experienced software engineer explaining the application to the interviewer.
-
-Explain naturally like a candidate, Explain everything in simple indian spoken english.
-
-Do NOT sound like ChatGPT.
-
-Do NOT sound like documentation.
+${question}
 
 =========================
-HOW TO ANSWER
+INSTRUCTIONS
 =========================
 
-Always explain in this order.
+The Candidate Profile below was already extracted by GPT-5.
 
-1. Big picture
+Use ONLY that profile.
 
-Start with one or two simple sentences.
+Never invent:
 
-Example
+• Microservices
+• Kafka
+• Redis
+• RabbitMQ
+• Docker
+• Kubernetes
+• JWT
+• OAuth
+• API Gateway
 
-"Our application follows a Microservices Architecture."
+unless they exist inside the Candidate Profile.
 
-or
+If the profile clearly shows Microservices,
+explain using Microservices.
 
-"Our application is built using Spring Boot microservices."
+Otherwise explain using the architecture actually supported by the profile.
 
-2. Explain the flow step by step.
+=========================
+ANSWER FLOW
+=========================
 
-Example
+1. Explain overall architecture.
+
+2. Explain complete request flow.
+
+Example:
 
 Client
 
 ↓
 
-API Gateway
+REST Controller
 
 ↓
 
-Authentication
+Service Layer
 
 ↓
 
-Business Service
+Repository
 
 ↓
 
@@ -81,159 +82,46 @@ Database
 
 Response
 
-Explain every step in simple indian spoken english.
+Explain every step in simple Indian spoken English.
 
-3. Mention technologies only if they exist in the uploaded resume.
+If architecture/request flow is asked,
+include a clean ASCII diagram.
 
-Never invent
+Never generate Mermaid.
 
-Kafka
+Never generate PlantUML.
 
-Redis
+If the Candidate Profile contains a project,
+connect the explanation naturally.
 
-RabbitMQ
-
-Docker
-
-Kubernetes
-
-JWT
-
-OAuth
-
-API Gateway
-
-or any other technology.
-
-If the resume doesn't mention them,
-
-explain the architecture without pretending you used them.
-
-=========================
-PROJECT CONNECTION
-=========================
-
-If the uploaded resume supports it,
-
-connect the explanation with the project.
-
-Example
-
-"In my current project..."
-
-"Our services communicate using REST APIs."
-
-"We use Spring Data JPA to access the database."
-
-ONLY if supported.
-
-Never invent architecture.
-
-=========================
-LANGUAGE
-=========================
-
-Simple Indian English.
-
-Short sentences.
-
-Imagine explaining to an interviewer on a video call.
-
-Avoid difficult words like
-
-Leverage
-
-Orchestrate
-
-Robust
-
-Scalable Enterprise Platform
-
-Comprehensive
-
-Facilitate
-
-Use
-
-Build
-
-Develop
-
-Use REST APIs
-
-Connect
-
-Store
-
-Retrieve
-
-Deploy
-
-=========================
-IF DIAGRAM IS REQUESTED
-=========================
-
-If interviewer asks
-
-Draw architecture
-
-Explain flow
-
-Request flow
-
-Authentication flow
-
-Return a simple text diagram.
-
-Example
-
-Client
-   │
-   ▼
-API Gateway
-   │
-   ▼
-Authentication
-   │
-   ▼
-Order Service
-   │
-   ▼
-Database
-
-After the diagram,
-
-explain every step.
+Otherwise explain generically without pretending project experience.
 
 =========================
 OUTPUT FORMAT
 =========================
 
-Return exactly
+## 🏗 Architecture Overview
 
-## 🏗 Architecture Explanation
-
-[Answer]
+...
 
 ## 🔄 Request Flow
 
-[Step-by-step flow]
+...
 
-## 💼 Project Usage
+## 💼 Project Connection
 
-If the resume supports it,
+...
 
-explain how it is used in the project.
+## 📝 Important Components
 
-Otherwise say
+- ...
 
-"This depends on the project architecture."
+- ...
 
-Keep the complete answer under 250 words.
+- ...
 
-Never create fake project details.
+Use Markdown.
 
-Never create fake architecture.
-
+Keep the answer around 250–350 words.
 `;
 }

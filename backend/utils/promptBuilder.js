@@ -2,7 +2,7 @@ import { classifyQuestion } from "./questionClassifier.js";
 import {
   isFollowUpQuestion,
   buildConversationHistory,
-  buildFollowUpPrompt
+  buildFollowUpPrompt,
 } from "./followupHandler.js";
 
 import { buildSelfIntroductionPrompt } from "../prompts/selfIntroPrompt.js";
@@ -11,88 +11,67 @@ import { buildScenarioPrompt } from "../prompts/scenarioPrompt.js";
 import { buildArchitecturePrompt } from "../prompts/architecturePrompt.js";
 import { buildCodingPrompt } from "../prompts/codingPrompt.js";
 
-/**
- * Creates the final prompt that will be sent to GPT.
- */
 export function buildPrompt({
   question,
-  resumeText,
+  resumeProfileContext,
   history = [],
   interviewLevel,
   company,
-  interviewType
+  interviewType,
 }) {
+  const cleanQuestion = String(question || "").trim();
 
-  // Prevent errors if question is empty
-  question = (question || "").trim();
+  const profileContext = String(
+    resumeProfileContext || ""
+  ).trim();
 
-  // -----------------------------
+  // ----------------------------
   // Follow-up Question
-  // -----------------------------
+  // ----------------------------
   if (
-    question &&
-    Array.isArray(history) && history.length > 0 &&
-    isFollowUpQuestion(question)
+    cleanQuestion &&
+    history.length &&
+    isFollowUpQuestion(cleanQuestion)
   ) {
-    const historyText = buildConversationHistory(history);
+    const historyText = buildConversationHistory(
+      history.slice(-9)
+    );
 
     return buildFollowUpPrompt({
-      question,
-      historyText
+      question: cleanQuestion,
+      historyText,
+      resumeProfileContext: profileContext,
     });
   }
 
-  // -----------------------------
-  // Classify Question
-  // -----------------------------
-  const questionType = classifyQuestion(question);
+  // ----------------------------
+  // Detect Question Type
+  // ----------------------------
+  const questionType = classifyQuestion(cleanQuestion);
+
+  const commonPayload = {
+    question: cleanQuestion,
+    resumeProfileContext: profileContext,
+    interviewLevel,
+    company,
+    interviewType,
+  };
 
   switch (questionType) {
-
     case "SELF_INTRO":
-      return buildSelfIntroductionPrompt({
-        question,
-        resumeText,
-        interviewLevel,
-        company,
-        interviewType
-      });
+      return buildSelfIntroductionPrompt(commonPayload);
 
     case "ARCHITECTURE":
-      return buildArchitecturePrompt({
-        question,
-        resumeText,
-        interviewLevel,
-        company,
-        interviewType
-      });
+      return buildArchitecturePrompt(commonPayload);
 
     case "SCENARIO":
-      return buildScenarioPrompt({
-        question,
-        resumeText,
-        interviewLevel,
-        company,
-        interviewType
-      });
+      return buildScenarioPrompt(commonPayload);
 
     case "CODING":
-      return buildCodingPrompt({
-        question,
-        resumeText,
-        interviewLevel,
-        company,
-        interviewType
-      });
+      return buildCodingPrompt(commonPayload);
 
     case "CONCEPT":
     default:
-      return buildConceptPrompt({
-        question,
-        resumeText,
-        interviewLevel,
-        company,
-        interviewType
-      });
+      return buildConceptPrompt(commonPayload);
   }
 }

@@ -1,153 +1,64 @@
-// prompts/codingPrompt.js
-
 import { buildCommonSystemPrompt } from "./commonPrompt.js";
 
 export function buildCodingPrompt({
   question,
-  resumeText,
+  resumeProfileContext,
   interviewLevel,
   company,
-  interviewType
+  interviewType,
 }) {
-
-return `
-
+  return `
 ${buildCommonSystemPrompt({
-    resumeText,
-    interviewLevel,
-    company,
-    interviewType
+  resumeProfileContext,
+  interviewLevel,
+  company,
+  interviewType,
 })}
 
 =========================
 CODING INTERVIEW
 =========================
 
-Interview Question
+Interview Question:
 
-"${question}"
-
-The interviewer is asking a coding or programming question.
-
-Generate an interview-ready answer.
+${question}
 
 =========================
-GOALS
+INSTRUCTIONS
 =========================
 
-The answer should help the candidate
+Answer exactly like a software engineer solving the problem during a live interview.
 
-• Understand the solution
+The Candidate Profile below was already extracted by GPT-5.
 
-• Explain it confidently
+Use it ONLY to identify the candidate's primary programming language.
 
-• Write the code
+If the interviewer does not specify a language,
+use the candidate's primary language from the profile.
 
-• Answer follow-up questions
+Write the cleanest and most commonly used solution.
 
-=========================
-CODE RULES
-=========================
+Use meaningful variable names.
 
-1. Write clean code.
+Avoid unnecessary complexity.
 
-2. Use meaningful variable names.
+After the code, explain:
 
-3. Add comments only where useful.
+• How the solution works
 
-4. Keep the code simple.
+• Time Complexity
 
-5. Avoid unnecessary complexity.
+• Space Complexity
 
-6. If multiple solutions exist,
+Mention one or two interview follow-up questions if relevant.
 
-show the most commonly used one first.
+Keep the explanation simple and interview-ready.
 
-Then briefly mention another approach if it adds value.
-
-=========================
-LANGUAGE
-=========================
-
-Detect the programming language from the question.
-
-Examples
-
-Java
-
-Python
-
-JavaScript
-
-C#
-
-SQL
-
-If the interviewer doesn't specify,
-
-use the primary programming language mentioned in the uploaded resume.
-
-=========================
-AFTER THE CODE
-=========================
-
-Explain naturally like a candidate, Explain everything in simple indian spoken english.
-
-Example
-
-"First I create a HashMap to store the frequency of each character."
-
-"Then I iterate through the string."
-
-"Finally I return the result."
-
-Keep it conversational.
-
-=========================
-TIME COMPLEXITY
-=========================
-
-Mention
-
-Time Complexity
-
-Space Complexity
-
-Explain them in one simple sentence.
-
-=========================
-FOLLOW-UP PREPARATION
-=========================
-
-Mention one or two interview follow-up questions.
-
-Example
-
-The interviewer may ask:
-
-• Can this be optimized?
-
-• Can you solve it using Streams?
-
-• What if the input is null?
-
-=========================
-IMPORTANT
-=========================
-
-Do NOT write lengthy theory.
-
-Do NOT write documentation.
-
-Do NOT explain every Java syntax.
-
-Assume the interviewer already knows programming.
+Do not invent project examples or resume experience.
 
 =========================
 OUTPUT FORMAT
 =========================
-
-Return exactly
 
 ## 💻 Solution
 
@@ -157,19 +68,12 @@ Return exactly
 
 ## 📝 Explanation
 
-[Simple explanation]
+...
 
-## 🎯 Possible Follow-up
+## ⏱ Complexity
 
-- Question 1
+**Time:** ...
 
-- Question 2
-
-Use Markdown.
-
-Never create fake project examples.
-
-Never mention technologies not present in the resume.
-
+**Space:** ...
 `;
 }

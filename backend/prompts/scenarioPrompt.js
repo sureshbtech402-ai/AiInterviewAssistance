@@ -1,169 +1,106 @@
-// prompts/scenarioPrompt.js
-
 import { buildCommonSystemPrompt } from "./commonPrompt.js";
 
 export function buildScenarioPrompt({
   question,
-  resumeText,
+  resumeProfileContext,
   interviewLevel,
   company,
-  interviewType
+  interviewType,
 }) {
-
-return `
-
+  return `
 ${buildCommonSystemPrompt({
-    resumeText,
-    interviewLevel,
-    company,
-    interviewType
+  resumeProfileContext,
+  interviewLevel,
+  company,
+  interviewType,
 })}
 
 =========================
 SCENARIO INTERVIEW
 =========================
 
-Interview Question
+Interview Question:
 
-"${question}"
-
-The interviewer is asking a practical project scenario.
-
-Answer naturally as if YOU experienced it.
-
-Explain naturally like a candidate, Explain everything in simple indian spoken english.
-
-Do NOT sound like ChatGPT.
-
-Do NOT sound like you memorized STAR format.
+${question}
 
 =========================
-HOW TO THINK
+INSTRUCTIONS
 =========================
 
-First understand
+The Candidate Profile below was already extracted by GPT-5.
 
-• What happened?
+Use ONLY that profile.
 
-• What was your responsibility?
+Answer like a real software engineer in a live interview.
 
-• What did you do?
+Use simple, natural Indian spoken English.
 
-• What was the outcome?
+Choose ONLY one approach.
 
-Answer naturally.
+1. If the Candidate Profile clearly contains the same experience,
+answer using that experience.
 
-=========================
-VERY IMPORTANT
-=========================
+2. If it contains similar experience,
+adapt it naturally without inventing facts.
 
-If the uploaded resume contains a similar project,
+3. If it doesn't contain that experience, say naturally:
 
-connect naturally with it.
+"I haven't worked on this exact scenario, but based on my project experience, this is how I would approach it."
 
-Example
+Then explain the approach.
 
-"In my current project we faced something similar..."
+Never invent:
 
-ONLY if supported.
-
-Never invent incidents.
-
-Never invent production issues.
-
-Never invent achievements.
-
-If resume doesn't contain a similar situation,
-
-say naturally
-
-"I haven't faced this exact situation, but based on my project experience, I would handle it like this."
-
-Never say
-
-"As an AI"
-
-"According to the resume"
-
-"The candidate"
-
-=========================
-LANGUAGE
-=========================
-
-Simple Indian English.
-
-Short sentences.
-
-Use
-
-I
-
-My team
-
-We
-
-Our application
-
-naturally.
-
-Avoid
-
-Leverage
-
-Utilize
-
-Robust
-
-Comprehensive
-
-Seamless
-
-Facilitate
+• Production incidents
+• Customers
+• Outages
+• Numbers
+• Team size
+• Responsibilities
+• Technologies
+• Achievements
+• Project history
 
 =========================
 ANSWER FLOW
 =========================
 
-1. Brief situation
+• Situation
 
-2. Your responsibility
+• Responsibility
 
-3. What you did
+• Action
 
-4. Result
+• Result
 
-5. Learning
+• Learning
 
-Don't make the answer too long.
+Do NOT mention STAR.
 
-Around 150-200 words.
+Keep it conversational.
 
 =========================
-OUTPUT
+OUTPUT FORMAT
 =========================
-
-Return exactly
 
 ## 🎯 Scenario Answer
 
-[Answer]
+...
 
-## ✅ Key Takeaways
+## 💡 Key Takeaways
 
-- Point 1
+- ...
 
-- Point 2
+- ...
 
-- Point 3
+- ...
 
-Bold important technologies only.
+Use Markdown.
 
-Don't generate fake numbers.
+Bold important technologies.
 
-Don't generate fake clients.
+Avoid long paragraphs.
 
-Don't generate fake achievements.
-
+Do not create tables.
 `;
 }

@@ -18,7 +18,9 @@ const server = http.createServer(app);
 const upload = multer({ dest: "uploads/" });
 
 const PORT = process.env.PORT || 5000;
-const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
+const ANSWER_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
+const PROFILE_MODEL = process.env.PROFILE_MODEL || "gpt-5";
+
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 
 app.use(
@@ -41,7 +43,8 @@ app.get("/health", (req, res) => {
     status: "ok",
     deepgram: Boolean(process.env.DEEPGRAM_API_KEY),
     openai: Boolean(process.env.OPENAI_API_KEY),
-    model: OPENAI_MODEL,
+    profileModel: PROFILE_MODEL,
+    answerModel: ANSWER_MODEL,
   });
 });
 
@@ -201,17 +204,26 @@ app.post("/transcribe", upload.single("audio"), async (req, res) => {
   }
 });
 
-app.post("/resume-summary", async (req, res) => {
+app.post("/resume-summary", upload.single("resume"), async (req, res) => {
   try {
-    const { resumeText } = req.body;
-
-    if (!resumeText || !String(resumeText).trim()) {
-      return res.status(400).json({ resumeProfile: null });
-    }
 
     if (!process.env.OPENAI_API_KEY) {
       return res.status(500).json({ resumeProfile: null });
     }
+
+    if (!req.file) {
+      return res.status(400).json({
+        resumeProfile: null,
+        error: "Resume PDF is required"
+      });
+    }
+
+    const pdfPath = req.file.path;
+
+    const pdfBuffer = fs.readFileSync(pdfPath);
+    fs.unlinkSync(pdfPath);
+
+    const pdfBase64 = pdfBuffer.toString("base64");
 
     const prompt = `
     You are a strict resume extraction and interview preparation assistant.
@@ -222,10 +234,6 @@ app.post("/resume-summary", async (req, res) => {
     Never invent.
 
     If any information is missing, return an empty string ("") or an empty array ([]).
-
-    Resume Content:
-
-    ${resumeText}
 
     ==================================================
     SELF INTRODUCTION
@@ -477,29 +485,31 @@ app.post("/resume-summary", async (req, res) => {
       "selfIntroduction": "One complete natural interview-ready self introduction following the exact flow above"
     }`;
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: OPENAI_MODEL,
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "system",
-            content:
-              "Extract resume facts accurately and return only valid JSON. Never invent missing details.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        temperature: 0.1,
-        max_completion_tokens: 1500,
-      }),
+      model: PROFILE_MODEL,
+      input: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_file",
+              filename: req.file.originalname,
+              file_data: `data:application/pdf;base64,${pdfBase64}`
+            },
+            {
+              type: "input_text",
+              text: prompt
+            }
+          ]
+        }
+      ],
+    }),
     });
 
     const data = await response.json();
@@ -512,12 +522,20 @@ app.post("/resume-summary", async (req, res) => {
       return res.status(response.status).json({ resumeProfile: null });
     }
 
-    const text = data?.choices?.[0]?.message?.content?.trim();
-    if (!text) {
-      return res.status(500).json({ resumeProfile: null });
-    }
+  let text = data.output_text?.trim();
 
-    const resumeProfile = JSON.parse(text);
+  if (!text) {
+     console.log(data);
+  return res.status(500).json({ resumeProfile: null });
+  }
+
+  text = text
+  .replace(/^```json\s*/i, "")
+  .replace(/^```\s*/i, "")
+  .replace(/\s*```$/, "")
+  .trim();
+
+  const resumeProfile = JSON.parse(text);
     res.json({ resumeProfile });
   } catch (err) {
     console.error("Resume Summary Error:", err);
@@ -562,7 +580,7 @@ function extractDeltaFromOpenAIEvent(event) {
 app.post("/answer", async (req, res) => {
   const {
     question,
-    resumeText,
+    resumeProfileContext,
     interviewLevel,
     company,
     interviewType,
@@ -585,7 +603,7 @@ app.post("/answer", async (req, res) => {
 
     const prompt = buildPrompt({
       question: cleanQ,
-      resumeText,
+      resumeText: resumeProfileContext,
       history: safeHistory,
       interviewLevel,
       company,
@@ -600,30 +618,72 @@ app.post("/answer", async (req, res) => {
     res.flushHeaders?.();
 
     const messages = [
-    {
-      role: "system",
-      content: `You are a live interview answer assistant.
+      {
+        role: "system",
+        content: `
+    You are a senior Java interview coach helping a candidate in a live interview.
 
-        Speak as a real interview candidate using simple, natural Indian spoken English.
-        Explain naturally like a candidate, Explain everything in simple indian spoken english.
-        Follow the active prompt's Markdown format exactly.
-        Use the uploaded resume as the single source of truth for project experience, companies, responsibilities, technologies, and achievements.
-        Never invent companies, projects, tools, responsibilities, numbers, dates, achievements, or incidents.
-        If the resume does not prove direct experience, explain the concept correctly without pretending the candidate worked on it.
-        Use previous conversation history to maintain interview continuity.
-        If the current question is a follow-up:
-        • Continue naturally from the previous answer.
-        • Do not restart the explanation.
-        • Assume the interviewer already knows the previous answer.
-        • Add only the newly requested information.
-        • If asked "why", explain only the reason.
-        • If asked "how", explain only the process.
-        • If asked for an example, provide one practical real-world example.
-        • If asked for differences or comparisons, compare only the requested topics.
-        • Keep the same interview context unless the interviewer changes the topic.
-        If the question is new, answer it independently.
-        Always sound confident, conversational, and interview-ready.`
-      }
+    The Candidate Profile below was already generated by GPT-5 after deeply analyzing the uploaded PDF resume.
+
+    Treat this Candidate Profile as the ONLY source of truth.
+
+    Candidate Profile:
+    ${resumeProfileContext || "Candidate profile not available."}
+
+    The Candidate Profile contains:
+    • Candidate Name
+    • Experience
+    • Current Company
+    • Technical Role
+    • Primary Skills
+    • Secondary Skills
+    • Current Project
+    • Project Summary
+    • Project Responsibilities
+    • Previous Project (if available)
+    • Tools and Technologies
+    • Achievements
+    • Professional Summary
+    • Interview-ready Self Introduction
+
+    Never invent:
+    • Companies
+    • Projects
+    • Responsibilities
+    • Technologies
+    • Achievements
+    • Experience
+    • Dates
+    • Numbers
+    • Production incidents
+
+    If the Candidate Profile doesn't show direct experience with a technology, explain the concept correctly without pretending the candidate worked on it.
+
+    Example:
+    "I haven't worked directly on Kafka, but I understand how it works and I'll explain it."
+
+    Use previous conversation history to maintain interview continuity.
+
+    For follow-up questions:
+    • Continue naturally from the previous answer.
+    • Do not restart the topic.
+    • Do not repeat information already explained.
+    • Answer only the newly asked part.
+    • If asked "why", explain only the reason.
+    • If asked "how", explain only the implementation or process.
+    • If asked for an example, provide one practical real-world example.
+    • If asked for a comparison, compare only the requested concepts.
+    • Keep the same interview context unless the interviewer changes it.
+
+    If the question is new, answer it independently.
+
+    Always speak like a real Indian software engineer in an interview.
+
+    Use simple Indian spoken English.
+
+    Follow the Markdown format generated by buildPrompt().
+    `,
+      },
     ];
 
     // Keep only recent turns so follow-up memory works without sending too much text.
@@ -645,7 +705,7 @@ app.post("/answer", async (req, res) => {
       SELF_INTRO: 450,
       CODING: 1200,
       SCENARIO: 900,
-      ARCHITECTURE: 1400,
+      ARCHITECTURE: 900,
       CONCEPT: 700,
     };
 
@@ -658,7 +718,7 @@ app.post("/answer", async (req, res) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: OPENAI_MODEL,
+          model: ANSWER_MODEL,
           messages,
           stream: true,
           temperature: 0.3,

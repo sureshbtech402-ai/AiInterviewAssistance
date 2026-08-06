@@ -15,7 +15,6 @@ import UploadResume from "./components/UploadResume";
 import QuestionPanel from "./components/QuestionPanel";
 import AnswerPanel from "./components/AnswerPanel";
 
-import { extractPdfText } from "./pdfReader";
 import "./styles/app.css";
 
 
@@ -48,10 +47,7 @@ function App() {
   const [answerData, setAnswerData] =
     useState(null);
 
-  const [
-    ,
-    setConversationHistory,
-  ] = useState([]);
+  const [, setConversationHistory] = useState([]);
 
   const [loading, setLoading] =
     useState(false);
@@ -60,9 +56,6 @@ function App() {
     interviewStarted,
     setInterviewStarted,
   ] = useState(false);
-
-  const [resumeText, setResumeText] =
-    useState("");
 
   const [resumeName, setResumeName] =
     useState("");
@@ -165,86 +158,75 @@ function App() {
     }, 4500);
   };
 
-  const buildResumeContext = () => {
+  const buildResumeProfileContext = () => {
     if (!resumeProfile) {
-      return (
-        resumeText ||
-        "Resume profile not available"
-      );
+      return "Resume profile not available";
     }
 
     const formatList = (value) =>
       Array.isArray(value)
         ? value
-            .map((item) =>
-              String(item || "").trim()
-            )
+            .map((item) => String(item || "").trim())
             .filter(Boolean)
             .map((item) => `- ${item}`)
             .join("\n")
         : "";
 
     return `
-Candidate Name:
-${resumeProfile.candidateName || ""}
+  Candidate Name:
+  ${resumeProfile.candidateName || ""}
 
-Total Experience:
-${resumeProfile.experience || ""}
+  Total Experience:
+  ${resumeProfile.experience || ""}
 
-Current Company:
-${resumeProfile.currentCompany || ""}
+  Current Company:
+  ${resumeProfile.currentCompany || ""}
 
-Primary Role:
-${resumeProfile.primaryRole || ""}
+  Primary Role:
+  ${resumeProfile.primaryRole || ""}
 
-Primary Skills:
-${formatList(resumeProfile.primarySkills)}
+  Primary Skills:
+  ${formatList(resumeProfile.primarySkills)}
 
-Secondary Skills:
-${formatList(resumeProfile.secondarySkills)}
+  Secondary Skills:
+  ${formatList(resumeProfile.secondarySkills)}
 
-Current Project Name:
-${resumeProfile.currentProjectName || ""}
+  Current Project Name:
+  ${resumeProfile.currentProjectName || ""}
 
-Current Project Domain:
-${resumeProfile.currentProjectDomain || ""}
+  Current Project Domain:
+  ${resumeProfile.currentProjectDomain || ""}
 
-Current Project Summary:
-${resumeProfile.currentProjectSummary || ""}
+  Current Project Summary:
+  ${resumeProfile.currentProjectSummary || ""}
 
-Current Project Responsibilities:
-${formatList(
-  resumeProfile.currentProjectResponsibilities
-)}
+  Current Project Responsibilities:
+  ${formatList(resumeProfile.currentProjectResponsibilities)}
 
-Previous Project Name:
-${resumeProfile.previousProjectName || ""}
+  Previous Project Name:
+  ${resumeProfile.previousProjectName || ""}
 
-Previous Project Domain:
-${resumeProfile.previousProjectDomain || ""}
+  Previous Project Domain:
+  ${resumeProfile.previousProjectDomain || ""}
 
-Previous Project Summary:
-${resumeProfile.previousProjectSummary || ""}
+  Previous Project Summary:
+  ${resumeProfile.previousProjectSummary || ""}
 
-Previous Project Responsibilities:
-${formatList(
-  resumeProfile.previousProjectResponsibilities
-)}
+  Previous Project Responsibilities:
+  ${formatList(resumeProfile.previousProjectResponsibilities)}
 
-Tools and Technologies:
-${formatList(
-  resumeProfile.toolsAndTechnologies
-)}
+  Tools and Technologies:
+  ${formatList(resumeProfile.toolsAndTechnologies)}
 
-Achievements:
-${formatList(resumeProfile.achievements)}
+  Achievements:
+  ${formatList(resumeProfile.achievements)}
 
-Professional Summary:
-${resumeProfile.candidateSummary || ""}
+  Professional Summary:
+  ${resumeProfile.candidateSummary || ""}
 
-Prepared Self Introduction:
-${resumeProfile.selfIntroduction || ""}
-`.trim();
+  Candidate Self Introduction:
+  ${resumeProfile.selfIntroduction || ""}
+  `.trim();
   };
 
   const saveConversationTurn = (
@@ -273,14 +255,11 @@ ${resumeProfile.selfIntroduction || ""}
         role: "assistant",
         content: cleanAnswer,
       },
-    ].slice(-20);
+    ].slice(-18);
 
-    conversationHistoryRef.current =
-      updatedHistory;
+    conversationHistoryRef.current = updatedHistory;
 
-    setConversationHistory(
-      updatedHistory
-    );
+    setConversationHistory(updatedHistory);
   };
 
   const updateQuestionFromTranscript = (
@@ -504,26 +483,17 @@ ${resumeProfile.selfIntroduction || ""}
       setResumeProfile(null);
       setSkills([]);
 
-      const text =
-        await extractPdfText(file);
+  const formData = new FormData();
 
-      setResumeText(text);
+    formData.append("resume", file);
 
-      const response = await fetch(
-        `${API_BASE_URL}/resume-summary`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            resumeText: text,
-          }),
-        }
-      );
+  const response = await fetch(
+      `${API_BASE_URL}/resume-summary`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
 
       if (!response.ok) {
         throw new Error(
@@ -572,7 +542,6 @@ ${resumeProfile.selfIntroduction || ""}
       );
 
       setResumeName("");
-      setResumeText("");
       setResumeProfile(null);
       setSkills([]);
     } finally {
@@ -806,11 +775,10 @@ ${resumeProfile.selfIntroduction || ""}
   };
 
   const generateSelfIntroAnswer = () => {
-    const selfIntroduction =
-      String(resumeProfile?.selfIntroduction || "").trim();
+    const selfIntroduction = String(
+      resumeProfile?.selfIntroduction ?? "").trim();
 
     const preparedAnswer =
-      "## 🎯 Self Introduction\n\n" +
       (selfIntroduction || "Self introduction is not available.");
 
     setAnswerData(preparedAnswer);
@@ -936,8 +904,7 @@ ${resumeProfile.selfIntroduction || ""}
         {
           question: askedQuestion,
 
-          resumeText:
-            buildResumeContext(),
+          resumeProfileContext: buildResumeProfileContext(),
 
           company:
             company === "Others"
@@ -949,7 +916,7 @@ ${resumeProfile.selfIntroduction || ""}
           interviewType,
 
           history:
-            conversationHistoryRef.current.slice(-20),
+            conversationHistoryRef.current,
         },
 
         "Unable to generate answer right now. Please try again."
