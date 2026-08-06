@@ -12,6 +12,7 @@ import { createClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 import { buildPrompt } from "./utils/promptBuilder.js";
 import { classifyQuestion } from "./utils/questionClassifier.js";
 import process from "node:process";
+import util from "node:util";
 
 const app = express();
 const server = http.createServer(app);
@@ -513,8 +514,13 @@ app.post("/resume-summary", upload.single("resume"), async (req, res) => {
     });
 
     const data = await response.json();
+
     console.log("========== OPENAI RESPONSE ==========");
-    console.log(JSON.stringify(data, null, 2));
+    console.log(util.inspect(data, {
+      depth: null,
+      colors: true,
+      maxArrayLength: null,
+    }));
     console.log("=====================================");
 
     if (!response.ok) {
@@ -522,21 +528,41 @@ app.post("/resume-summary", upload.single("resume"), async (req, res) => {
       return res.status(response.status).json({ resumeProfile: null });
     }
 
-  let text = data.output_text?.trim();
+  let text = data.output_text;
+
+  if (!text && data.output) {
+    const message = data.output.find(item => item.type === "message");
+
+    if (message?.content?.length) {
+      text = message.content
+        .map(c => c.text?.value || c.text || "")
+        .join("");
+    }
+  }
 
   if (!text) {
-     console.log(data);
-  return res.status(500).json({ resumeProfile: null });
+    console.error("No text found in OpenAI response");
+    return res.status(500).json({
+      resumeProfile: null,
+      error: "OpenAI returned empty response"
+    });
   }
 
   text = text
-  .replace(/^```json\s*/i, "")
-  .replace(/^```\s*/i, "")
-  .replace(/\s*```$/, "")
-  .trim();
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/, "")
+    .trim();
+
+  console.log("========== MODEL OUTPUT ==========");
+  console.log(text);
+  console.log("=================================");
 
   const resumeProfile = JSON.parse(text);
-    res.json({ resumeProfile });
+
+  res.json({
+    resumeProfile
+  });
   } catch (err) {
     console.error("Resume Summary Error:", err);
     res.status(500).json({ resumeProfile: null });
