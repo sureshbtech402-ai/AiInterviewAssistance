@@ -6,7 +6,6 @@ const FOLLOW_UP_PATTERNS = [
   "why",
   "how",
   "how so",
-  "how exactly",
   "what if",
   "what about",
   "then",
@@ -14,39 +13,35 @@ const FOLLOW_UP_PATTERNS = [
   "continue",
   "go on",
   "tell me more",
-  "can you explain",
-  "explain more",
-  "give an example",
+  "explain",
   "example",
   "internally",
   "flow",
   "step by step",
   "after that",
-  "and then",
   "difference",
   "compare",
   "which one",
-  "why is that"
+  "why is that",
+  "can you elaborate",
+  "can you explain"
 ];
 
 /**
- * Detects whether the current question
- * is a follow-up to the previous question.
+ * Detect Follow-up Question
  */
 export function isFollowUpQuestion(question = "") {
-  const q = question.trim().toLowerCase();
+  const q = String(question).trim().toLowerCase();
 
-  if (!q) {
-    return false;
-  }
+  if (!q) return false;
 
-  return FOLLOW_UP_PATTERNS.some((pattern) =>
+  return FOLLOW_UP_PATTERNS.some(pattern =>
     q.startsWith(pattern) || q.includes(pattern)
   );
 }
 
 /**
- * Builds previous conversation.
+ * Previous Interview Conversation
  */
 export function buildConversationHistory(history = []) {
   if (!Array.isArray(history) || history.length === 0) {
@@ -54,7 +49,8 @@ export function buildConversationHistory(history = []) {
   }
 
   return history
-    .map((item) => {
+    .slice(-10)
+    .map(item => {
       const role =
         item.role === "assistant"
           ? "Candidate"
@@ -66,110 +62,45 @@ export function buildConversationHistory(history = []) {
 }
 
 /**
- * Prompt for follow-up questions.
+ * Prompt for Follow-up Questions
  */
 export function buildFollowUpPrompt({
   question,
   historyText,
 }) {
   return `
-==================================================
-LIVE INTERVIEW
-==================================================
+You are in a live technical interview.
 
-Previous Conversation
+Previous conversation:
 
 ${historyText}
 
-==================================================
-FOLLOW-UP QUESTION
-==================================================
-
+Interviewer:
 "${question}"
 
-==================================================
-YOUR ROLE
-==================================================
+Continue your previous answer naturally.
 
-You ARE the candidate.
+Do not restart the topic.
 
-The interviewer has asked a follow-up question.
+Do not repeat what you've already explained.
 
-Continue naturally from your previous answer.
+Answer only what the interviewer is asking now.
 
-Do NOT restart the topic.
+Speak exactly like an experienced Indian software engineer in an interview.
 
-Do NOT repeat information already explained.
+Keep the answer short unless the interviewer asks for more details.
 
-Answer ONLY the newly asked part.
+If a simple explanation is enough, stop there.
 
-==================================================
-HOW TO ANSWER
-==================================================
+Don't teach.
 
-If asked
+Don't generate notes.
 
-"Why"
+Don't generate documentation.
 
-→ Explain only the reason.
+Don't add headings.
 
-If asked
-
-"How"
-
-→ Explain only the implementation or internal working.
-
-If asked
-
-"Difference"
-
-→ Compare only those two things.
-
-If asked
-
-"Example"
-
-→ Give only one simple practical example.
-
-If asked
-
-"Internally"
-
-→ Explain the internal flow step by step.
-
-If asked
-
-"What if"
-
-→ Explain how you would handle that situation.
-
-Keep the same interview context.
-
-Do not change the topic unless the interviewer changes it.
-
-==================================================
-STYLE
-==================================================
-
-✔ Natural Indian spoken English.
-
-✔ Interview style.
-
-✔ Human.
-
-✔ Confident.
-
-✔ Short.
-
-✔ Conversational.
-
-Do not sound like ChatGPT.
-
-Do not generate documentation.
-
-Do not generate unnecessary headings.
-
-Return ONLY the interview answer.
+Don't use markdown.
 
 Start answering immediately.
 `;

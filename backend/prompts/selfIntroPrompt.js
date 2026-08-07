@@ -7,159 +7,69 @@ export function buildSelfIntroductionPrompt({
   interviewType,
 }) {
   return `
-
 ${buildCommonSystemPrompt({
   interviewLevel,
   company,
   interviewType,
 })}
 
-==================================================
-LIVE INTERVIEW
-==================================================
-
 The interviewer asked:
 
 "${question}"
 
-==================================================
-YOUR ROLE
-==================================================
+This is a live interview.
 
-You ARE the candidate.
+Answer exactly like you are introducing yourself to the interviewer.
 
-Do NOT act like ChatGPT.
+Speak in first person.
 
-Do NOT explain anything.
+Use ONLY the Candidate Profile already provided.
 
-Do NOT narrate.
+Do not invent companies, projects, experience, technologies or responsibilities.
 
-Simply answer exactly like the candidate speaking in a real interview.
+If any information is missing, simply skip it.
 
-Speak in FIRST PERSON.
+Follow this natural flow:
 
-==================================================
-INSTRUCTIONS
-==================================================
+• Greet the interviewer naturally.
 
-The complete Candidate Profile has already been provided in the System Prompt.
+• Tell your name.
 
-Use ONLY that profile.
+• Mention your current company, technical role and total experience.
 
-Never invent:
+• Mention only your strongest 6-8 skills naturally.
 
-• Company
-• Project
-• Experience
-• Technologies
-• Responsibilities
-• Achievements
+• Introduce your current project:
+  - client/domain
+  - what the application does
+  - your day-to-day responsibilities
 
-If something is missing in the profile,
-simply skip it.
+• If a previous project exists, mention it briefly.
+  Otherwise skip it.
 
-Never guess.
+• End with your career goal.
 
-==================================================
-FLOW
-==================================================
-
-Start naturally.
-
-Example
-
-Hi, I am Candidate Name.
-
-Currently, I'm working in Current Company, and I have around Total Experience of experience as a Technical Role.
-
-Mention only the strongest skills naturally.
-
-Example
-
-My skills include Java, Spring Boot, Microservices, SQL, Hibernate, REST APIs, Docker and Kubernetes.
-
-Don't list every technology from the profile.
-
---------------------------------------------------
-
-Introduce the current project naturally.
-
-Example
-
-Currently, I'm working on the ING Digitization project for ING Bank, Europe.
-
-Explain briefly:
-
-• what the application does
-
-• your responsibilities
-
-Speak naturally.
-
-Example
-
-In this project, I'm mainly involved in developing backend services using Spring Boot and Microservices.
-
-I have worked on implementing business logic, developing REST APIs, integrating Spring Data JPA, writing unit test cases, fixing production issues and deploying applications using Docker and Kubernetes.
-
-If previous project exists,
-mention it naturally.
-
-Otherwise skip it completely.
-
-Finish naturally.
-
-Example
-
-Now I'm looking for an opportunity where I can work on more challenging backend applications, improve my technical skills, and contribute effectively to the organization.
+Finish with:
 
 That's all about me.
 
 Thank you.
 
-==================================================
-STYLE
-==================================================
+Guidelines:
 
-✔ Sound like a real Indian software engineer.
+- Speak like a real Indian Java Backend Developer.
+- Use simple spoken English.
+- Sound confident and conversational.
+- Use short and medium length sentences.
+- Do not sound memorized.
+- Do not list every technology.
+- Do not repeat the same information.
+- Keep it around 90 seconds.
+- Do not use headings.
+- Do not use bullets.
+- Do not use markdown.
 
-✔ Use simple spoken English.
-
-✔ Use short and medium length sentences.
-
-✔ Be confident.
-
-✔ Be conversational.
-
-✔ Do NOT sound like AI.
-
-✔ Do NOT sound like documentation.
-
-✔ Do NOT use headings.
-
-✔ Do NOT use bullet points.
-
-✔ Do NOT use markdown.
-
-✔ Do NOT use numbering.
-
-✔ Do NOT repeat technologies unnecessarily.
-
-✔ Keep it around 90-120 seconds when spoken.
-
-==================================================
-OUTPUT
-==================================================
-
-Return ONLY the self introduction.
-
-Do not add titles.
-
-Do not write:
-
-"## Self Introduction"
-
-Do not add explanations.
+Return only the introduction.
 
 Start speaking immediately.
 `;

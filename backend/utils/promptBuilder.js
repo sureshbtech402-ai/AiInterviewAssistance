@@ -27,24 +27,26 @@ export function buildPrompt({
   // ======================================
   // Follow-up Question
   // ======================================
+
   if (
-    history.length > 0 &&
+    history.length &&
     isFollowUpQuestion(cleanQuestion)
   ) {
-    const historyText = buildConversationHistory(history);
-
     return buildFollowUpPrompt({
       question: cleanQuestion,
-      historyText,
+      historyText: buildConversationHistory(
+        history.slice(-10)
+      ),
     });
   }
 
   // ======================================
-  // Detect Question Type
+  // Detect Interview Question Type
   // ======================================
+
   const questionType = classifyQuestion(cleanQuestion);
 
-  const commonPayload = {
+  const payload = {
     question: cleanQuestion,
     interviewLevel,
     company,
@@ -53,19 +55,19 @@ export function buildPrompt({
 
   switch (questionType) {
     case "SELF_INTRO":
-      return buildSelfIntroductionPrompt(commonPayload);
+      return buildSelfIntroductionPrompt(payload);
 
     case "ARCHITECTURE":
-      return buildArchitecturePrompt(commonPayload);
+      return buildArchitecturePrompt(payload);
 
     case "SCENARIO":
-      return buildScenarioPrompt(commonPayload);
+      return buildScenarioPrompt(payload);
 
     case "CODING":
-      return buildCodingPrompt(commonPayload);
+      return buildCodingPrompt(payload);
 
     case "CONCEPT":
     default:
-      return buildConceptPrompt(commonPayload);
+      return buildConceptPrompt(payload);
   }
 }

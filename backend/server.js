@@ -731,11 +731,11 @@ app.post("/answer", async (req, res) => {
     });
 
     const maxTokensByType = {
-      SELF_INTRO: 450,
-      CODING: 1200,
-      SCENARIO: 900,
+      SELF_INTRO: 300,
+      CODING: 450,
+      SCENARIO: 400,
       ARCHITECTURE: 900,
-      CONCEPT: 700,
+      CONCEPT: 300,
     };
 
     const openaiResponse = await fetch(

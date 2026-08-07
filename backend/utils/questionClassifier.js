@@ -1,66 +1,85 @@
 /**
- * Detect interview question type.
+ * Detect Interview Question Type
  */
 
 export function classifyQuestion(question = "") {
-  const q = question.toLowerCase().trim();
+  const q = String(question || "").toLowerCase().trim();
 
   // ==================================
   // SELF INTRODUCTION
   // ==================================
 
-  if (
-    q.includes("tell me about yourself") ||
-    q.includes("introduce yourself") ||
-    q.includes("walk me through your resume") ||
-    q.includes("walk me through resume") ||
-    q.includes("self introduction") ||
-    q === "about yourself"
-  ) {
+  const selfIntroPatterns = [
+    "tell me about yourself",
+    "introduce yourself",
+    "walk me through your resume",
+    "walk me through resume",
+    "self introduction",
+    "about yourself",
+    "your introduction",
+    "brief introduction",
+    "can you introduce yourself",
+  ];
+
+  if (selfIntroPatterns.some(pattern => q.includes(pattern))) {
     return "SELF_INTRO";
   }
 
   // ==================================
-  // ARCHITECTURE
+  // ARCHITECTURE / SYSTEM DESIGN
   // ==================================
 
-  if (
-    q.includes("architecture") ||
-    q.includes("system design") ||
-    q.includes("hld") ||
-    q.includes("lld") ||
-    q.includes("high level design") ||
-    q.includes("low level design") ||
-    q.includes("request flow") ||
-    q.includes("application flow") ||
-    q.includes("project flow") ||
-    q.includes("workflow") ||
-    q.includes("deployment") ||
-    q.includes("microservice flow") ||
-    q.includes("draw architecture") ||
-    q.includes("sequence diagram")
-  ) {
+  const architecturePatterns = [
+    "architecture",
+    "system design",
+    "high level design",
+    "low level design",
+    "hld",
+    "lld",
+    "request flow",
+    "application flow",
+    "project flow",
+    "workflow",
+    "deployment",
+    "microservice flow",
+    "sequence diagram",
+    "draw architecture",
+    "design",
+    "how request flows",
+    "how the request flows",
+    "end to end flow",
+  ];
+
+  if (architecturePatterns.some(pattern => q.includes(pattern))) {
     return "ARCHITECTURE";
   }
 
   // ==================================
-  // SCENARIO
+  // SCENARIO / BEHAVIORAL
   // ==================================
 
-  if (
-    q.includes("tell me about a time") ||
-    q.includes("have you ever") ||
-    q.includes("how did you handle") ||
-    q.includes("what would you do") ||
-    q.includes("production issue") ||
-    q.includes("critical issue") ||
-    q.includes("production bug") ||
-    q.includes("customer issue") ||
-    q.includes("client issue") ||
-    q.includes("team conflict") ||
-    q.includes("deadline") ||
-    q.includes("code review experience")
-  ) {
+  const scenarioPatterns = [
+    "tell me about a time",
+    "have you ever",
+    "how did you handle",
+    "what would you do",
+    "how would you handle",
+    "production issue",
+    "production bug",
+    "critical issue",
+    "critical bug",
+    "client issue",
+    "customer issue",
+    "production support",
+    "team conflict",
+    "deadline",
+    "challenging situation",
+    "code review",
+    "bug you fixed",
+    "issue you faced",
+  ];
+
+  if (scenarioPatterns.some(pattern => q.includes(pattern))) {
     return "SCENARIO";
   }
 
@@ -68,27 +87,35 @@ export function classifyQuestion(question = "") {
   // CODING
   // ==================================
 
-  if (
-    q.includes("write code") ||
-    q.includes("write a program") ||
-    q.includes("program for") ||
-    q.includes("implement") ||
-    q.includes("algorithm") ||
-    q.includes("leetcode") ||
-    q.includes("hackerrank") ||
-    q.includes("coding question") ||
-    q.includes("print") ||
-    q.includes("find duplicates") ||
-    q.includes("reverse string") ||
-    q.includes("palindrome") ||
-    q.includes("anagram") ||
-    q.includes("fibonacci") ||
-    q.includes("factorial") ||
-    q.includes("binary search") ||
-    q.includes("sort an array") ||
-    q.includes("merge two") ||
-    q.includes("remove duplicates")
-  ) {
+  const codingPatterns = [
+    "write code",
+    "write a program",
+    "program for",
+    "implement",
+    "coding question",
+    "algorithm",
+    "leetcode",
+    "hackerrank",
+    "print",
+    "find duplicates",
+    "remove duplicates",
+    "reverse string",
+    "palindrome",
+    "anagram",
+    "fibonacci",
+    "factorial",
+    "binary search",
+    "linear search",
+    "sort an array",
+    "merge two",
+    "code for",
+    "write java code",
+    "write the code",
+    "can you code",
+    "solve this",
+  ];
+
+  if (codingPatterns.some(pattern => q.includes(pattern))) {
     return "CODING";
   }
 
