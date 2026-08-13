@@ -184,7 +184,7 @@ function App() {
         role: "assistant",
         content: cleanAnswer,
       },
-    ].slice(-18);
+    ].slice(-6);
 
     conversationHistoryRef.current = updatedHistory;
 

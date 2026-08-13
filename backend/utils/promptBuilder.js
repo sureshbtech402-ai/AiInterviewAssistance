@@ -1,7 +1,9 @@
 import { classifyQuestion } from "./questionClassifier.js";
+
 import {
   isFollowUpQuestion,
-  buildConversationHistory,
+  isShortInterviewQuestion,
+  buildInterviewContext,
   buildFollowUpPrompt,
 } from "./followupHandler.js";
 
@@ -11,40 +13,98 @@ import { buildScenarioPrompt } from "../prompts/scenarioPrompt.js";
 import { buildArchitecturePrompt } from "../prompts/architecturePrompt.js";
 import { buildCodingPrompt } from "../prompts/codingPrompt.js";
 
+/**
+ * Build the prompt for a live interview question.
+ *
+ * IMPORTANT:
+ * This function is intentionally lightweight.
+ *
+ * The candidate profile should be supplied once at the model/system
+ * level by the backend rather than repeatedly duplicated here.
+ *
+ * The current question should remain the main input for every turn.
+ */
 export function buildPrompt({
   question,
   history = [],
-  interviewLevel,
-  company,
-  interviewType,
+  interviewLevel = "",
+  company = "",
+  interviewType = "",
 }) {
-  const cleanQuestion = String(question || "").trim();
+  const cleanQuestion = String(question || "")
+    .trim()
+    .replace(/\s+/g, " ");
 
   if (!cleanQuestion) {
     return "";
   }
 
-  // ======================================
-  // Follow-up Question
-  // ======================================
+  const safeHistory = Array.isArray(history) ? history : [];
 
-  if (
-    history.length &&
-    isFollowUpQuestion(cleanQuestion)
-  ) {
+  // ==================================================
+  // INTERVIEW CONTEXT
+  // ==================================================
+
+  const interviewContext = buildInterviewContext(safeHistory);
+
+  const {
+    previousQuestion = "",
+    previousAnswer = "",
+    historyText = "",
+  } = interviewContext;
+
+  // ==================================================
+  // FOLLOW-UP DETECTION
+  // ==================================================
+  //
+  // Follow-up detection is only a lightweight signal.
+  //
+  // We do NOT treat every "why" or "how" question as a follow-up.
+  //
+  // A follow-up is much more likely when:
+  //
+  // 1. Previous interview context exists
+  // 2. The current question has a follow-up signal
+  // 3. The question is short/context-dependent
+  //
+  // The backend can later add stronger semantic detection.
+  // ==================================================
+
+  const hasPreviousContext =
+    Boolean(previousQuestion) || Boolean(previousAnswer);
+
+  const followUpSignal =
+    isFollowUpQuestion(cleanQuestion);
+
+  const shortQuestion =
+    isShortInterviewQuestion(cleanQuestion);
+
+  const shouldUseFollowUp =
+    hasPreviousContext &&
+    followUpSignal &&
+    (
+      shortQuestion ||
+      Boolean(previousQuestion)
+    );
+
+  if (shouldUseFollowUp) {
     return buildFollowUpPrompt({
       question: cleanQuestion,
-      historyText: buildConversationHistory(
-        history.slice(-10)
-      ),
+      previousQuestion,
+      previousAnswer,
+      historyText,
     });
   }
 
-  // ======================================
-  // Detect Interview Question Type
-  // ======================================
+  // ==================================================
+  // QUESTION CLASSIFICATION
+  // ==================================================
 
   const questionType = classifyQuestion(cleanQuestion);
+
+  // ==================================================
+  // COMMON PAYLOAD
+  // ==================================================
 
   const payload = {
     question: cleanQuestion,
@@ -52,6 +112,10 @@ export function buildPrompt({
     company,
     interviewType,
   };
+
+  // ==================================================
+  // QUESTION ROUTING
+  // ==================================================
 
   switch (questionType) {
     case "SELF_INTRO":

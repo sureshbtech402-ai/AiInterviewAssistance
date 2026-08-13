@@ -717,7 +717,7 @@ app.post("/answer", async (req, res) => {
     ];
 
     // Keep only recent turns so follow-up memory works without sending too much text.
-    safeHistory.slice(-12).forEach((turn) => {
+    safeHistory.slice(-6).forEach((turn) => {
       if (!turn || !turn.content) return;
 
       messages.push({
