@@ -398,13 +398,21 @@ function App() {
     socketRef.current = null;
   };
 
-  const handleResumeUpload = async (
+const handleResumeUpload = async (
     event
   ) => {
     const file =
       event.target.files[0];
 
     if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      showToast(
+        "Please upload a PDF resume.",
+        "error"
+      );
+      return;
+    }
 
     try {
       setResumeProcessing(true);
@@ -738,6 +746,7 @@ function App() {
         return;
       }
 
+      answerAbortRef.current?.abort();
       conversationHistoryRef.current = [];
       setConversationHistory([]);
 
@@ -813,52 +822,55 @@ function App() {
       }
     };
 
-  const generateAnswer = async () => {
-    questionLockedRef.current = true;
+const generateAnswer = async () => {
+  questionLockedRef.current = true;
 
-    if (!question.trim()) {
-      showToast(
-        "Question panel is empty.",
-        "info"
-      );
-
-      return;
-    }
-
-    const askedQuestion =
-      question.trim();
-
-    const generatedAnswer =
-      await streamAnswer(
-        {
-          question: askedQuestion,
-
-          company:
-            company === "Others"
-              ? customCompany
-              : company,
-
-          interviewLevel,
-
-          interviewType,
-
-          history:
-            conversationHistoryRef.current,
-        },
-
-        "Unable to generate answer right now. Please try again."
-      );
-
-    if (generatedAnswer?.trim()) {
-        saveConversationTurn(
-            askedQuestion,
-            generatedAnswer
-        );
-    }
+  if (!question.trim()) {
+    showToast(
+      "Question panel is empty.",
+      "info"
+    );
 
     questionLockedRef.current = false;
-    waitingForNextQuestionRef.current = true;
-  };
+    return;
+  }
+
+  const askedQuestion =
+    question.trim();
+
+  const generatedAnswer =
+     await streamAnswer(
+    {
+      question: askedQuestion,
+
+      company:
+        company === "Others"
+          ? customCompany
+          : company,
+
+      interviewLevel,
+
+      interviewType,
+
+      history:
+        conversationHistoryRef.current,
+
+      resumeProfile,
+    },
+
+    "Unable to generate answer right now. Please try again."
+  );
+
+  if (generatedAnswer?.trim()) {
+    saveConversationTurn(
+      askedQuestion,
+      generatedAnswer
+    );
+  }
+
+  questionLockedRef.current = false;
+  waitingForNextQuestionRef.current = true;
+};
 
   if (authLoading) {
     return (

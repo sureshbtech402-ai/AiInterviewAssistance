@@ -35,8 +35,6 @@ app.use(express.json({ limit: "10mb" }));
 
 const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 
-let cachedResumeProfile = null;
-
 app.get("/", (req, res) => {
   res.send("AI Interview Assistant Backend Running 🚀");
 });
@@ -209,367 +207,366 @@ app.post("/transcribe", upload.single("audio"), async (req, res) => {
 
 app.post("/resume-summary", upload.single("resume"), async (req, res) => {
   try {
-
+    // -----------------------------------------
+    // 1. Check OpenAI API key
+    // -----------------------------------------
     if (!process.env.OPENAI_API_KEY) {
-      return res.status(500).json({ resumeProfile: null });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({
+      return res.status(500).json({
         resumeProfile: null,
-        error: "Resume PDF is required"
+        error: "OPENAI_API_KEY is missing",
       });
     }
 
-    const pdfPath = req.file.path;
+    // -----------------------------------------
+    // 2. Check uploaded resume
+    // -----------------------------------------
+    if (!req.file) {
+      return res.status(400).json({
+        resumeProfile: null,
+        error: "Resume PDF is required",
+      });
+    }
 
+    // -----------------------------------------
+    // 3. Read PDF
+    // -----------------------------------------
+    const pdfPath = req.file.path;
     const pdfBuffer = fs.readFileSync(pdfPath);
+
+    // Delete temporary uploaded file
     fs.unlinkSync(pdfPath);
 
     const pdfBase64 = pdfBuffer.toString("base64");
 
+    // -----------------------------------------
+    // 4. Resume analysis prompt
+    // -----------------------------------------
     const prompt = `
-    You are a strict resume extraction and interview preparation assistant.
+You are a strict resume extraction and interview preparation assistant.
 
-    Extract ONLY facts explicitly available in the uploaded resume.
+Read the uploaded resume carefully.
 
-    Never guess.
-    Never invent.
+IMPORTANT:
 
-    If any information is missing, return an empty string ("") or an empty array ([]).
+- Use ONLY information explicitly present in the resume.
+- Never guess.
+- Never invent.
+- Never add technologies that are not in the resume.
+- Never add projects that are not in the resume.
+- Never add responsibilities that are not in the resume.
+- Never add companies, dates, experience, numbers or achievements that are not in the resume.
+- If information is missing, return "" or [].
 
-    ==================================================
-    SELF INTRODUCTION
-    ==================================================
+==================================================
+CANDIDATE ROLE
+==================================================
 
-    Generate ONE interview-ready self introduction.
+Identify the candidate's actual technical role from the resume.
 
-    It must sound like a real candidate speaking in an interview.
+Do NOT blindly use HR/designation titles such as:
 
-    Use simple natural Indian spoken English.
+Associate System Engineer
+Programmer Analyst
+Graduate Engineer Trainee
+Software Engineer Trainee
 
-    Do NOT sound like ChatGPT.
+Instead determine the technical role from:
 
-    Do NOT sound like documentation.
+- Skills
+- Technologies
+- Projects
+- Responsibilities
+- Experience
 
-    ==================================================
-    UNDERSTAND THE RESUME FIRST
-    ==================================================
+Examples:
 
-    Before generating the introduction, carefully understand the complete resume.
+Java + Spring Boot + Hibernate + REST APIs + Microservices
+=> Java Backend Developer
 
-    Do NOT simply copy the official company designation.
+Java + Spring MVC
+=> Java Developer
 
-    Instead identify the candidate's actual technical profile based on
+Selenium + TestNG + Automation
+=> Automation Test Engineer
 
-    • Skills
-    • Technologies
-    • Current Project
-    • Responsibilities
-    • Overall Experience
+React + Angular
+=> Frontend Developer
 
-    Examples
+React + Spring Boot
+=> Full Stack Developer
 
-    Java + Spring Boot + Hibernate + REST APIs + Microservices
+AWS + Docker + Kubernetes + CI/CD
+=> DevOps Engineer
 
-    → Java Backend Developer
+==================================================
+SELF INTRODUCTION
+==================================================
 
-    Java + Spring MVC
+Generate ONE natural interview-ready self introduction.
 
-    → Java Developer
+Use simple Indian spoken English.
 
-    Selenium + TestNG + Automation
+It should sound like a real candidate speaking.
 
-    → Automation Test Engineer
+Do NOT sound like ChatGPT.
 
-    React + Angular
+Do NOT sound like documentation.
 
-    → Frontend Developer
+Follow this flow:
 
-    React + Spring Boot
+1. Start with:
 
-    → Full Stack Developer
+"Hi, I am Candidate Name."
 
-    AWS + Docker + Kubernetes + CI/CD
+2. Mention:
 
-    → DevOps Engineer
+- Technical role
+- Current company
+- Total experience
 
-    If the resume clearly belongs to a fresher
+3. Mention only the strongest 6-10 technologies.
 
-    → Entry Level Software Developer
+4. Explain the current project naturally:
 
-    Never blindly use HR titles like
+- Project name
+- Domain/client
+- What the application does
+- Main responsibilities
 
-    Associate System Engineer
+5. Mention previous project ONLY if it is explicitly available in the resume.
 
-    Programmer Analyst
+6. Mention only real responsibilities from the resume.
 
-    Graduate Engineer Trainee
+7. Finish naturally.
 
-    Software Engineer Trainee
+End with:
 
-    unless no better technical profile can be identified.
+"Yeah, that's all about myself. Thank you."
 
-    Choose the role that best represents the candidate's actual work.
-
-    ==================================================
-    SELF INTRODUCTION FLOW
-    ==================================================
-
-    Generate naturally in this order.
-
-    1.
-
-    Start with
-
-    Hi, I am Candidate Name.
-
-    2.
-
-    Mention
-
-    • Technical Profile
-    • Current Company
-    • Total Experience
-
-    Example
-
-    "I am currently working as a Java Backend Developer at TCS and I have around 3 years of experience."
-
-    3.
-
-    Mention only the strongest 6-10 core technologies.
-
-    Speak naturally.
-
-    Do NOT list every technology.
-
-    4.
-
-    Say
-
-    Currently, I am working on...
-
-    Mention
-
-    • Project Name
-    • Domain / Client
-    • What the application does
-    • Main responsibilities
-
-    Explain naturally.
-
-    5.
-
-    If a genuine previous project exists in the resume,
-
-    mention
-
-    Previously I worked on...
-
-    Otherwise skip completely.
-
-    Never invent previous projects.
-
-    6.
-
-    Mention only resume-supported responsibilities such as
-
-    • REST API Development
-    • Spring Boot
-    • Microservices
-    • Bug Fixing
-    • Production Support
-    • Docker
-    • Kubernetes
-    • Security Fixes
-    • Unit Testing
-    • Agile
-    • JIRA
-
-    Only include responsibilities explicitly supported by the resume.
-
-    7.
-
-    Finish naturally.
-
-    Example
-
-    "I am looking for an opportunity where I can work on challenging projects, improve my technical skills, and contribute effectively to the organization."
-
-    End with
-
-    Yeah That's all about my self.
-
-    Thank you.
-
-    ==================================================
-    RULES
-    ==================================================
-
-    ✔ Use ONLY uploaded resume.
-
-    ✔ Never invent companies.
-
-    ✔ Never invent projects.
-
-    ✔ Never invent experience.
-
-    ✔ Never invent technologies.
-
-    ✔ Never invent achievements.
-
-    ✔ Mention previous project ONLY if explicitly available.
-
-    ✔ Mention only resume-supported responsibilities.
-
-    ✔ Use simple Indian spoken English.
-
-    ✔ Use a mix of short and medium-length sentences.
-
-    ✔ Make the introduction conversational, confident, and easy to speak.
-
-    ✔ Keep the introduction between 180 and 220 words.
-
-    ✔ The introduction should take around 90 to 120 seconds when spoken naturally.
-
-    ✔ Do not simply list skills. Explain naturally where and how they are used.
-
-    ✔ Avoid sounding like you are reading the resume.
-
-    ==================================================
-    RESPONSIBILITIES
-    ==================================================
-
-    Every responsibility must begin with an action verb such as
-
-    Developed
-
-    Implemented
-
-    Integrated
-
-    Designed
-
-    Configured
-
-    Maintained
-
-    Fixed
-
-    Tested
-
-    Deployed
-
-    ==================================================
-    OUTPUT
-    ==================================================
-
-    Return exactly ONE valid JSON object.
-
-    {
-      "candidateName": "Candidate name",
-      "experience": "Total experience exactly as found",
-      "currentCompany": "Current company",
-      "primaryRole": "Detected technical role",
-      "primarySkills": ["Core skills"],
-      "secondarySkills": ["Supporting skills"],
-      "currentProjectName": "Current project name",
-      "currentProjectDomain": "Current project domain or client type",
-      "currentProjectSummary": "Brief factual current project overview",
-      "currentProjectResponsibilities": ["Current project responsibilities"],
-      "previousProjectName": "Previous project name if explicitly available",
-      "previousProjectDomain": "Previous project domain if explicitly available",
-      "previousProjectSummary": "Brief factual previous project overview",
-      "previousProjectResponsibilities": ["Previous project responsibilities"],
-      "toolsAndTechnologies": ["Tools and technologies"],
-      "achievements": ["Only explicit achievements"],
-      "candidateSummary": "Brief factual professional summary",
-      "selfIntroduction": "One complete natural interview-ready self introduction following the exact flow above"
-    }`;
-
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-      model: PROFILE_MODEL,
-      input: [
-        {
-          role: "user",
-          content: [
+Keep the introduction around 180-220 words.
+
+==================================================
+RESPONSIBILITIES
+==================================================
+
+Every responsibility should start with an action verb.
+
+Examples:
+
+Developed
+Implemented
+Integrated
+Designed
+Configured
+Maintained
+Fixed
+Tested
+Deployed
+
+==================================================
+OUTPUT
+==================================================
+
+Return ONLY valid JSON.
+
+Do NOT return markdown.
+
+Do NOT return code fences.
+
+Use exactly this structure:
+
+{
+  "candidateName": "",
+  "experience": "",
+  "currentCompany": "",
+  "primaryRole": "",
+  "primarySkills": [],
+  "secondarySkills": [],
+  "currentProjectName": "",
+  "currentProjectDomain": "",
+  "currentProjectSummary": "",
+  "currentProjectResponsibilities": [],
+  "previousProjectName": "",
+  "previousProjectDomain": "",
+  "previousProjectSummary": "",
+  "previousProjectResponsibilities": [],
+  "toolsAndTechnologies": [],
+  "achievements": [],
+  "candidateSummary": "",
+  "selfIntroduction": ""
+}
+`;
+
+    // -----------------------------------------
+    // 5. Call OpenAI
+    // -----------------------------------------
+    const response = await fetch(
+      "https://api.openai.com/v1/responses",
+      {
+        method: "POST",
+
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          model: PROFILE_MODEL,
+
+          input: [
             {
-              type: "input_file",
-              filename: req.file.originalname,
-              file_data: `data:application/pdf;base64,${pdfBase64}`
+              role: "user",
+
+              content: [
+                {
+                  type: "input_file",
+                  filename: req.file.originalname,
+                  file_data: `data:application/pdf;base64,${pdfBase64}`,
+                },
+                {
+                  type: "input_text",
+                  text: prompt,
+                },
+              ],
             },
-            {
-              type: "input_text",
-              text: prompt
-            }
-          ]
-        }
-      ],
-    }),
-    });
+          ],
 
+          text: {
+            format: {
+              type: "json_object",
+            },
+          },
+        }),
+      }
+    );
+
+    // -----------------------------------------
+    // 6. Read OpenAI response
+    // -----------------------------------------
     const data = await response.json();
 
-    console.log("========== OPENAI RESPONSE ==========");
-    console.log(util.inspect(data, {
-      depth: null,
-      colors: true,
-      maxArrayLength: null,
-    }));
-    console.log("=====================================");
+    console.log(
+      "========== RESUME OPENAI RESPONSE =========="
+    );
 
+    console.log(
+      util.inspect(data, {
+        depth: null,
+        colors: true,
+        maxArrayLength: null,
+      })
+    );
+
+    console.log(
+      "============================================"
+    );
+
+    // -----------------------------------------
+    // 7. Handle OpenAI error
+    // -----------------------------------------
     if (!response.ok) {
-      console.error("Resume Summary OpenAI Error:", data);
-      return res.status(response.status).json({ resumeProfile: null });
+      console.error(
+        "Resume Summary OpenAI Error:",
+        data
+      );
+
+      return res.status(response.status).json({
+        resumeProfile: null,
+        error:
+          data?.error?.message ||
+          "OpenAI resume processing failed",
+      });
     }
 
-  let text = data.output_text;
+    // -----------------------------------------
+    // 8. Get generated text
+    // -----------------------------------------
+    let text = data.output_text || "";
 
-  if (!text && data.output) {
-    const message = data.output.find(item => item.type === "message");
-
-    if (message?.content?.length) {
-      text = message.content
-        .map(c => c.text?.value || c.text || "")
-        .join("");
+    // Fallback if output_text is unavailable
+    if (!text && Array.isArray(data.output)) {
+      for (const item of data.output) {
+        if (
+          item.type === "message" &&
+          Array.isArray(item.content)
+        ) {
+          for (const content of item.content) {
+            if (content.type === "output_text") {
+              text += content.text || "";
+            }
+          }
+        }
+      }
     }
-  }
 
-  if (!text) {
-    console.error("No text found in OpenAI response");
+    text = String(text || "").trim();
+
+    // -----------------------------------------
+    // 9. Check empty response
+    // -----------------------------------------
+    if (!text) {
+      console.error(
+        "OpenAI returned empty resume profile"
+      );
+
+      return res.status(500).json({
+        resumeProfile: null,
+        error: "OpenAI returned empty response",
+      });
+    }
+
+    console.log(
+      "========== RESUME PROFILE =========="
+    );
+
+    console.log(text);
+
+    console.log(
+      "===================================="
+    );
+
+    // -----------------------------------------
+    // 10. Convert JSON string to object
+    // -----------------------------------------
+    let resumeProfile;
+
+    try {
+      resumeProfile = JSON.parse(text);
+    } catch (parseError) {
+      console.error(
+        "Resume JSON Parse Error:",
+        parseError
+      );
+
+      console.error(
+        "Invalid OpenAI Output:",
+        text
+      );
+
+      return res.status(500).json({
+        resumeProfile: null,
+        error:
+          "Invalid resume profile returned by OpenAI",
+      });
+    }
+
+    // -----------------------------------------
+    // 11. Send profile to frontend
+    // -----------------------------------------
+    return res.json({
+      resumeProfile,
+    });
+
+  } catch (err) {
+    console.error(
+      "Resume Summary Error:",
+      err
+    );
+
     return res.status(500).json({
       resumeProfile: null,
-      error: "OpenAI returned empty response"
+      error: "Resume processing failed",
     });
-  }
-
-  text = text
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/\s*```$/, "")
-    .trim();
-
-  console.log("========== MODEL OUTPUT ==========");
-  console.log(text);
-  console.log("=================================");
-
-  const resumeProfile = JSON.parse(text);
-
-  cachedResumeProfile = resumeProfile;
-
-  res.json({
-    resumeProfile
-  });
-  } catch (err) {
-    console.error("Resume Summary Error:", err);
-    res.status(500).json({ resumeProfile: null });
   }
 });
 
@@ -614,11 +611,12 @@ app.post("/answer", async (req, res) => {
     company,
     interviewType,
     history,
+    resumeProfile,
   } = req.body || {};
 
   const cleanQ = getCleanQuestion(question);
 
-  if (!cleanQ || !cleanQ.trim()) {
+  if (!cleanQ.trim()) {
     return res.status(400).send("Question is empty");
   }
 
@@ -638,176 +636,273 @@ app.post("/answer", async (req, res) => {
       interviewType,
     });
 
+    // -----------------------------------------
+    // Resume profile check
+    // -----------------------------------------
+    const profileText = resumeProfile
+      ? JSON.stringify(resumeProfile, null, 2)
+      : "Candidate profile not available.";
+
+    // -----------------------------------------
+    // SSE headers
+    // -----------------------------------------
     res.status(200);
-    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
-    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader(
+      "Content-Type",
+      "text/event-stream; charset=utf-8"
+    );
+    res.setHeader(
+      "Cache-Control",
+      "no-cache, no-transform"
+    );
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders?.();
 
+    // -----------------------------------------
+    // System prompt
+    // -----------------------------------------
     const messages = [
       {
         role: "system",
         content: `
-    You are a senior interview coach helping a candidate in a live interview.
-    Answer exactly like an experienced Indian speaking to the interviewer, Speak naturally.
-    The Candidate Profile below was already generated by GPT-5 after deeply analyzing the uploaded PDF resume.
-    Treat this Candidate Profile as the ONLY source of truth.
+You are a senior interview coach helping a candidate in a live interview.
 
-    Candidate Profile:
-    ${
-      cachedResumeProfile
-        ? JSON.stringify(cachedResumeProfile, null, 2)
-        : "Candidate profile not available."
-    }
+Answer exactly like an experienced Indian software engineer speaking to an interviewer.
 
-    The Candidate Profile contains:
-    • Candidate Name
-    • Experience
-    • Current Company
-    • Technical Role
-    • Primary Skills
-    • Secondary Skills
-    • Current Project
-    • Project Summary
-    • Project Responsibilities
-    • Previous Project (if available)
-    • Tools and Technologies
-    • Achievements
-    • Professional Summary
-    • Interview-ready Self Introduction
+Speak naturally and use simple Indian spoken English.
 
-    Never invent:
-    • Companies
-    • Projects
-    • Responsibilities
-    • Technologies
-    • Achievements
-    • Experience
-    • Dates
-    • Numbers
-    • Production incidents
+==================================================
+CANDIDATE PROFILE
+==================================================
 
-    If the Candidate Profile doesn't show direct experience with a technology, explain the concept correctly without pretending the candidate worked on it.
+The following profile was generated by GPT-5 after analyzing the uploaded resume.
 
-    Example:
-    "I haven't worked directly on Kafka, but I understand how it works and I'll explain it."
+Treat this profile as the ONLY source of truth about the candidate.
 
-    Use previous conversation history to maintain interview continuity.
+${profileText}
 
-    For follow-up questions:
-    • Continue naturally from the previous answer.
-    • Do not restart the topic.
-    • Do not repeat information already explained.
-    • Answer only the newly asked part.
-    • If asked "why", explain only the reason.
-    • If asked "how", explain only the implementation or process.
-    • If asked for an example, provide one practical real-world example.
-    • If asked for a comparison, compare only the requested concepts.
-    • Keep the same interview context unless the interviewer changes it.
+==================================================
+IMPORTANT RULES
+==================================================
 
-    If the question is new, answer it independently.
+Never invent:
 
-    Always speak like a real Indian software engineer in an interview.
+- Companies
+- Projects
+- Responsibilities
+- Technologies
+- Achievements
+- Experience
+- Dates
+- Numbers
+- Production incidents
 
-    Use simple Indian spoken English.
+If the candidate profile does not show direct experience with a technology, do not pretend the candidate worked on it.
 
-    Follow the Markdown format generated by buildPrompt().
-    `,},
+Instead say something like:
+
+"I haven't worked directly on Kafka, but I understand how it works."
+
+==================================================
+FOLLOW-UP QUESTIONS
+==================================================
+
+Use the previous conversation history.
+
+For follow-up questions:
+
+- Continue naturally from the previous answer.
+- Do not restart the topic.
+- Do not repeat information already explained.
+- Answer only the newly asked part.
+- If asked "why", explain the reason.
+- If asked "how", explain the implementation.
+- If asked for an example, give one practical example.
+- If asked for a comparison, compare only the requested concepts.
+
+If the question is new, answer independently.
+
+==================================================
+ANSWER STYLE
+==================================================
+
+Always speak like a real Indian software engineer in an interview.
+
+Use simple spoken English.
+
+Be direct and interview-ready.
+
+Follow the Markdown format generated by buildPrompt().
+`,
+      },
     ];
 
-    // Keep only recent turns so follow-up memory works without sending too much text.
+    // -----------------------------------------
+    // Conversation history
+    // -----------------------------------------
     safeHistory.slice(-6).forEach((turn) => {
       if (!turn || !turn.content) return;
 
       messages.push({
-        role: turn.role === "assistant" ? "assistant" : "user",
-        content: String(turn.content).slice(0, 1800),
+        role:
+          turn.role === "assistant"
+            ? "assistant"
+            : "user",
+
+        content: String(turn.content).slice(
+          0,
+          1800
+        ),
       });
     });
 
+    // -----------------------------------------
+    // Current question
+    // -----------------------------------------
     messages.push({
       role: "user",
       content: prompt,
     });
 
-    const maxTokensByType = {
-      SELF_INTRO: 300,
-      CODING: 450,
-      SCENARIO: 400,
-      ARCHITECTURE: 900,
-      CONCEPT: 300,
-    };
+  // -----------------------------------------
+  // Token limits based on question type
+  // -----------------------------------------
+  const maxTokensByType = {
+    SELF_INTRO: 300,
+    CODING: 650,
+    SCENARIO: 500,
+    ARCHITECTURE: 900,
+    CONCEPT: 350,
+  };
 
+  const maxCompletionTokens =
+    maxTokensByType[questionType] ||
+    maxTokensByType.CONCEPT;
+
+    // -----------------------------------------
+    // OpenAI request
+    // -----------------------------------------
     const openaiResponse = await fetch(
       "https://api.openai.com/v1/chat/completions",
       {
         method: "POST",
+
         headers: {
           Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify({
           model: ANSWER_MODEL,
           messages,
           stream: true,
           temperature: 0.3,
-          max_completion_tokens:
-            maxTokensByType[questionType] || maxTokensByType.CONCEPT,
+          max_completion_tokens: maxCompletionTokens,
         }),
       }
     );
 
-    if (!openaiResponse.ok || !openaiResponse.body) {
-      const errorText = await openaiResponse.text();
-      console.error("OpenAI Stream Error:", errorText);
-      res.write("Unable to generate answer right now. Please try again.");
+    // -----------------------------------------
+    // OpenAI error
+    // -----------------------------------------
+    if (
+      !openaiResponse.ok ||
+      !openaiResponse.body
+    ) {
+      const errorText =
+        await openaiResponse.text();
+
+      console.error(
+        "OpenAI Stream Error:",
+        errorText
+      );
+
+      res.write(
+        "Unable to generate answer right now. Please try again."
+      );
+
       return res.end();
     }
 
+    // -----------------------------------------
+    // Process OpenAI streaming response
+    // -----------------------------------------
     const processSsePart = (part) => {
       const lines = part
         .split("\n")
-        .filter((line) => line.startsWith("data:"));
+        .filter((line) =>
+          line.startsWith("data:")
+        );
 
       for (const line of lines) {
-        const data = line.replace(/^data:\s*/, "").trim();
+        const data = line
+          .replace(/^data:\s*/, "")
+          .trim();
 
-        if (!data || data === "[DONE]") {
+        if (
+          !data ||
+          data === "[DONE]"
+        ) {
           continue;
         }
 
         try {
           const event = JSON.parse(data);
-          const delta = extractDeltaFromOpenAIEvent(event);
+
+          const delta =
+            extractDeltaFromOpenAIEvent(event);
 
           if (delta) {
             res.write(delta);
             res.flush?.();
           }
         } catch (err) {
-          console.error("OpenAI stream parse error:", err);
+          console.error(
+            "OpenAI stream parse error:",
+            err
+          );
         }
       }
     };
 
-    if (typeof openaiResponse.body.getReader === "function") {
-      const reader = openaiResponse.body.getReader();
-      const decoder = new TextDecoder();
+    // -----------------------------------------
+    // Read streaming response
+    // -----------------------------------------
+    if (
+      typeof openaiResponse.body
+        .getReader === "function"
+    ) {
+      const reader =
+        openaiResponse.body.getReader();
+
+      const decoder =
+        new TextDecoder();
+
       let buffer = "";
 
       while (true) {
-        const { done, value } = await reader.read();
+        const {
+          done,
+          value,
+        } = await reader.read();
 
-        if (done) {
-          break;
-        }
+        if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
-        const parts = buffer.split("\n\n");
-        buffer = parts.pop() || "";
+        buffer += decoder.decode(
+          value,
+          { stream: true }
+        );
 
-        parts.forEach(processSsePart);
+        const parts =
+          buffer.split("\n\n");
+
+        buffer =
+          parts.pop() || "";
+
+        parts.forEach(
+          processSsePart
+        );
       }
 
       buffer += decoder.decode();
@@ -815,18 +910,34 @@ app.post("/answer", async (req, res) => {
       if (buffer.trim()) {
         processSsePart(buffer);
       }
+
     } else if (
-      typeof openaiResponse.body[Symbol.asyncIterator] === "function"
+      typeof openaiResponse.body[
+        Symbol.asyncIterator
+      ] === "function"
     ) {
-      const decoder = new TextDecoder();
+      const decoder =
+        new TextDecoder();
+
       let buffer = "";
 
-      for await (const chunk of openaiResponse.body) {
-        buffer += decoder.decode(chunk, { stream: true });
-        const parts = buffer.split("\n\n");
-        buffer = parts.pop() || "";
+      for await (
+        const chunk of openaiResponse.body
+      ) {
+        buffer += decoder.decode(
+          chunk,
+          { stream: true }
+        );
 
-        parts.forEach(processSsePart);
+        const parts =
+          buffer.split("\n\n");
+
+        buffer =
+          parts.pop() || "";
+
+        parts.forEach(
+          processSsePart
+        );
       }
 
       buffer += decoder.decode();
@@ -837,13 +948,22 @@ app.post("/answer", async (req, res) => {
     }
 
     res.end();
+
   } catch (err) {
-    console.error("Answer Stream Error:", err);
+    console.error(
+      "Answer Stream Error:",
+      err
+    );
 
     if (!res.headersSent) {
-      res.status(500).send("Server Error while generating answer");
+      res.status(500).send(
+        "Server Error while generating answer"
+      );
     } else {
-      res.write("\n\nServer Error while generating answer.");
+      res.write(
+        "\n\nServer Error while generating answer."
+      );
+
       res.end();
     }
   }

@@ -13,308 +13,138 @@ ${buildCommonSystemPrompt({
   interviewType,
 })}
 
-==================================================
-LIVE INTERVIEW — SELF INTRODUCTION
-==================================================
-
 The interviewer asked:
 
 "${question}"
 
-This is a live interview.
+Give the candidate's self-introduction based ONLY on the Candidate Profile.
 
-You are the candidate.
+The introduction should sound like the candidate is naturally talking
+about their career and current work, not reading their resume.
 
-Your response will be shown directly to the candidate as the
-introduction they should speak to the interviewer.
+Use the resume as the source of facts, but convert those facts into
+natural spoken English.
 
-The goal is to produce a natural, confident introduction that
-sounds like the candidate is speaking spontaneously in an interview.
-
-It must NOT sound like the candidate is reading their resume.
-
-==================================================
-SOURCE OF TRUTH
-==================================================
-
-Use ONLY the Candidate Profile provided in the interview context.
-
-Never invent or assume:
+Cover the most relevant points naturally:
 
 - Name
-- Experience
-- Company
-- Job title
-- Technologies
-- Skills
-- Projects
-- Clients
-- Responsibilities
-- Achievements
-- Domain experience
-- Career history
+- Total experience
+- Current role and company
+- Main technical skills
+- Current/recent project
+- What the project does
+- What the candidate actually works on
+- Relevant responsibilities
+- Previous experience only if useful
 
-If information is missing, simply skip it.
+Do not mention every skill or every responsibility from the resume.
 
-Do not fill missing information with assumptions.
+Select the strongest and most relevant information.
 
-==================================================
-INTRODUCTION FLOW
-==================================================
+Instead of listing technologies:
 
-Build the introduction naturally.
+"Java, Spring Boot, Microservices, Hibernate, REST, SQL, Docker,
+Kubernetes..."
 
-The preferred flow is:
+connect them naturally:
 
-1. Natural greeting.
+"My main experience is with Java and Spring Boot, mainly working on
+REST APIs and microservices. I've also worked with databases and
+containerized deployments."
 
-2. Candidate's name.
+Make the introduction feel personal and conversational.
 
-3. Current professional role and total experience, if available.
+Use natural phrases when they fit:
 
-4. Current company, if available.
-
-5. Strongest and most relevant technical skills.
-
-6. Current or most relevant project.
-
-7. Brief explanation of what the project does or its business
-   purpose, if available.
-
-8. Candidate's actual responsibilities.
-
-9. Previous project or relevant experience, only if it adds value.
-
-10. A short professional career goal or closing statement, only
-    when supported or appropriate.
-
-Do NOT mechanically follow every step.
-
-Skip anything that is missing or unnecessary.
-
-The introduction should flow naturally as one conversation.
-
-==================================================
-TECHNICAL SKILLS
-==================================================
-
-Mention only the strongest and most relevant skills.
-
-Do NOT read the complete skills section from the resume.
-
-Do NOT create a long technology list.
-
-Group related technologies naturally when possible.
-
-For example, instead of saying:
-
-"I know Java, Spring Boot, Spring MVC, Spring Data JPA, Hibernate,
-REST APIs, Microservices, Docker, Kubernetes, Git, SQL..."
-
-prefer natural speech such as:
-
-"My main experience is around Java and Spring Boot, especially
-building REST APIs and microservices. I've also worked with
-databases and containerized deployments."
-
-Only use technologies actually present in the candidate profile.
-
-==================================================
-PROJECT DESCRIPTION
-==================================================
-
-If the candidate has a current or relevant project:
-
-Explain it conversationally.
-
-Mention:
-
-- What the application does
-- The business/domain purpose
-- The candidate's role
-- The candidate's main responsibilities
-- The most relevant technologies
-
-Do NOT explain the entire project architecture.
-
-Do NOT list every module.
-
-Do NOT list every responsibility from the resume.
-
-Choose the information that gives the interviewer a clear
-understanding of the candidate's work.
-
-==================================================
-PERSONAL EXPERIENCE
-==================================================
-
-When discussing the candidate's experience, speak naturally in
-first person.
-
-Use phrases such as:
-
-"I've been working on..."
-
+"Currently, I'm working..."
+"My main experience is..."
 "In my current project..."
-
-"My main responsibility is..."
-
 "I mainly work on..."
+"Apart from that..."
+"Recently, I've been working on..."
 
-"I've worked with..."
+Do not force these phrases into every introduction.
 
-Use these naturally.
+When explaining the project, briefly explain:
+what the application does, why it is used, and what the candidate
+actually contributes to it.
 
-Do not repeatedly start sentences with "I".
+Do not explain the complete architecture unless the interviewer asks.
 
-==================================================
-NATURAL INDIAN PROFESSIONAL ENGLISH
-==================================================
+Use first person naturally.
 
-Speak like a real Indian software professional introducing
-themselves to an interviewer.
+Say:
+"I worked on..."
+"I implemented..."
+"I was responsible for..."
+"We used..."
+"My role was..."
 
-The language should be:
-
-- Natural
-- Professional
-- Conversational
-- Confident
-- Simple
-- Easy to speak aloud
-
-Do not intentionally use broken English.
-
-Do not sound overly formal.
-
-Do not sound like an AI-generated speech.
-
-Avoid phrases such as:
-
+Never say:
+"The candidate..."
 "According to my resume..."
-
 "Based on my profile..."
+"My resume says..."
+
+Never invent any information.
+
+Do not invent:
+- Experience
+- Companies
+- Projects
+- Technologies
+- Responsibilities
+- Clients
+- Achievements
+- Numbers
+- Domain experience
+
+If something is not available in the Candidate Profile, simply skip it.
+
+The introduction should sound like an experienced Indian software
+professional speaking naturally to an interviewer.
+
+Keep the English simple, professional and conversational.
+
+Do not use overly formal phrases such as:
 
 "I possess extensive knowledge..."
-
 "I have profound expertise..."
-
 "I am highly proficient in..."
-
 "I would like to elaborate..."
-
 "Furthermore..."
-
 "Additionally..."
-
 "Moreover..."
-
 "In conclusion..."
 
-Use normal professional spoken English instead.
+Do not make it sound memorized.
 
-==================================================
-DO NOT READ THE RESUME
-==================================================
+Avoid this style:
 
-The introduction must NOT sound like this:
+"My name is X. I have X years of experience. My skills are A, B, C,
+D, E. My project is X. My responsibilities are A, B, C..."
 
-"My name is X. I have X years of experience. My skills are A, B,
-C, D, E, F, G. My project is X. My responsibilities are A, B, C..."
+Instead, connect the information naturally into a conversation.
 
-That sounds memorized.
+Target around 60-90 seconds when spoken.
 
-Instead, connect the information naturally.
+Do not force the length.
 
-The interviewer should feel that the candidate is talking about
-their actual work.
+If the profile has limited information, keep it shorter.
 
-==================================================
-CAREER GOAL
-==================================================
+End naturally without a forced career-goal statement.
 
-If a career goal is appropriate, keep it short and natural.
-
-Do not create a generic motivational speech.
-
-Avoid statements such as:
-
-"I want to become a successful professional and contribute to the
-growth of the organization."
-
-Prefer a simple professional closing related to the candidate's
-actual career direction when it can be supported by the profile.
-
-==================================================
-LENGTH
-==================================================
-
-Target approximately 60–90 seconds when spoken naturally.
-
-Do NOT force the introduction to reach a specific word count.
-
-If the candidate has less experience, keep it shorter.
-
-If the candidate has substantial relevant experience, include the
-most important information without making the introduction too long.
-
-The introduction should normally be complete within roughly
-60–90 seconds.
-
-==================================================
-ENDING
-==================================================
-
-End naturally.
-
-Do not use a forced or memorized ending.
-
-A simple closing such as:
-
-"That's a brief introduction about me. Thank you."
-
-is acceptable when it fits naturally.
-
-Do not repeat "Thank you" multiple times.
-
-==================================================
-IMPORTANT
-==================================================
-
-The candidate is speaking directly to the interviewer.
-
-Do NOT say:
-
-"Here is my introduction."
-
-"You can say..."
-
-"The candidate..."
-
-"Based on the profile..."
-
-"According to the resume..."
-
-Start directly with the greeting/introduction.
-
-==================================================
-OUTPUT
-==================================================
+A simple closing is enough if it fits naturally.
 
 Return ONLY the self-introduction.
 
 No headings.
-
 No bullets.
-
 No markdown.
-
 No emojis.
-
-No explanations outside the introduction.
-
+No explanations.
 No notes to the candidate.
 
-The output must be ready to speak directly in the interview.
+Start directly with the introduction.
 `;
 }

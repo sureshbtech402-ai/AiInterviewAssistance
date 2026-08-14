@@ -1,24 +1,4 @@
-/**
- * Detect Interview Question Type
- *
- * IMPORTANT:
- * This classifier is intentionally deterministic and lightweight.
- *
- * Do NOT call an AI model only for classification.
- * The live interview path needs to remain fast.
- *
- * The classifier determines the most likely prompt category:
- *
- * SELF_INTRO
- * ARCHITECTURE
- * SCENARIO
- * CODING
- * CONCEPT
- */
 
-/**
- * Normalize question text.
- */
 function normalizeQuestion(question = "") {
   return String(question || "")
     .toLowerCase()
@@ -26,28 +6,16 @@ function normalizeQuestion(question = "") {
     .replace(/\s+/g, " ");
 }
 
-/**
- * Check whether the question contains one of the supplied patterns.
- */
 function containsPattern(question, patterns = []) {
-  return patterns.some((pattern) => {
-    return question.includes(pattern);
-  });
+  return patterns.some((pattern) => question.includes(pattern));
 }
 
-/**
- * Detect Interview Question Type.
- */
 export function classifyQuestion(question = "") {
   const q = normalizeQuestion(question);
 
   if (!q) {
     return "CONCEPT";
   }
-
-  // ==================================================
-  // SELF INTRODUCTION
-  // ==================================================
 
   const selfIntroPatterns = [
     "tell me about yourself",
@@ -62,55 +30,75 @@ export function classifyQuestion(question = "") {
     "self introduction",
     "self-introduction",
     "brief introduction",
-    "about yourself",
     "walk me through your resume",
     "walk me through the resume",
     "walk me through your cv",
     "walk me through your background",
     "tell me about your background",
-    "tell me about your experience",
   ];
 
   if (containsPattern(q, selfIntroPatterns)) {
     return "SELF_INTRO";
   }
 
-  // ==================================================
-  // CODING
-  // ==================================================
-  //
-  // Coding is checked before broad architecture/scenario
-  // patterns because some coding questions contain words
-  // such as "design" or "implement".
-  // ==================================================
-
   const codingPatterns = [
+    "syntax",
+    "syntax for",
+    "syntax of",
+    "code",
     "write code",
     "write the code",
     "write a code",
-    "write java code",
-    "write python code",
-    "write javascript code",
+    "give me code",
+    "give me the code",
+    "give me syntax",
+    "show me code",
+    "show me the code",
+    "show me syntax",
+    "code snippet",
+    "code for",
+    "code this",
+    "coding",
+    "coding question",
+    "coding problem",
     "write a program",
+    "write program",
     "program for",
     "write a function",
     "write a method",
-    "implement this",
-    "implement the",
-    "implement a",
+    "create a method",
+    "create a function",
     "can you code",
     "could you code",
-    "code this",
-    "code for",
-    "coding question",
-    "coding problem",
     "solve this problem",
-    "solve this using",
     "solve the problem",
+    "solve this using",
     "algorithm for",
-    "leetcode",
-    "hackerrank",
-    "codechef",
+
+    // ------------------------------
+    // Programming languages
+    // ------------------------------
+
+    "java code",
+    "java syntax",
+    "java program",
+    "java method",
+    "java function",
+    "python code",
+    "python syntax",
+    "python program",
+    "javascript code",
+    "javascript syntax",
+    "javascript program",
+    "js code",
+    "typescript code",
+    "c++ code",
+    "c# code",
+
+    // ------------------------------
+    // Java / programming problems
+    // ------------------------------
+
     "reverse string",
     "reverse a string",
     "reverse linked list",
@@ -127,7 +115,7 @@ export function classifyQuestion(question = "") {
     "linear search",
     "sort an array",
     "sort the array",
-    "merge two",
+    "merge two arrays",
     "merge arrays",
     "find the maximum",
     "find the minimum",
@@ -136,6 +124,141 @@ export function classifyQuestion(question = "") {
     "frequency of characters",
     "find missing number",
     "two sum",
+    "hashmap code",
+    "hash map code",
+    "array code",
+    "string code",
+    "arraylist code",
+    "linkedlist code",
+
+    // ------------------------------
+    // Selenium / UI automation
+    // ------------------------------
+
+    "selenium code",
+    "selenium syntax",
+    "selenium script",
+    "webdriver code",
+    "webdriver syntax",
+    "web driver code",
+    "xpath",
+    "xpath syntax",
+    "css selector",
+    "css selector syntax",
+    "locator syntax",
+    "findelement",
+    "find elements",
+    "webelement",
+    "window handling",
+    "windows handling",
+    "handle windows",
+    "handle browser windows",
+    "switch window",
+    "switch to window",
+    "switch tabs",
+    "handle tabs",
+    "iframe code",
+    "frame handling",
+    "alert handling",
+    "dropdown code",
+    "select class",
+    "actions class",
+    "mouse hover",
+    "drag and drop",
+    "screenshot code",
+    "explicit wait",
+    "implicit wait",
+    "fluent wait",
+    "wait syntax",
+    "broken link code",
+    "broken links code",
+    "broken server code",
+
+    // ------------------------------
+    // TestNG / JUnit / automation
+    // ------------------------------
+
+    "testng code",
+    "testng syntax",
+    "testng annotation",
+    "testng annotations",
+    "junit code",
+    "junit syntax",
+    "junit annotation",
+    "junit annotations",
+    "beforemethod",
+    "aftermethod",
+    "beforeclass",
+    "afterclass",
+    "dataprovider",
+    "parameterization",
+    "parallel testing",
+    "parallel execution",
+
+    // ------------------------------
+    // SQL / Database
+    // ------------------------------
+
+    "sql query",
+    "sql syntax",
+    "write sql",
+    "write a query",
+    "write query",
+    "give me query",
+    "database query",
+    "select query",
+    "insert query",
+    "update query",
+    "delete query",
+    "join query",
+    "inner join",
+    "left join",
+    "right join",
+    "group by query",
+    "having query",
+    "subquery",
+    "find duplicates in sql",
+    "second highest salary",
+    "nth highest salary",
+
+    // ------------------------------
+    // REST / API
+    // ------------------------------
+
+    "rest api code",
+    "rest api syntax",
+    "api code",
+    "api syntax",
+    "write an api",
+    "create an api",
+    "create rest api",
+    "rest controller code",
+    "spring controller code",
+    "spring boot code",
+    "spring boot syntax",
+    "endpoint code",
+    "endpoint syntax",
+    "request mapping code",
+    "getmapping",
+    "postmapping",
+    "putmapping",
+    "deletemapping",
+
+    // ------------------------------
+    // Git / Shell / Scripts
+    // ------------------------------
+
+    "git command",
+    "git commands",
+    "git syntax",
+    "command for",
+    "command to",
+    "shell script",
+    "shell command",
+    "bash script",
+    "bash command",
+    "script for",
+    "write a script",
   ];
 
   if (containsPattern(q, codingPatterns)) {
@@ -147,6 +270,20 @@ export function classifyQuestion(question = "") {
   // ==================================================
 
   const architecturePatterns = [
+    "explain your project",
+    "explain your current project",
+    "explain the project",
+    "project explanation",
+    "how does your project work",
+    "how does your current project work",
+    "how does the project work",
+    "explain the complete project flow",
+    "complete project flow",
+    "end to end project flow",
+    "project flow",
+    "api flow",
+    "api request flow",
+    "explain the request flow",
     "system design",
     "system-design",
     "high level design",
@@ -194,6 +331,17 @@ export function classifyQuestion(question = "") {
     "data flow",
     "component design",
     "architecture design",
+    "design a system",
+    "design an application",
+    "design an api",
+    "design a scalable system",
+    "design a scalable application",
+    "how would you design",
+    "how will you design",
+    "how do you design",
+    "how would you architect",
+    "how will you architect",
+    "how do you architect",
   ];
 
   if (containsPattern(q, architecturePatterns)) {
@@ -201,7 +349,7 @@ export function classifyQuestion(question = "") {
   }
 
   // ==================================================
-  // SCENARIO / BEHAVIORAL / PRACTICAL
+  // SCENARIO / PRACTICAL
   // ==================================================
 
   const scenarioPatterns = [
@@ -258,44 +406,6 @@ export function classifyQuestion(question = "") {
     "troubleshoot this",
     "debug this issue",
     "debug a",
-  ];
-
-  if (containsPattern(q, scenarioPatterns)) {
-    return "SCENARIO";
-  }
-
-  // ==================================================
-  // ARCHITECTURE SHORTCUTS
-  // ==================================================
-  //
-  // These are intentionally more specific than simply checking
-  // for the word "design".
-  // ==================================================
-
-  const architectureQuestionPatterns = [
-    "design a system",
-    "design an application",
-    "design an api",
-    "design a scalable",
-    "design a scalable system",
-    "design a scalable application",
-    "how would you design",
-    "how will you design",
-    "how do you design",
-    "how would you architect",
-    "how will you architect",
-    "how do you architect",
-  ];
-
-  if (containsPattern(q, architectureQuestionPatterns)) {
-    return "ARCHITECTURE";
-  }
-
-  // ==================================================
-  // SCENARIO SHORTCUTS
-  // ==================================================
-
-  const scenarioQuestionPatterns = [
     "what if the",
     "what if your",
     "suppose the",
@@ -304,23 +414,12 @@ export function classifyQuestion(question = "") {
     "imagine your",
   ];
 
-  if (containsPattern(q, scenarioQuestionPatterns)) {
+  if (containsPattern(q, scenarioPatterns)) {
     return "SCENARIO";
   }
 
   // ==================================================
   // DEFAULT
-  // ==================================================
-  //
-  // Most normal technical interview questions are concept
-  // questions:
-  //
-  // "What is HashMap?"
-  // "What is dependency injection?"
-  // "Difference between HashMap and Hashtable?"
-  // "What is REST?"
-  //
-  // These should go to the concept prompt.
   // ==================================================
 
   return "CONCEPT";
