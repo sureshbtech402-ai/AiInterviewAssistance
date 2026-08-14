@@ -1,4 +1,3 @@
-
 function normalizeQuestion(question = "") {
   return String(question || "")
     .toLowerCase()
@@ -6,8 +5,10 @@ function normalizeQuestion(question = "") {
     .replace(/\s+/g, " ");
 }
 
-function containsPattern(question, patterns = []) {
-  return patterns.some((pattern) => question.includes(pattern));
+function containsAny(question, patterns = []) {
+  return patterns.some((pattern) =>
+    question.includes(pattern)
+  );
 }
 
 export function classifyQuestion(question = "") {
@@ -17,6 +18,10 @@ export function classifyQuestion(question = "") {
     return "CONCEPT";
   }
 
+  // ==================================================
+  // SELF INTRODUCTION
+  // ==================================================
+
   const selfIntroPatterns = [
     "tell me about yourself",
     "tell us about yourself",
@@ -25,88 +30,69 @@ export function classifyQuestion(question = "") {
     "could you introduce yourself",
     "please introduce yourself",
     "give me your introduction",
-    "give us your introduction",
     "your introduction",
     "self introduction",
     "self-introduction",
-    "brief introduction",
+    "about yourself",
     "walk me through your resume",
-    "walk me through the resume",
     "walk me through your cv",
     "walk me through your background",
     "tell me about your background",
   ];
 
-  if (containsPattern(q, selfIntroPatterns)) {
+  if (containsAny(q, selfIntroPatterns)) {
     return "SELF_INTRO";
   }
 
+  // ==================================================
+  // CODING / SYNTAX / QUERIES / COMMANDS
+  // ==================================================
+
   const codingPatterns = [
+    // General coding
     "syntax",
-    "syntax for",
-    "syntax of",
-    "code",
     "write code",
     "write the code",
-    "write a code",
     "give me code",
     "give me the code",
-    "give me syntax",
     "show me code",
     "show me the code",
-    "show me syntax",
     "code snippet",
-    "code for",
-    "code this",
-    "coding",
-    "coding question",
-    "coding problem",
     "write a program",
     "write program",
-    "program for",
-    "write a function",
     "write a method",
+    "write a function",
     "create a method",
     "create a function",
+    "implement this",
+    "implement the",
+    "implementation of",
     "can you code",
     "could you code",
+    "coding question",
+    "coding problem",
     "solve this problem",
     "solve the problem",
-    "solve this using",
-    "algorithm for",
 
-    // ------------------------------
-    // Programming languages
-    // ------------------------------
-
+    // Java / Core Java
     "java code",
     "java syntax",
     "java program",
     "java method",
     "java function",
-    "python code",
-    "python syntax",
-    "python program",
-    "javascript code",
-    "javascript syntax",
-    "javascript program",
-    "js code",
-    "typescript code",
-    "c++ code",
-    "c# code",
-
-    // ------------------------------
-    // Java / programming problems
-    // ------------------------------
-
+    "hashmap code",
+    "hash map code",
+    "arraylist code",
+    "linkedlist code",
     "reverse string",
     "reverse a string",
     "reverse linked list",
-    "find duplicates",
     "find duplicate",
-    "remove duplicates",
+    "find duplicates",
+    "duplicate characters",
+    "duplicates in string",
     "remove duplicate",
-    "check palindrome",
+    "remove duplicates",
     "palindrome",
     "anagram",
     "fibonacci",
@@ -115,26 +101,16 @@ export function classifyQuestion(question = "") {
     "linear search",
     "sort an array",
     "sort the array",
-    "merge two arrays",
     "merge arrays",
-    "find the maximum",
-    "find the minimum",
+    "find maximum",
+    "find minimum",
     "count characters",
     "count frequency",
     "frequency of characters",
     "find missing number",
     "two sum",
-    "hashmap code",
-    "hash map code",
-    "array code",
-    "string code",
-    "arraylist code",
-    "linkedlist code",
 
-    // ------------------------------
-    // Selenium / UI automation
-    // ------------------------------
-
+    // Selenium
     "selenium code",
     "selenium syntax",
     "selenium script",
@@ -144,7 +120,6 @@ export function classifyQuestion(question = "") {
     "xpath",
     "xpath syntax",
     "css selector",
-    "css selector syntax",
     "locator syntax",
     "findelement",
     "find elements",
@@ -174,10 +149,7 @@ export function classifyQuestion(question = "") {
     "broken links code",
     "broken server code",
 
-    // ------------------------------
-    // TestNG / JUnit / automation
-    // ------------------------------
-
+    // TestNG / JUnit
     "testng code",
     "testng syntax",
     "testng annotation",
@@ -191,14 +163,37 @@ export function classifyQuestion(question = "") {
     "beforeclass",
     "afterclass",
     "dataprovider",
-    "parameterization",
     "parallel testing",
     "parallel execution",
 
-    // ------------------------------
-    // SQL / Database
-    // ------------------------------
+    // REST Assured / API
+    "rest assured code",
+    "rest assured syntax",
+    "rest api code",
+    "rest api syntax",
+    "api code",
+    "api syntax",
+    "api request code",
+    "api automation code",
+    "api test code",
+    "get request",
+    "post request",
+    "put request",
+    "delete request",
 
+    // Cucumber / BDD
+    "cucumber code",
+    "cucumber syntax",
+    "feature file",
+    "feature file syntax",
+    "gherkin syntax",
+    "step definition",
+    "step definitions",
+    "given when then",
+    "bdd code",
+    "bdd syntax",
+
+    // SQL
     "sql query",
     "sql syntax",
     "write sql",
@@ -221,69 +216,26 @@ export function classifyQuestion(question = "") {
     "second highest salary",
     "nth highest salary",
 
-    // ------------------------------
-    // REST / API
-    // ------------------------------
-
-    "rest api code",
-    "rest api syntax",
-    "api code",
-    "api syntax",
-    "write an api",
-    "create an api",
-    "create rest api",
-    "rest controller code",
-    "spring controller code",
-    "spring boot code",
-    "spring boot syntax",
-    "endpoint code",
-    "endpoint syntax",
-    "request mapping code",
-    "getmapping",
-    "postmapping",
-    "putmapping",
-    "deletemapping",
-
-    // ------------------------------
-    // Git / Shell / Scripts
-    // ------------------------------
-
+    // Git / Shell
     "git command",
     "git commands",
     "git syntax",
-    "command for",
-    "command to",
     "shell script",
     "shell command",
     "bash script",
     "bash command",
-    "script for",
     "write a script",
   ];
 
-  if (containsPattern(q, codingPatterns)) {
+  if (containsAny(q, codingPatterns)) {
     return "CODING";
   }
 
   // ==================================================
-  // ARCHITECTURE / SYSTEM DESIGN
+  // ARCHITECTURE / FRAMEWORK / PROJECT DESIGN
   // ==================================================
 
   const architecturePatterns = [
-    "explain your project",
-    "explain your current project",
-    "explain the project",
-    "project explanation",
-    "how does your project work",
-    "how does your current project work",
-    "how does the project work",
-    "explain the complete project flow",
-    "complete project flow",
-    "end to end project flow",
-    "project flow",
-    "api flow",
-    "api request flow",
-    "explain the request flow",
     "system design",
     "system-design",
     "high level design",
@@ -292,45 +244,62 @@ export function classifyQuestion(question = "") {
     "low-level design",
     "hld",
     "lld",
+
+    // Architecture
     "system architecture",
     "application architecture",
     "software architecture",
     "project architecture",
-    "explain the architecture",
-    "explain your architecture",
-    "explain the project architecture",
-    "explain your project architecture",
+    "framework architecture",
+    "automation framework architecture",
     "architecture of your project",
     "architecture of the application",
+    "explain the architecture",
+    "explain your architecture",
+
+    // Project
+    "explain your project",
+    "explain the project",
+    "explain your current project",
+    "project explanation",
+    "how does your project work",
+    "how does the project work",
+    "project flow",
+    "complete project flow",
+    "end to end project flow",
+    "end-to-end project flow",
+
+    // Automation framework
+    "automation framework",
+    "test automation framework",
+    "framework design",
+    "selenium framework",
+    "selenium architecture",
+    "bdd framework",
+    "cucumber framework",
+
+    // Flow
     "request flow",
     "request-response flow",
     "request response flow",
     "application flow",
-    "project flow",
+    "api flow",
+    "api request flow",
+    "data flow",
+    "deployment flow",
     "end to end flow",
     "end-to-end flow",
-    "how request flows",
-    "how the request flows",
-    "how does the request flow",
-    "how does a request flow",
-    "how the application works",
-    "how does the application work",
-    "how does your application work",
-    "microservice architecture",
-    "microservices architecture",
-    "microservice flow",
-    "microservices flow",
+
+    // Services / API
     "service communication",
     "how services communicate",
     "service-to-service communication",
+
+    // Design
     "sequence diagram",
-    "draw the architecture",
-    "draw architecture",
-    "deployment architecture",
-    "deployment flow",
-    "data flow",
     "component design",
     "architecture design",
+    "deployment architecture",
     "design a system",
     "design an application",
     "design an api",
@@ -344,12 +313,12 @@ export function classifyQuestion(question = "") {
     "how do you architect",
   ];
 
-  if (containsPattern(q, architecturePatterns)) {
+  if (containsAny(q, architecturePatterns)) {
     return "ARCHITECTURE";
   }
 
   // ==================================================
-  // SCENARIO / PRACTICAL
+  // SCENARIO / TROUBLESHOOTING
   // ==================================================
 
   const scenarioPatterns = [
@@ -369,6 +338,8 @@ export function classifyQuestion(question = "") {
     "how will you approach",
     "what is your approach",
     "what would be your approach",
+
+    // Production
     "production issue",
     "production problem",
     "production bug",
@@ -377,23 +348,18 @@ export function classifyQuestion(question = "") {
     "production outage",
     "critical issue",
     "critical bug",
-    "critical production",
+    "production support",
+
+    // Client / team
     "client issue",
     "client problem",
     "customer issue",
     "customer problem",
-    "production support",
-    "support issue",
     "team conflict",
-    "conflict with a team member",
     "conflict with team member",
     "disagreement with",
-    "tight deadline",
-    "challenging situation",
-    "challenging issue",
-    "difficult situation",
-    "difficult issue",
-    "code review",
+
+    // Troubleshooting
     "bug you fixed",
     "issue you faced",
     "problem you faced",
@@ -406,6 +372,8 @@ export function classifyQuestion(question = "") {
     "troubleshoot this",
     "debug this issue",
     "debug a",
+
+    // Hypothetical
     "what if the",
     "what if your",
     "suppose the",
@@ -414,7 +382,7 @@ export function classifyQuestion(question = "") {
     "imagine your",
   ];
 
-  if (containsPattern(q, scenarioPatterns)) {
+  if (containsAny(q, scenarioPatterns)) {
     return "SCENARIO";
   }
 

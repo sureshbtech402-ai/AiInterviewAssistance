@@ -1,20 +1,28 @@
-
 const SHORT_FOLLOW_UPS = [
   "why?",
+  "why",
   "how?",
+  "how",
   "then?",
+  "then",
   "next?",
+  "next",
   "what next?",
   "and then?",
   "why is that?",
   "how so?",
-  "what about it?",
   "what about that?",
   "what do you mean?",
   "can you explain?",
   "can you elaborate?",
   "and why?",
   "and how?",
+  "write syntax",
+  "give syntax",
+  "write code",
+  "give code",
+  "show code",
+  "can you code it?",
 ];
 
 const FOLLOW_UP_PATTERNS = [
@@ -34,10 +42,17 @@ const FOLLOW_UP_PATTERNS = [
   "can you explain",
   "can you elaborate",
   "what do you mean",
+  "write syntax for",
+  "give me syntax for",
+  "write code for",
+  "give me code for",
+  "show me the code",
+  "can you write the code",
+  "can you write syntax",
 ];
 
 function normalizeQuestion(question = "") {
-  return String(question)
+  return String(question || "")
     .trim()
     .replace(/\s+/g, " ")
     .toLowerCase();
@@ -46,32 +61,33 @@ function normalizeQuestion(question = "") {
 export function isFollowUpQuestion(question = "") {
   const q = normalizeQuestion(question);
 
-  if (!q) return false;
+  if (!q) {
+    return false;
+  }
 
   if (SHORT_FOLLOW_UPS.includes(q)) {
     return true;
   }
 
-  return FOLLOW_UP_PATTERNS.some((pattern) => {
-    return (
-      q === pattern ||
-      q.startsWith(`${pattern} `) ||
-      q.includes(` ${pattern} `) ||
-      q.endsWith(` ${pattern}`)
-    );
-  });
+  return FOLLOW_UP_PATTERNS.some((pattern) =>
+    q === pattern ||
+    q.startsWith(`${pattern} `) ||
+    q.includes(` ${pattern} `) ||
+    q.endsWith(` ${pattern}`)
+  );
 }
 
 export function isShortInterviewQuestion(question = "") {
   const q = normalizeQuestion(question);
 
-  if (!q) return false;
-
-  return q.split(" ").length <= 6;
+  return q ? q.split(" ").length <= 8 : false;
 }
 
-export function getRecentConversationHistory(history = [], limit = 6) {
-  if (!Array.isArray(history) || history.length === 0) {
+export function getRecentConversationHistory(
+  history = [],
+  limit = 6
+) {
+  if (!Array.isArray(history)) {
     return [];
   }
 
@@ -80,8 +96,12 @@ export function getRecentConversationHistory(history = [], limit = 6) {
   return history.slice(-safeLimit);
 }
 
-export function buildConversationHistory(history = [], limit = 6) {
-  const recentHistory = getRecentConversationHistory(history, limit);
+export function buildConversationHistory(
+  history = [],
+  limit = 6
+) {
+  const recentHistory =
+    getRecentConversationHistory(history, limit);
 
   if (!recentHistory.length) {
     return "";
@@ -93,16 +113,18 @@ export function buildConversationHistory(history = [], limit = 6) {
         return "";
       }
 
-      const role =
-        item.role === "assistant" || item.role === "candidate"
-          ? "Candidate"
-          : "Interviewer";
-
-      const content = String(item.content || "").trim();
+      const content =
+        String(item.content || "").trim();
 
       if (!content) {
         return "";
       }
+
+      const role =
+        item.role === "assistant" ||
+        item.role === "candidate"
+          ? "Candidate"
+          : "Interviewer";
 
       return `${role}: ${content}`;
     })
@@ -110,8 +132,13 @@ export function buildConversationHistory(history = [], limit = 6) {
     .join("\n");
 }
 
-export function buildInterviewContext(history = []) {
-  if (!Array.isArray(history) || history.length === 0) {
+export function buildInterviewContext(
+  history = []
+) {
+  const recentHistory =
+    getRecentConversationHistory(history, 6);
+
+  if (!recentHistory.length) {
     return {
       previousQuestion: "",
       previousAnswer: "",
@@ -120,52 +147,60 @@ export function buildInterviewContext(history = []) {
     };
   }
 
-  const recentHistory = getRecentConversationHistory(history, 6);
-
   let previousQuestion = "";
   let previousAnswer = "";
 
-  for (let i = recentHistory.length - 1; i >= 0; i--) {
+  for (
+    let i = recentHistory.length - 1;
+    i >= 0;
+    i--
+  ) {
     const item = recentHistory[i];
 
-    if (!item || typeof item !== "object") {
+    if (!item || !item.content) {
       continue;
     }
 
-    const content = String(item.content || "").trim();
-
-    if (!content) {
-      continue;
-    }
+    const content =
+      String(item.content).trim();
 
     if (
       !previousAnswer &&
-      (item.role === "assistant" || item.role === "candidate")
+      (item.role === "assistant" ||
+        item.role === "candidate")
     ) {
       previousAnswer = content;
       continue;
     }
 
-    if (!previousQuestion && item.role === "user") {
+    if (
+      !previousQuestion &&
+      item.role === "user"
+    ) {
       previousQuestion = content;
     }
 
-    if (previousQuestion && previousAnswer) {
+    if (
+      previousQuestion &&
+      previousAnswer
+    ) {
       break;
     }
   }
 
-  const questionAnswerCount = countQuestionAnswerPairs(recentHistory);
-
   return {
     previousQuestion,
     previousAnswer,
-    historyText: buildConversationHistory(recentHistory, 6),
-    questionAnswerCount,
+    historyText:
+      buildConversationHistory(recentHistory),
+    questionAnswerCount:
+      countQuestionAnswerPairs(recentHistory),
   };
 }
 
-function countQuestionAnswerPairs(history = []) {
+function countQuestionAnswerPairs(
+  history = []
+) {
   if (!Array.isArray(history)) {
     return 0;
   }
@@ -174,7 +209,7 @@ function countQuestionAnswerPairs(history = []) {
   let answers = 0;
 
   for (const item of history) {
-    if (!item || typeof item !== "object") {
+    if (!item) {
       continue;
     }
 
@@ -193,70 +228,12 @@ function countQuestionAnswerPairs(history = []) {
   return Math.min(questions, answers);
 }
 
-export function hasEnoughFollowUpContext(history = []) {
-  return countQuestionAnswerPairs(
-    getRecentConversationHistory(history, 6)
-  ) >= 3;
-}
-
-export function buildFollowUpPrompt({
-  question,
-  historyText = "",
-}) {
-  return `
-You are the candidate in a live technical interview.
-
-Recent interview conversation:
-
-${historyText}
-
-Current interviewer question:
-"${question}"
-
-Continue the conversation naturally.
-
-Use the previous conversation only to understand what the interviewer is referring to.
-
-If this is a follow-up, answer only the new point.
-
-Do not repeat the previous answer.
-
-Do not restart the topic.
-
-If the current question is a new topic, answer the current question normally.
-
-Use the candidate profile already provided in the system prompt.
-
-Never invent experience, projects, technologies, responsibilities, incidents, or achievements.
-
-Speak naturally like an experienced Indian software professional in a live interview.
-
-Keep the answer short, clear, direct, and easy to speak.
-
-Do not sound scripted or like AI.
-
-Do not use phrases like:
-"Certainly"
-"Additionally"
-"Furthermore"
-"Moreover"
-"In conclusion"
-"Let me elaborate"
-"According to my profile"
-"Based on my experience"
-
-Do not teach.
-
-Do not write documentation.
-
-Do not add headings.
-
-Do not add titles.
-
-Do not add emojis.
-
-Return only the answer the candidate should speak.
-
-Start immediately.
-`;
+export function hasEnoughFollowUpContext(
+  history = []
+) {
+  return (
+    countQuestionAnswerPairs(
+      getRecentConversationHistory(history)
+    ) >= 1
+  );
 }

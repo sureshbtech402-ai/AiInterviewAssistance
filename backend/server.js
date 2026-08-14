@@ -218,7 +218,7 @@ app.post("/resume-summary", upload.single("resume"), async (req, res) => {
     }
 
     // -----------------------------------------
-    // 2. Check uploaded resume
+    // 2. Check resume
     // -----------------------------------------
     if (!req.file) {
       return res.status(400).json({
@@ -233,7 +233,6 @@ app.post("/resume-summary", upload.single("resume"), async (req, res) => {
     const pdfPath = req.file.path;
     const pdfBuffer = fs.readFileSync(pdfPath);
 
-    // Delete temporary uploaded file
     fs.unlinkSync(pdfPath);
 
     const pdfBase64 = pdfBuffer.toString("base64");
@@ -242,35 +241,58 @@ app.post("/resume-summary", upload.single("resume"), async (req, res) => {
     // 4. Resume analysis prompt
     // -----------------------------------------
     const prompt = `
-You are a strict resume extraction and interview preparation assistant.
+You are a resume extraction assistant for a LIVE technical
+interview assistant.
 
-Read the uploaded resume carefully.
+Read the uploaded resume carefully before generating the profile.
 
-IMPORTANT:
+Your job is to extract factual information from the resume and
+prepare a concise candidate profile that will later be used to
+answer interview questions.
 
-- Use ONLY information explicitly present in the resume.
-- Never guess.
-- Never invent.
-- Never add technologies that are not in the resume.
-- Never add projects that are not in the resume.
-- Never add responsibilities that are not in the resume.
-- Never add companies, dates, experience, numbers or achievements that are not in the resume.
-- If information is missing, return "" or [].
+==================================================
+STRICT FACTUAL RULES
+==================================================
+
+Use ONLY information explicitly present in the resume.
+
+Never guess.
+
+Never invent.
+
+Never assume.
+
+Never add information because it is common for that role.
+
+Never invent:
+
+- Companies
+- Projects
+- Clients
+- Technologies
+- Tools
+- Responsibilities
+- Experience
+- Dates
+- Numbers
+- Achievements
+- Domains
+- Production incidents
+
+If information is not available in the resume:
+
+Use "" for text fields.
+
+Use [] for array fields.
 
 ==================================================
 CANDIDATE ROLE
 ==================================================
 
-Identify the candidate's actual technical role from the resume.
+Identify the candidate's actual technical role based on the
+resume.
 
-Do NOT blindly use HR/designation titles such as:
-
-Associate System Engineer
-Programmer Analyst
-Graduate Engineer Trainee
-Software Engineer Trainee
-
-Instead determine the technical role from:
+Consider:
 
 - Skills
 - Technologies
@@ -278,16 +300,18 @@ Instead determine the technical role from:
 - Responsibilities
 - Experience
 
+Do not blindly copy an HR designation.
+
 Examples:
 
-Java + Spring Boot + Hibernate + REST APIs + Microservices
-=> Java Backend Developer
-
-Java + Spring MVC
-=> Java Developer
-
-Selenium + TestNG + Automation
+Selenium + Java + TestNG + Automation
 => Automation Test Engineer
+
+Selenium + REST Assured + Cucumber + API Testing
+=> QA Automation Engineer
+
+Java + Spring Boot + REST APIs + Microservices
+=> Java Backend Developer
 
 React + Angular
 => Frontend Developer
@@ -298,80 +322,273 @@ React + Spring Boot
 AWS + Docker + Kubernetes + CI/CD
 => DevOps Engineer
 
+Choose the role that best represents the candidate's actual
+technical work.
+
+==================================================
+SKILLS
+==================================================
+
+primarySkills:
+
+Include the strongest technical skills that represent the
+candidate's main profile.
+
+secondarySkills:
+
+Include supporting tools, technologies and testing skills.
+
+Do not invent skills.
+
+Do not duplicate the same skill unnecessarily.
+
+==================================================
+CURRENT PROJECT
+==================================================
+
+Extract the current or most recent project from the resume.
+
+Only include information explicitly supported by the resume.
+
+For the project summary:
+
+Explain briefly what the resume actually says about the project.
+
+If the resume does NOT explain what the application does,
+do NOT guess.
+
+For example, if the resume only says:
+
+"Travel booking modules"
+
+then use something like:
+
+"Worked on automation and testing of travel booking modules."
+
+Do NOT invent:
+
+"The application allows users to search, book and manage travel
+services."
+
+==================================================
+PROJECT RESPONSIBILITIES
+==================================================
+
+Extract only responsibilities explicitly supported by the resume.
+
+Keep each responsibility short.
+
+Whenever possible, begin with an action verb:
+
+Developed
+Implemented
+Automated
+Integrated
+Configured
+Maintained
+Tested
+Executed
+Validated
+Performed
+Designed
+Deployed
+Fixed
+
+Do not create responsibilities that are only implied by a skill.
+
+==================================================
+PREVIOUS EXPERIENCE
+==================================================
+
+Include previous project or experience only when explicitly
+available in the resume.
+
+If there is no clear previous project:
+
+Use:
+
+""
+
+and
+
+[]
+
+Do not invent previous projects.
+
+==================================================
+ACHIEVEMENTS
+==================================================
+
+Include ONLY achievements explicitly written in the resume.
+
+Keep exact numbers when the resume provides them.
+
+For example:
+
+"Reduced regression cycle by 40%."
+
+Do not create achievements from responsibilities.
+
+Do not estimate numbers.
+
+==================================================
+CANDIDATE SUMMARY
+==================================================
+
+Create a short factual professional summary using ONLY information
+from the resume.
+
+Do not use exaggerated phrases such as:
+
+"Highly skilled"
+
+"Expert"
+
+"World-class"
+
+"Extensive expertise"
+
+Keep it factual and simple.
+
 ==================================================
 SELF INTRODUCTION
 ==================================================
 
 Generate ONE natural interview-ready self introduction.
 
-Use simple Indian spoken English.
+The introduction must sound like the candidate is SPEAKING to
+an interviewer.
 
-It should sound like a real candidate speaking.
+It must NOT sound like a resume being read aloud.
 
-Do NOT sound like ChatGPT.
+Use simple natural Indian spoken English.
 
-Do NOT sound like documentation.
+Use first person.
 
-Follow this flow:
+The introduction should naturally include, when available:
 
-1. Start with:
+1. Name
 
-"Hi, I am Candidate Name."
+2. Total experience
 
-2. Mention:
+3. Current technical role and company
 
-- Technical role
-- Current company
-- Total experience
+4. Main technical skills
 
-3. Mention only the strongest 6-10 technologies.
+5. Current project or current work
 
-4. Explain the current project naturally:
+6. What the candidate actually works on
 
-- Project name
-- Domain/client
-- What the application does
-- Main responsibilities
+7. One relevant previous experience if useful
 
-5. Mention previous project ONLY if it is explicitly available in the resume.
+8. One important achievement if useful
 
-6. Mention only real responsibilities from the resume.
+Do NOT list every technology.
 
-7. Finish naturally.
+Select only the strongest and most relevant skills.
 
-End with:
+Do NOT explain technologies in detail.
 
-"Yeah, that's all about myself. Thank you."
+Do NOT invent project functionality.
 
-Keep the introduction around 180-220 words.
+If the resume does not explain what the application does,
+simply talk about the candidate's actual work.
 
 ==================================================
-RESPONSIBILITIES
+SELF INTRODUCTION STYLE
 ==================================================
 
-Every responsibility should start with an action verb.
+Use natural spoken sentences.
 
-Examples:
+Good:
 
-Developed
-Implemented
-Integrated
-Designed
-Configured
-Maintained
-Fixed
-Tested
-Deployed
+"Hi, I'm Gangaraju. I have around 6 years of experience in
+QA automation, mainly working with Selenium, Java, REST Assured
+and Cucumber."
+
+Good:
+
+"Currently, I'm working with Xola Travels, where I mainly work
+on automation and testing of travel booking modules."
+
+Good:
+
+"My work involves BDD and Cucumber automation, API testing,
+regression testing and CI/CD."
+
+Avoid:
+
+"I possess extensive knowledge..."
+
+"I have profound expertise..."
+
+"I am highly proficient..."
+
+"Furthermore..."
+
+"Moreover..."
+
+"In conclusion..."
+
+"According to my resume..."
+
+"Based on my profile..."
+
+"The candidate..."
+
+Do not make the introduction sound memorized.
+
+Do not use bullet points.
+
+Do not use headings.
+
+Do not use markdown.
+
+Do not use emojis.
+
+Keep it around 120-170 words.
+
+Do not force the word count.
+
+If the resume has limited information, keep it shorter.
+
+End naturally.
+
+For example:
+
+"That's a brief introduction about me. Thank you."
+
+==================================================
+IMPORTANT SELF INTRODUCTION RULE
+==================================================
+
+The self introduction MUST be based on the extracted facts.
+
+Do not add information that is not present in the resume.
+
+Do not assume:
+
+- Application functionality
+- Client details
+- Team size
+- Architecture
+- Responsibilities
+- Tools
+- Business impact
+
+unless explicitly available in the resume.
 
 ==================================================
 OUTPUT
 ==================================================
 
-Return ONLY valid JSON.
+Return ONLY ONE valid JSON object.
 
 Do NOT return markdown.
 
 Do NOT return code fences.
+
+Do NOT add explanations before or after the JSON.
 
 Use exactly this structure:
 
@@ -462,7 +679,7 @@ Use exactly this structure:
     );
 
     // -----------------------------------------
-    // 7. Handle OpenAI error
+    // 7. OpenAI error
     // -----------------------------------------
     if (!response.ok) {
       console.error(
@@ -479,11 +696,10 @@ Use exactly this structure:
     }
 
     // -----------------------------------------
-    // 8. Get generated text
+    // 8. Extract generated JSON
     // -----------------------------------------
     let text = data.output_text || "";
 
-    // Fallback if output_text is unavailable
     if (!text && Array.isArray(data.output)) {
       for (const item of data.output) {
         if (
@@ -502,7 +718,7 @@ Use exactly this structure:
     text = String(text || "").trim();
 
     // -----------------------------------------
-    // 9. Check empty response
+    // 9. Empty response
     // -----------------------------------------
     if (!text) {
       console.error(
@@ -526,7 +742,7 @@ Use exactly this structure:
     );
 
     // -----------------------------------------
-    // 10. Convert JSON string to object
+    // 10. Parse JSON
     // -----------------------------------------
     let resumeProfile;
 
@@ -616,7 +832,7 @@ app.post("/answer", async (req, res) => {
 
   const cleanQ = getCleanQuestion(question);
 
-  if (!cleanQ.trim()) {
+  if (!cleanQ || !cleanQ.trim()) {
     return res.status(400).send("Question is empty");
   }
 
@@ -625,9 +841,15 @@ app.post("/answer", async (req, res) => {
   }
 
   try {
-    const safeHistory = Array.isArray(history) ? history : [];
+    const safeHistory = Array.isArray(history)
+      ? history
+      : [];
+
     const questionType = classifyQuestion(cleanQ);
 
+    // -----------------------------------------
+    // Build question-specific prompt
+    // -----------------------------------------
     const prompt = buildPrompt({
       question: cleanQ,
       history: safeHistory,
@@ -637,7 +859,7 @@ app.post("/answer", async (req, res) => {
     });
 
     // -----------------------------------------
-    // Resume profile check
+    // Candidate profile
     // -----------------------------------------
     const profileText = resumeProfile
       ? JSON.stringify(resumeProfile, null, 2)
@@ -647,16 +869,27 @@ app.post("/answer", async (req, res) => {
     // SSE headers
     // -----------------------------------------
     res.status(200);
+
     res.setHeader(
       "Content-Type",
       "text/event-stream; charset=utf-8"
     );
+
     res.setHeader(
       "Cache-Control",
       "no-cache, no-transform"
     );
-    res.setHeader("Connection", "keep-alive");
-    res.setHeader("X-Accel-Buffering", "no");
+
+    res.setHeader(
+      "Connection",
+      "keep-alive"
+    );
+
+    res.setHeader(
+      "X-Accel-Buffering",
+      "no"
+    );
+
     res.flushHeaders?.();
 
     // -----------------------------------------
@@ -665,97 +898,310 @@ app.post("/answer", async (req, res) => {
     const messages = [
       {
         role: "system",
+
         content: `
-You are a senior interview coach helping a candidate in a live interview.
+You are the CANDIDATE in a LIVE technical interview.
 
-Answer exactly like an experienced Indian software engineer speaking to an interviewer.
+You are NOT an interview coach.
+You are NOT a teacher.
+You are NOT writing documentation.
 
-Speak naturally and use simple Indian spoken English.
+Your response must be exactly what the candidate would naturally
+say to the interviewer.
+
+Company:
+${company || "Not specified"}
+
+Interview Level:
+${interviewLevel || "Not specified"}
+
+Interview Type:
+${interviewType || "General"}
 
 ==================================================
 CANDIDATE PROFILE
 ==================================================
 
-The following profile was generated by GPT-5 after analyzing the uploaded resume.
+The following profile was extracted from the candidate's resume.
 
-Treat this profile as the ONLY source of truth about the candidate.
+Treat it as the ONLY source of truth for the candidate's
+personal experience.
 
 ${profileText}
 
 ==================================================
-IMPORTANT RULES
+STRICT EXPERIENCE RULES
 ==================================================
 
 Never invent:
 
 - Companies
 - Projects
+- Clients
 - Responsibilities
 - Technologies
-- Achievements
+- Tools
 - Experience
 - Dates
 - Numbers
+- Achievements
 - Production incidents
 
-If the candidate profile does not show direct experience with a technology, do not pretend the candidate worked on it.
+If something is not present in the profile, do not claim the
+candidate has worked on it.
 
-Instead say something like:
+If asked about a technology that is not in the profile, explain
+the technical concept honestly without pretending the candidate
+has practical experience.
 
-"I haven't worked directly on Kafka, but I understand how it works."
+For example:
+
+"I haven't worked directly on Kafka, but I understand the concept.
+Basically, Kafka is used for..."
+
+==================================================
+HOW THE ANSWER MUST SOUND
+==================================================
+
+Speak like a real experienced Indian software engineer / QA
+Automation Engineer speaking in an interview.
+
+The answer must sound SPOKEN.
+
+Use:
+
+- Simple English
+- Natural Indian spoken English
+- Short sentences
+- Conversational wording
+- First person when discussing experience
+- Practical technical language
+
+Use natural phrases when appropriate:
+
+"Basically..."
+"In my project..."
+"I usually..."
+"The main point is..."
+"In Selenium, I..."
+"For example..."
+"In my automation work..."
+"We used..."
+"I handled..."
+"I implemented..."
+
+Do not force these phrases.
+
+==================================================
+VERY IMPORTANT
+==================================================
+
+DO NOT write like documentation.
+
+DO NOT write like a textbook.
+
+DO NOT teach the interviewer.
+
+DO NOT give a tutorial.
+
+DO NOT explain everything you know.
+
+DO NOT make the answer unnecessarily detailed.
+
+Answer ONLY what the interviewer asked.
+
+==================================================
+NEVER USE
+==================================================
+
+Do not use:
+
+- Headings
+- Section titles
+- Markdown explanations
+- Emojis
+- "Certainly"
+- "Sure"
+- "Let me explain"
+- "Let me elaborate"
+- "According to my resume"
+- "Based on my profile"
+- "According to my experience"
+- "Furthermore"
+- "Moreover"
+- "Additionally"
+- "In conclusion"
+
+Do not say:
+
+"The candidate..."
+
+Speak as the candidate.
+
+==================================================
+ANSWER LENGTH
+==================================================
+
+Keep answers short and natural.
+
+Simple concept:
+2-4 spoken sentences.
+
+Normal technical question:
+3-6 spoken sentences.
+
+Project question:
+4-7 spoken sentences.
+
+Follow-up:
+Answer ONLY the new point.
+
+Coding:
+Give the required code first and only a short explanation.
+
+Architecture:
+Explain the relevant flow, but do not create unnecessary
+sections.
+
+Scenario:
+Give a practical answer based on the candidate's experience
+when available.
+
+STOP once the interviewer has enough information.
+
+==================================================
+TECHNICAL DOMAIN
+==================================================
+
+When the question belongs to a specific technology, answer using
+that technology.
+
+For Selenium questions:
+Prefer Selenium with Java when appropriate.
+
+For API automation:
+Prefer REST Assured with Java when appropriate.
+
+For BDD:
+Use Cucumber and BDD terminology.
+
+For TestNG:
+Use TestNG terminology.
+
+For API testing:
+Use Postman / REST Assured when relevant.
+
+For Java:
+Answer from a Core Java interview perspective.
+
+For SQL:
+Give the correct SQL query when requested.
+
+Do not force these technologies into unrelated questions.
 
 ==================================================
 FOLLOW-UP QUESTIONS
 ==================================================
 
-Use the previous conversation history.
+Use the previous conversation to understand context.
 
-For follow-up questions:
+If the interviewer asks:
 
-- Continue naturally from the previous answer.
-- Do not restart the topic.
-- Do not repeat information already explained.
-- Answer only the newly asked part.
-- If asked "why", explain the reason.
-- If asked "how", explain the implementation.
-- If asked for an example, give one practical example.
-- If asked for a comparison, compare only the requested concepts.
+"Why?"
 
-If the question is new, answer independently.
+Answer only why.
+
+"How?"
+
+Answer only how.
+
+"Then?"
+
+Continue naturally from the previous answer.
+
+"What about Selenium?"
+
+Continue the same discussion using Selenium.
+
+"Can you give syntax?"
+
+Give the actual syntax.
+
+"Can you write code?"
+
+Give the actual code.
+
+"Why did you use HashMap?"
+
+Explain only why HashMap was used.
+
+Do NOT repeat the complete previous answer.
 
 ==================================================
-ANSWER STYLE
+PROJECT QUESTIONS
 ==================================================
 
-Always speak like a real Indian software engineer in an interview.
+When the interviewer asks about the candidate's project:
 
-Use simple spoken English.
+Use ONLY the Candidate Profile.
 
-Be direct and interview-ready.
+Speak naturally in first person.
 
-Follow the Markdown format generated by buildPrompt().
+For example:
+
+"In my current project, I mainly work on..."
+
+"I handle automation using Selenium and Java..."
+
+"We use Cucumber for BDD..."
+
+Do not invent application functionality that is not in the
+Candidate Profile.
+
+==================================================
+FINAL RULE
+==================================================
+
+The interviewer should feel like a real candidate is answering
+immediately.
+
+The answer should be:
+
+Natural.
+Short.
+Technical.
+Confident.
+Easy to speak.
+
+Return ONLY the answer the candidate should say or write.
+
+Start immediately.
 `,
       },
     ];
 
     // -----------------------------------------
-    // Conversation history
+    // Recent conversation history
     // -----------------------------------------
-    safeHistory.slice(-6).forEach((turn) => {
-      if (!turn || !turn.content) return;
+    safeHistory
+      .slice(-6)
+      .forEach((turn) => {
+        if (!turn || !turn.content) {
+          return;
+        }
 
-      messages.push({
-        role:
-          turn.role === "assistant"
-            ? "assistant"
-            : "user",
+        messages.push({
+          role:
+            turn.role === "assistant"
+              ? "assistant"
+              : "user",
 
-        content: String(turn.content).slice(
-          0,
-          1800
-        ),
+          content: String(turn.content).slice(
+            0,
+            1500
+          ),
+        });
       });
-    });
 
     // -----------------------------------------
     // Current question
@@ -765,20 +1211,20 @@ Follow the Markdown format generated by buildPrompt().
       content: prompt,
     });
 
-  // -----------------------------------------
-  // Token limits based on question type
-  // -----------------------------------------
-  const maxTokensByType = {
-    SELF_INTRO: 300,
-    CODING: 650,
-    SCENARIO: 500,
-    ARCHITECTURE: 900,
-    CONCEPT: 350,
-  };
+    // -----------------------------------------
+    // Token limits
+    // -----------------------------------------
+    const maxTokensByType = {
+      SELF_INTRO: 280,
+      CODING: 650,
+      SCENARIO: 450,
+      ARCHITECTURE: 700,
+      CONCEPT: 300,
+    };
 
-  const maxCompletionTokens =
-    maxTokensByType[questionType] ||
-    maxTokensByType.CONCEPT;
+    const maxCompletionTokens =
+      maxTokensByType[questionType] ||
+      maxTokensByType.CONCEPT;
 
     // -----------------------------------------
     // OpenAI request
@@ -789,16 +1235,24 @@ Follow the Markdown format generated by buildPrompt().
         method: "POST",
 
         headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
+          Authorization:
+            `Bearer ${process.env.OPENAI_API_KEY}`,
+
+          "Content-Type":
+            "application/json",
         },
 
         body: JSON.stringify({
           model: ANSWER_MODEL,
+
           messages,
+
           stream: true,
-          temperature: 0.3,
-          max_completion_tokens: maxCompletionTokens,
+
+          temperature: 0.2,
+
+          max_completion_tokens:
+            maxCompletionTokens,
         }),
       }
     );
@@ -826,7 +1280,7 @@ Follow the Markdown format generated by buildPrompt().
     }
 
     // -----------------------------------------
-    // Process OpenAI streaming response
+    // Process SSE
     // -----------------------------------------
     const processSsePart = (part) => {
       const lines = part
@@ -867,7 +1321,7 @@ Follow the Markdown format generated by buildPrompt().
     };
 
     // -----------------------------------------
-    // Read streaming response
+    // Read stream
     // -----------------------------------------
     if (
       typeof openaiResponse.body
@@ -887,7 +1341,9 @@ Follow the Markdown format generated by buildPrompt().
           value,
         } = await reader.read();
 
-        if (done) break;
+        if (done) {
+          break;
+        }
 
         buffer += decoder.decode(
           value,
