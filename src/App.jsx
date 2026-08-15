@@ -431,7 +431,7 @@ function App() {
 
     try {
       setLoading(true);
-      setAnswerData("⏳ GPT-5 is analyzing your resume and preparing your interview profile...");
+      setAnswerData("⏳ GPT-4o is analyzing your resume and preparing your interview profile...");
 
       const formData = new FormData();
       formData.append("resume", resumeFile);

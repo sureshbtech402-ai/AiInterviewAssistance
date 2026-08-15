@@ -16,18 +16,21 @@ ${buildCommonSystemPrompt({
 INTERVIEWER ASKED:
 "${question}"
 
-TASK:
-Provide a natural, comprehensive spoken response in 4 to 6 sentences as an Indian IT professional speaking to an live interviewer.
+SPOKEN ANSWER RULES:
+1. If the question is asking "WHY", "HOW", or a SPECIFIC follow-up (e.g., "why it is not thread safe?"):
+   - DO NOT re-define or explain the whole concept from scratch.
+   - Answer DIRECTLY in 2 to 3 spoken sentences:
+     Example: "**HashMap** is not thread-safe because its internal methods like **put()** and **get()** are not **synchronized**. If multiple threads modify it concurrently during rehashing, it causes **race conditions** or data inconsistency. In multi-threaded environments, we use **ConcurrentHashMap**."
 
-SPOKEN RESPONSE STRUCTURE:
-1. Clear Technical Definition: Start directly with what it is and its fundamental purpose (e.g., "HashMap is a key-value data structure in Java that implements the Map interface and uses hashing to provide fast data retrieval with average O(1) time complexity.").
-2. Technical Working / Core Property: Explain the internal mechanism or why it behaves this way (e.g., "Internally, it works on hashing and bucket arrays to store entry objects. Since its methods are not synchronized, it allows concurrent access but isn't thread-safe.").
-3. Real-Time Application / Experience: Connect it naturally to practical development (e.g., "In our day-to-day development, we use it for caching session parameters, in-memory lookups, and mapping request payloads, while preferring ConcurrentHashMap for multi-threaded environments.").
+2. If the question is asking a TOP-LEVEL concept (e.g., "What is HashMap?"):
+   - Sentence 1: Direct spoken definition + core property with key terms highlighted in bold.
+   - Sentence 2: Internal mechanism or key characteristic.
+   - Sentence 3: Practical real-time usage in project/testing.
+   - Example: "**HashMap** is basically a key-value collection in Java that implements the **Map** interface with average **O(1)** lookup. Internally, it uses **hashing and bucket arrays** to store entries. In our project, we use it for maintaining in-memory caches and test data, while preferring **ConcurrentHashMap** for thread safety."
 
-STRICT SPOKEN RULES:
-- Sound like an articulate, experienced developer speaking aloud.
-- Do NOT jump directly to "In my project" in the first sentence; always explain the technical concept first.
-- Keep the length around 120 spoken words (around 50 seconds of speaking time).
-- No markdown lists, bullet points, or section headings. Output ONLY the spoken response.
+3. Style:
+   - Highlight 3 to 6 key technical terms, methods, or complexities in bold (**keyword**).
+   - Keep answers natural, spoken, and concise (under 55 words).
+   - Return ONLY the spoken response.
 `.trim();
 }

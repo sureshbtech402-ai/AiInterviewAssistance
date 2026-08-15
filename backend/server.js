@@ -19,7 +19,6 @@ const upload = multer({ dest: "uploads/" });
 const PORT = process.env.PORT || 5000;
 const ANSWER_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 const PROFILE_MODEL = process.env.PROFILE_MODEL || "gpt-4o";
-
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 
 app.use(
@@ -45,7 +44,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-// WebSocket Server for Audio Transcription
+// WebSocket Server for Real-Time STT
 const wss = new WebSocketServer({ noServer: true });
 
 server.on("upgrade", (request, socket, head) => {
@@ -86,7 +85,7 @@ wss.on("connection", (client) => {
         dgConnection.keepAlive();
       }
     } catch {
-      // keepAlive error handling
+      // keepAlive handler
     }
   }, 5000);
 
@@ -105,7 +104,7 @@ wss.on("connection", (client) => {
       try {
         dgConnection.send(chunk);
       } catch {
-        // chunk send handling
+        // chunk send handler
       }
     }
   });
@@ -121,7 +120,7 @@ wss.on("connection", (client) => {
         if (pendingAudio.length > 80) pendingAudio.shift();
       }
     } catch {
-      // audio error handling
+      // audio handler
     }
   });
 
@@ -158,12 +157,12 @@ wss.on("connection", (client) => {
     try {
       if (dgConnection) dgConnection.finish();
     } catch {
-      // finish error handling
+      // finish handler
     }
   });
 });
 
-// Resume Profile Extraction with gpt-4o
+// Resume Extraction - Factual and Natural Spoken Self-Intro
 app.post("/resume-summary", upload.single("resume"), async (req, res) => {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -180,12 +179,14 @@ app.post("/resume-summary", upload.single("resume"), async (req, res) => {
     const pdfBase64 = pdfBuffer.toString("base64");
 
     const prompt = `
-Extract factual information from the uploaded resume into valid JSON.
+Extract factual details from the resume into valid JSON.
 
-Create a natural, comprehensive first-person self-introduction (130-160 words) tailored to the candidate's actual domain (Backend, Frontend, Full Stack, QA, DevOps, Data, etc.).
-
-Structure the "selfIntroduction" naturally:
-"Hi, I'm [Name]. I have around [X] years of experience in the IT industry, currently working at [Company] as a [Role]. My core expertise includes [Primary Skills & Tools]. In my current project, I work on [Key Project Details & Responsibilities]. In my previous role, I worked on [Previous Project/Tech]. That's a brief summary of my background. Thank you."
+Write "selfIntroduction" in clean, natural spoken Indian IT English (110-140 words).
+Structure:
+"Hi, I'm [Name]. I have around [X] years of experience as a [Role], and currently I'm working with [Company].
+My main skills are [Primary Skills like Core Java, Spring Boot, Microservices, REST APIs, etc.]. I also have hands-on experience with [Secondary Skills like Git, Jenkins, Docker, etc.].
+Currently, I'm working on [Project Name] for [Client/Domain]. It is a [Domain] application mainly related to [Project Purpose]. In this project, I'm mainly involved in [Key Responsibilities].
+Overall, my experience is mainly in [Core Domain/Role]. That's a brief summary about me. Thank you."
 
 Return ONLY valid JSON matching this schema:
 {
@@ -301,31 +302,38 @@ app.post("/answer", async (req, res) => {
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders?.();
 
-const messages = [
+    const messages = [
       {
         role: "system",
         content: `You are an articulate Indian IT professional speaking live in a technical interview.
-      Candidate Profile:
-      ${profileText}
+Candidate Profile:
+${profileText}
 
-      SPOKEN ANSWER & HIGHLIGHTING GUIDELINES:
-      1. Wrap critical technical terms, data structures, algorithms, time complexity, and method names in bold (**keyword**) so the candidate can spot key points in a 1-second scan.
-        Example: "**HashMap** is a key-value data structure in Java that implements the **Map** interface with an average lookup of **O(1)**. Internally, it uses **hashing and bucket arrays**..."
-      2. Structure:
-        - First: Clear technical definition and purpose.
-        - Second: Internal working mechanism or core property.
-        - Third: Practical real-time usage in the project.
-      3. Length: Strictly 4 to 6 spoken sentences (60 to 90 words).
-      4. For coding questions: Output the code block first, then 1-2 spoken sentences with bold keywords.
-      5. NO headings, NO bullet points, NO filler intros ("Sure", "Certainly").`
+CORE GUIDELINES:
+1. ALWAYS highlight 3 to 6 key terms, annotations, methods, data structures, and complexities in bold (**term**).
+2. For specific/why/how follow-ups: Answer ONLY that specific point directly in 2-3 sentences. DO NOT re-explain the whole concept.
+3. For top-level technical questions: Explain what it is with practical clarity, internal mechanism, and project usage in 3-4 sentences.
+4. For coding questions: Output clean code first, followed by a 1-2 sentence spoken summary.
+5. NO headings, NO bullet points, NO filler intros ("Sure", "Certainly"). Output ONLY the spoken response.
+
+FEW-SHOT EXAMPLES:
+
+Q: "What is HashMap?"
+A: "**HashMap** is basically a key-value collection in Java that implements the **Map** interface. We use it when we want to store and retrieve values using unique keys with average **O(1)** lookup. Internally, it uses **hashing and bucket arrays** to store entries. In our project, we use it for in-memory lookups and caching test data, while preferring **ConcurrentHashMap** for thread safety."
+
+Q: "Why is it not thread safe?"
+A: "**HashMap** is not thread-safe because its methods like **put()** and **get()** are not **synchronized**. If multiple threads access and modify the map concurrently, it can lead to **race conditions** or corrupted bucket structures during rehashing. For thread-safe operations, we switch to **ConcurrentHashMap**."
+
+Q: "Explain your project."
+A: "In my current project, I work on the **${resumeProfile?.currentProjectName || 'ING Digitization'}** application. It is a banking platform where we migrated monolithic services to a **Spring Boot microservices architecture**. My day-to-day work involves developing **RESTful APIs**, handling service integration using **Spring Data JPA**, and writing unit tests with **Mockito**."`
       },
     ];
 
-    safeHistory.slice(-4).forEach((turn) => {
+    safeHistory.slice(-3).forEach((turn) => {
       if (!turn || !turn.content) return;
       messages.push({
         role: turn.role === "assistant" ? "assistant" : "user",
-        content: String(turn.content).slice(0, 800),
+        content: String(turn.content).slice(0, 600),
       });
     });
 
@@ -335,7 +343,7 @@ const messages = [
       SELF_INTRO: 300,
       CODING: 650,
       SCENARIO: 300,
-      ARCHITECTURE: 650,
+      ARCHITECTURE: 600,
       CONCEPT: 300,
     };
 
@@ -350,7 +358,7 @@ const messages = [
         messages,
         stream: true,
         temperature: 0.15,
-        max_completion_tokens: maxTokensByType[questionType] || 220,
+        max_completion_tokens: maxTokensByType[questionType] || 180,
       }),
     });
 
