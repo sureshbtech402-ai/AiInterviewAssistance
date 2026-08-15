@@ -1,29 +1,25 @@
-const SHORT_FOLLOW_UPS = [
-  "why?",
+const SHORT_FOLLOW_UPS = new Set([
   "why",
-  "how?",
   "how",
-  "then?",
   "then",
-  "next?",
   "next",
-  "what next?",
-  "and then?",
-  "why is that?",
-  "how so?",
-  "what about that?",
-  "what do you mean?",
-  "can you explain?",
-  "can you elaborate?",
-  "and why?",
-  "and how?",
+  "what next",
+  "and then",
+  "why is that",
+  "how so",
+  "what about that",
+  "what do you mean",
+  "can you explain",
+  "can you elaborate",
+  "and why",
+  "and how",
   "write syntax",
   "give syntax",
   "write code",
   "give code",
   "show code",
-  "can you code it?",
-];
+  "can you code it",
+]);
 
 const FOLLOW_UP_PATTERNS = [
   "what about",
@@ -53,9 +49,10 @@ const FOLLOW_UP_PATTERNS = [
 
 function normalizeQuestion(question = "") {
   return String(question || "")
-    .trim()
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, " ") // Cleanly strips punctuation
     .replace(/\s+/g, " ")
-    .toLowerCase();
+    .trim();
 }
 
 export function isFollowUpQuestion(question = "") {
@@ -65,7 +62,7 @@ export function isFollowUpQuestion(question = "") {
     return false;
   }
 
-  if (SHORT_FOLLOW_UPS.includes(q)) {
+  if (SHORT_FOLLOW_UPS.has(q)) {
     return true;
   }
 
@@ -79,29 +76,20 @@ export function isFollowUpQuestion(question = "") {
 
 export function isShortInterviewQuestion(question = "") {
   const q = normalizeQuestion(question);
-
   return q ? q.split(" ").length <= 8 : false;
 }
 
-export function getRecentConversationHistory(
-  history = [],
-  limit = 6
-) {
+export function getRecentConversationHistory(history = [], limit = 6) {
   if (!Array.isArray(history)) {
     return [];
   }
 
   const safeLimit = Math.max(1, Number(limit) || 6);
-
   return history.slice(-safeLimit);
 }
 
-export function buildConversationHistory(
-  history = [],
-  limit = 6
-) {
-  const recentHistory =
-    getRecentConversationHistory(history, limit);
+export function buildConversationHistory(history = [], limit = 6) {
+  const recentHistory = getRecentConversationHistory(history, limit);
 
   if (!recentHistory.length) {
     return "";
@@ -113,16 +101,13 @@ export function buildConversationHistory(
         return "";
       }
 
-      const content =
-        String(item.content || "").trim();
-
+      const content = String(item.content || "").trim();
       if (!content) {
         return "";
       }
 
       const role =
-        item.role === "assistant" ||
-        item.role === "candidate"
+        item.role === "assistant" || item.role === "candidate"
           ? "Candidate"
           : "Interviewer";
 
@@ -132,11 +117,8 @@ export function buildConversationHistory(
     .join("\n");
 }
 
-export function buildInterviewContext(
-  history = []
-) {
-  const recentHistory =
-    getRecentConversationHistory(history, 6);
+export function buildInterviewContext(history = []) {
+  const recentHistory = getRecentConversationHistory(history, 6);
 
   if (!recentHistory.length) {
     return {
@@ -150,40 +132,28 @@ export function buildInterviewContext(
   let previousQuestion = "";
   let previousAnswer = "";
 
-  for (
-    let i = recentHistory.length - 1;
-    i >= 0;
-    i--
-  ) {
+  for (let i = recentHistory.length - 1; i >= 0; i--) {
     const item = recentHistory[i];
 
     if (!item || !item.content) {
       continue;
     }
 
-    const content =
-      String(item.content).trim();
+    const content = String(item.content).trim();
 
     if (
       !previousAnswer &&
-      (item.role === "assistant" ||
-        item.role === "candidate")
+      (item.role === "assistant" || item.role === "candidate")
     ) {
       previousAnswer = content;
       continue;
     }
 
-    if (
-      !previousQuestion &&
-      item.role === "user"
-    ) {
+    if (!previousQuestion && item.role === "user") {
       previousQuestion = content;
     }
 
-    if (
-      previousQuestion &&
-      previousAnswer
-    ) {
+    if (previousQuestion && previousAnswer) {
       break;
     }
   }
@@ -191,16 +161,12 @@ export function buildInterviewContext(
   return {
     previousQuestion,
     previousAnswer,
-    historyText:
-      buildConversationHistory(recentHistory),
-    questionAnswerCount:
-      countQuestionAnswerPairs(recentHistory),
+    historyText: buildConversationHistory(recentHistory),
+    questionAnswerCount: countQuestionAnswerPairs(recentHistory),
   };
 }
 
-function countQuestionAnswerPairs(
-  history = []
-) {
+function countQuestionAnswerPairs(history = []) {
   if (!Array.isArray(history)) {
     return 0;
   }
@@ -217,10 +183,7 @@ function countQuestionAnswerPairs(
       questions++;
     }
 
-    if (
-      item.role === "assistant" ||
-      item.role === "candidate"
-    ) {
+    if (item.role === "assistant" || item.role === "candidate") {
       answers++;
     }
   }
@@ -228,12 +191,8 @@ function countQuestionAnswerPairs(
   return Math.min(questions, answers);
 }
 
-export function hasEnoughFollowUpContext(
-  history = []
-) {
+export function hasEnoughFollowUpContext(history = []) {
   return (
-    countQuestionAnswerPairs(
-      getRecentConversationHistory(history)
-    ) >= 1
+    countQuestionAnswerPairs(getRecentConversationHistory(history)) >= 1
   );
 }

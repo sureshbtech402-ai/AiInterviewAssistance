@@ -1,14 +1,13 @@
 function normalizeQuestion(question = "") {
   return String(question || "")
     .toLowerCase()
-    .trim()
-    .replace(/\s+/g, " ");
+    .replace(/[^\w\s-]/g, " ") // Strips punctuation like ?, !, ,, . cleanly
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function containsAny(question, patterns = []) {
-  return patterns.some((pattern) =>
-    question.includes(pattern)
-  );
+  return patterns.some((pattern) => question.includes(pattern));
 }
 
 export function classifyQuestion(question = "") {
@@ -19,9 +18,8 @@ export function classifyQuestion(question = "") {
   }
 
   // ==================================================
-  // SELF INTRODUCTION
+  // 1. SELF INTRODUCTION
   // ==================================================
-
   const selfIntroPatterns = [
     "tell me about yourself",
     "tell us about yourself",
@@ -45,9 +43,8 @@ export function classifyQuestion(question = "") {
   }
 
   // ==================================================
-  // CODING / SYNTAX / QUERIES / COMMANDS
+  // 2. CODING / SYNTAX / QUERIES / COMMANDS
   // ==================================================
-
   const codingPatterns = [
     // General coding
     "syntax",
@@ -232,9 +229,8 @@ export function classifyQuestion(question = "") {
   }
 
   // ==================================================
-  // ARCHITECTURE / FRAMEWORK / PROJECT DESIGN
+  // 3. ARCHITECTURE / FRAMEWORK / PROJECT DESIGN
   // ==================================================
-
   const architecturePatterns = [
     "system design",
     "system-design",
@@ -318,9 +314,8 @@ export function classifyQuestion(question = "") {
   }
 
   // ==================================================
-  // SCENARIO / TROUBLESHOOTING
+  // 4. SCENARIO / TROUBLESHOOTING
   // ==================================================
-
   const scenarioPatterns = [
     "tell me about a time",
     "tell me about an incident",
@@ -387,8 +382,7 @@ export function classifyQuestion(question = "") {
   }
 
   // ==================================================
-  // DEFAULT
+  // 5. DEFAULT
   // ==================================================
-
   return "CONCEPT";
 }
