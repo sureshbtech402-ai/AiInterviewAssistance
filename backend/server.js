@@ -17,7 +17,6 @@ const server = http.createServer(app);
 const upload = multer({ dest: "uploads/" });
 
 const PORT = process.env.PORT || 5000;
-// Use fast models for sub-second streaming
 const ANSWER_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 const PROFILE_MODEL = process.env.PROFILE_MODEL || "gpt-4o";
 
@@ -46,7 +45,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-// WebSocket Server
+// WebSocket Server for Audio Transcription
 const wss = new WebSocketServer({ noServer: true });
 
 server.on("upgrade", (request, socket, head) => {
@@ -86,8 +85,8 @@ wss.on("connection", (client) => {
       if (deepgramReady && typeof dgConnection.keepAlive === "function") {
         dgConnection.keepAlive();
       }
-    } catch (err) {
-      console.error("Deepgram keepAlive error:", err);
+    } catch {
+      // keepAlive error handling
     }
   }, 5000);
 
@@ -105,8 +104,8 @@ wss.on("connection", (client) => {
       const chunk = pendingAudio.shift();
       try {
         dgConnection.send(chunk);
-      } catch (err) {
-        console.error("Deepgram buffer send error:", err);
+      } catch {
+        // chunk send handling
       }
     }
   });
@@ -121,8 +120,8 @@ wss.on("connection", (client) => {
         pendingAudio.push(audioChunk);
         if (pendingAudio.length > 80) pendingAudio.shift();
       }
-    } catch (err) {
-      console.error("Deepgram send error:", err);
+    } catch {
+      // audio error handling
     }
   });
 
@@ -141,8 +140,7 @@ wss.on("connection", (client) => {
     });
   });
 
-  dgConnection.on(LiveTranscriptionEvents.Error, (err) => {
-    console.error("Deepgram Error:", err);
+  dgConnection.on(LiveTranscriptionEvents.Error, () => {
     sendToClient({ type: "error", error: "Deepgram error" });
   });
 
@@ -159,15 +157,13 @@ wss.on("connection", (client) => {
     clearInterval(keepAlive);
     try {
       if (dgConnection) dgConnection.finish();
-    } catch (err) {
-      console.error("Deepgram finish error:", err);
+    } catch {
+      // finish error handling
     }
   });
-
-  client.on("error", (err) => console.error("WebSocket Client Error:", err));
 });
 
-// Resume Extraction (High Speed, Accurate Spoken Indian Self-Intro)
+// Resume Profile Extraction with gpt-4o
 app.post("/resume-summary", upload.single("resume"), async (req, res) => {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -184,11 +180,12 @@ app.post("/resume-summary", upload.single("resume"), async (req, res) => {
     const pdfBase64 = pdfBuffer.toString("base64");
 
     const prompt = `
-Extract factual details from the resume into JSON format.
+Extract factual information from the uploaded resume into valid JSON.
 
-Write "selfIntroduction" in SPOKEN Indian IT English (100-130 words).
-It must sound spoken in first person:
-"Hi, I'm [Name]. I have around [X] years of experience in Java, Spring Boot, and Microservices, currently working at [Company]. In my current project, I work on developing REST APIs, handling Kafka event streaming, and writing unit tests using JUnit. Before this, I worked on [past work]. That's a brief intro about me. Thank you."
+Create a natural, comprehensive first-person self-introduction (130-160 words) tailored to the candidate's actual domain (Backend, Frontend, Full Stack, QA, DevOps, Data, etc.).
+
+Structure the "selfIntroduction" naturally:
+"Hi, I'm [Name]. I have around [X] years of experience in the IT industry, currently working at [Company] as a [Role]. My core expertise includes [Primary Skills & Tools]. In my current project, I work on [Key Project Details & Responsibilities]. In my previous role, I worked on [Previous Project/Tech]. That's a brief summary of my background. Thank you."
 
 Return ONLY valid JSON matching this schema:
 {
@@ -197,6 +194,7 @@ Return ONLY valid JSON matching this schema:
   "currentCompany": "",
   "primaryRole": "",
   "primarySkills": [],
+  "secondarySkills": [],
   "currentProjectName": "",
   "currentProjectSummary": "",
   "selfIntroduction": ""
@@ -264,7 +262,7 @@ function extractDeltaFromOpenAIEvent(event) {
   return "";
 }
 
-// Live Answer Generator
+// Live Spoken Answer Endpoint
 app.post("/answer", async (req, res) => {
   const {
     question,
@@ -303,33 +301,23 @@ app.post("/answer", async (req, res) => {
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders?.();
 
-    const messages = [
+const messages = [
       {
         role: "system",
-        content: `You are an experienced Indian IT Software/Automation Engineer SPEAKING live in an interview.
-Candidate Profile:
-${profileText}
+        content: `You are an articulate Indian IT professional speaking live in a technical interview.
+      Candidate Profile:
+      ${profileText}
 
-CRITICAL RULES:
-1. NEVER speak like a textbook or documentation. Do NOT start with "A HashMap is a data structure..." or "In software engineering...".
-2. Start DIRECTLY with conversational spoken English: "Basically...", "In Java, we use...", "In my current project, I...".
-3. Length: Strictly 2 to 4 spoken sentences (30-50 words max).
-4. For coding/syntax: output the code snippet first, followed by 1 spoken explanation sentence.
-5. NO headings, NO markdown asterisks, NO bullet points, NO filler words like "Certainly" or "Sure".
-
-FEW-SHOT SPOKEN EXAMPLES:
-
-Q: "What is HashMap?"
-A: "HashMap is basically a key-value collection in Java. We use it when we want to store and retrieve values using unique keys with average O(1) lookup. In my project, we use it for caching session data and test data. It is not thread-safe."
-
-Q: "Why is it not thread safe?"
-A: "Because HashMap methods are not synchronized. If multiple threads try to put or remove elements simultaneously, it leads to race conditions and inconsistent data. In multi-threaded scenarios, we prefer ConcurrentHashMap."
-
-Q: "How do you handle windows in Selenium?"
-A: "For multiple windows, I use getWindowHandles() to get all the window IDs. Then I iterate through them using driver.switchTo().window() based on the title or URL, and proceed with the validation."
-
-Q: "Explain your project."
-A: "In my current project at ${resumeProfile?.currentCompany || 'my company'}, I work on the ${resumeProfile?.currentProjectName || 'backend services'} module. My day-to-day work involves developing REST APIs using Spring Boot, writing unit tests with JUnit, and deploying containerized services on Kubernetes."`
+      SPOKEN ANSWER & HIGHLIGHTING GUIDELINES:
+      1. Wrap critical technical terms, data structures, algorithms, time complexity, and method names in bold (**keyword**) so the candidate can spot key points in a 1-second scan.
+        Example: "**HashMap** is a key-value data structure in Java that implements the **Map** interface with an average lookup of **O(1)**. Internally, it uses **hashing and bucket arrays**..."
+      2. Structure:
+        - First: Clear technical definition and purpose.
+        - Second: Internal working mechanism or core property.
+        - Third: Practical real-time usage in the project.
+      3. Length: Strictly 4 to 6 spoken sentences (60 to 90 words).
+      4. For coding questions: Output the code block first, then 1-2 spoken sentences with bold keywords.
+      5. NO headings, NO bullet points, NO filler intros ("Sure", "Certainly").`
       },
     ];
 
@@ -361,8 +349,8 @@ A: "In my current project at ${resumeProfile?.currentCompany || 'my company'}, I
         model: ANSWER_MODEL,
         messages,
         stream: true,
-        temperature: 0.1, // Low temperature eliminates rambling
-        max_completion_tokens: maxTokensByType[questionType] || 160,
+        temperature: 0.15,
+        max_completion_tokens: maxTokensByType[questionType] || 220,
       }),
     });
 

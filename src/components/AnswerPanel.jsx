@@ -8,16 +8,11 @@ function AnswerPanel({ answerData, loading }) {
   const answerBodyRef = useRef(null);
   const previousAnswerRef = useRef("");
 
-  const answerText =
-    typeof answerData === "string"
-      ? answerData
-      : "";
-
+  const answerText = typeof answerData === "string" ? answerData : "";
   const hasAnswer = answerText.trim().length > 0;
 
   useEffect(() => {
-    const previousAnswer =
-      previousAnswerRef.current;
+    const previousAnswer = previousAnswerRef.current;
 
     const isNewAnswer =
       answerText &&
@@ -37,7 +32,6 @@ function AnswerPanel({ answerData, loading }) {
 
   const scrollToTop = () => {
     const answerBody = answerBodyRef.current;
-
     if (!answerBody) return;
 
     answerBody.scrollTo({
@@ -52,7 +46,6 @@ function AnswerPanel({ answerData, loading }) {
 
   const scrollToBottom = () => {
     const answerBody = answerBodyRef.current;
-
     if (!answerBody) return;
 
     answerBody.scrollTo({
@@ -67,38 +60,27 @@ function AnswerPanel({ answerData, loading }) {
 
   const handleAnswerKeyDown = (event) => {
     const answerBody = answerBodyRef.current;
-
     if (!answerBody) return;
 
-    if (
-      event.key === "Home" &&
-      (event.ctrlKey || event.metaKey)
-    ) {
+    if (event.key === "Home" && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();
       scrollToTop();
     }
 
-    if (
-      event.key === "End" &&
-      (event.ctrlKey || event.metaKey)
-    ) {
+    if (event.key === "End" && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();
       scrollToBottom();
     }
   };
 
   const copyAnswer = () => {
-    navigator.clipboard.writeText(
-      answerText || ""
-    );
+    navigator.clipboard.writeText(answerText || "");
   };
 
   return (
     <div className="answer-panel">
       <div className="answer-header">
-        <h2 className="answer-title">
-          Interview Answer
-        </h2>
+        <h2 className="answer-title">Interview Answer</h2>
 
         {hasAnswer && (
           <div className="answer-scroll-actions">
@@ -133,15 +115,11 @@ function AnswerPanel({ answerData, loading }) {
         {loading && !hasAnswer ? (
           <div className="loading-container">
             <div className="loader"></div>
-
-            <div className="loading-text">
-              AI is thinking...
-            </div>
+            <div className="loading-text">AI is thinking...</div>
           </div>
         ) : !hasAnswer ? (
           <div className="empty-container">
             <h3>AI is waiting...</h3>
-
             <p>
               Ask a question or click
               <b> Generate Answer </b>
@@ -153,57 +131,26 @@ function AnswerPanel({ answerData, loading }) {
             <ReactMarkdown
               components={{
                 h1: ({ children }) => (
-                  <h1 className="markdown-h1">
-                    {children}
-                  </h1>
+                  <h1 className="markdown-h1">{children}</h1>
                 ),
-
                 h2: ({ children }) => (
-                  <h2 className="markdown-h2">
-                    {children}
-                  </h2>
+                  <h2 className="markdown-h2">{children}</h2>
                 ),
-
                 h3: ({ children }) => (
-                  <h3 className="markdown-h3">
-                    {children}
-                  </h3>
+                  <h3 className="markdown-h3">{children}</h3>
                 ),
-
                 p: ({ children }) => (
-                  <p className="markdown-p">
-                    {children}
-                  </p>
+                  <p className="markdown-p">{children}</p>
                 ),
-
                 li: ({ children }) => (
-                  <li className="markdown-li">
-                    {children}
-                  </li>
+                  <li className="markdown-li">{children}</li>
                 ),
-
                 strong: ({ children }) => (
-                  <strong className="markdown-strong">
-                    {children}
-                  </strong>
+                  <strong className="markdown-strong">{children}</strong>
                 ),
-
-                code({
-                  inline,
-                  className,
-                  children,
-                  ...props
-                }) {
-                  const match =
-                    /language-(\w+)/.exec(
-                      className || ""
-                    );
-
-                  const codeText =
-                    String(children).replace(
-                      /\n$/,
-                      ""
-                    );
+                code({ inline, className, children, ...props }) {
+                  const match = /language-(\w+)/.exec(className || "");
+                  const codeText = String(children).replace(/\n$/, "");
 
                   if (!inline && match) {
                     return (
@@ -226,10 +173,7 @@ function AnswerPanel({ answerData, loading }) {
                   }
 
                   return (
-                    <code
-                      className="inline-code"
-                      {...props}
-                    >
+                    <code className="inline-code" {...props}>
                       {children}
                     </code>
                   );

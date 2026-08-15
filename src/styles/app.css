@@ -2,233 +2,265 @@
    GLOBAL RESET
 ========================================= */
 
-:root{
-    font-family:
-        Inter,
-        "Segoe UI",
-        Roboto,
-        Helvetica,
-        Arial,
-        sans-serif;
+:root {
+  font-family:
+    Inter,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
 
-    color:#f8fafc;
-    background:#020617;
+  color: #f8fafc;
+  background: #020617;
 
-    font-synthesis:none;
-    text-rendering:optimizeLegibility;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
 }
 
 html,
 body,
-#root{
-    width:100%;
-    min-height:100%;
-    margin:0;
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
 }
 
-html{
-    background:#020617;
+html {
+  background: #020617;
 }
 
-body{
-    margin:0;
-    overflow-x:hidden;
+body {
+  margin: 0;
+  overflow-x: hidden;
 
-    background:
-        radial-gradient(
-            circle at 15% 10%,
-            rgba(124,58,237,.16),
-            transparent 30%
-        ),
-        radial-gradient(
-            circle at 88% 16%,
-            rgba(37,99,235,.14),
-            transparent 28%
-        ),
-        radial-gradient(
-            circle at 50% 100%,
-            rgba(14,165,233,.08),
-            transparent 32%
-        ),
-        #020617;
+  background:
+    radial-gradient(
+      circle at 15% 10%,
+      rgba(124, 58, 237, 0.16),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 88% 16%,
+      rgba(37, 99, 235, 0.14),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 50% 100%,
+      rgba(14, 165, 233, 0.08),
+      transparent 32%
+    ),
+    #020617;
 
-    color:#f8fafc;
+  color: #f8fafc;
 }
 
-*{
-    box-sizing:border-box;
+* {
+  box-sizing: border-box;
 }
 
 button,
 input,
 select,
-textarea{
-    font:inherit;
+textarea {
+  font: inherit;
 }
 
-button{
-    -webkit-tap-highlight-color:transparent;
+button {
+  -webkit-tap-highlight-color: transparent;
 }
 
-::selection{
-    background:rgba(139,92,246,.4);
-    color:white;
+::selection {
+  background: rgba(139, 92, 246, 0.4);
+  color: white;
 }
 
 /* =========================================
    PREMIUM APP BACKGROUND
 ========================================= */
 
-.app-container{
-    position:relative;
-    isolation:isolate;
+.app-container {
+  position: relative;
+  isolation: isolate;
 
-    width:100%;
-    min-height:100vh;
+  width: 100%;
+  min-height: 100vh;
 
-    padding:22px;
-    padding-bottom:70px;
+  padding: 22px;
+  padding-bottom: 70px;
 
-    overflow:hidden;
+  overflow: hidden;
 
-    background:
-        linear-gradient(
-            rgba(255,255,255,.018) 1px,
-            transparent 1px
-        ),
-        linear-gradient(
-            90deg,
-            rgba(255,255,255,.018) 1px,
-            transparent 1px
-        ),
-        radial-gradient(
-            circle at top left,
-            rgba(124,58,237,.14),
-            transparent 34%
-        ),
-        radial-gradient(
-            circle at bottom right,
-            rgba(37,99,235,.12),
-            transparent 36%
-        ),
-        #020617;
+  background:
+    linear-gradient(
+      rgba(255, 255, 255, 0.018) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.018) 1px,
+      transparent 1px
+    ),
+    radial-gradient(
+      circle at top left,
+      rgba(124, 58, 237, 0.14),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(37, 99, 235, 0.12),
+      transparent 36%
+    ),
+    #020617;
 
-    background-size:
-        34px 34px,
-        34px 34px,
-        auto,
-        auto,
-        auto;
+  background-size:
+    34px 34px,
+    34px 34px,
+    auto,
+    auto,
+    auto;
 }
 
-.app-container::before{
-    content:"";
+.app-container::before {
+  content: "";
 
-    position:fixed;
-    inset:auto auto -180px -160px;
+  position: fixed;
+  inset: auto auto -180px -160px;
 
-    z-index:-1;
+  z-index: -1;
 
-    width:430px;
-    height:430px;
+  width: 430px;
+  height: 430px;
 
-    border-radius:50%;
+  border-radius: 50%;
 
-    background:rgba(124,58,237,.1);
+  background: rgba(124, 58, 237, 0.1);
 
-    filter:blur(95px);
+  filter: blur(95px);
 
-    pointer-events:none;
+  pointer-events: none;
 }
 
-.app-container::after{
-    content:"";
+.app-container::after {
+  content: "";
 
-    position:fixed;
-    top:90px;
-    right:-170px;
+  position: fixed;
+  top: 90px;
+  right: -170px;
 
-    z-index:-1;
+  z-index: -1;
 
-    width:390px;
-    height:390px;
+  width: 390px;
+  height: 390px;
 
-    border-radius:50%;
+  border-radius: 50%;
 
-    background:rgba(37,99,235,.09);
+  background: rgba(37, 99, 235, 0.09);
 
-    filter:blur(100px);
+  filter: blur(100px);
 
-    pointer-events:none;
+  pointer-events: none;
 }
 
 /* =========================================
    MAIN CONTENT WIDTH
 ========================================= */
 
-.app-content{
-    width:100%;
-    max-width:1600px;
-
-    margin:0 auto;
+.app-content {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
 /* =========================================
    MAIN INTERVIEW GRID
 ========================================= */
 
-.main-layout{
-    display:grid;
-
-    grid-template-columns:minmax(320px,28%) minmax(0,72%);
-
-    gap:18px;
-
-    width:100%;
-    height:100%;
-    min-height:0;
-
-    overflow:hidden;
+.main-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 28%) minmax(0, 72%);
+  gap: 18px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* =========================================
-   COMMON STATUS
+   COMMON STATUS & BADGES
 ========================================= */
 
-.status{
-    display:flex;
-    align-items:center;
-    justify-content:center;
+.status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+}
 
-    font-size:14px;
-    font-weight:800;
+/* =========================================
+   MARKDOWN HIGHLIGHTING (LIVE SCANNING)
+========================================= */
+
+.markdown-strong {
+  color: #38bdf8; /* Bright Cyan Glow */
+  font-weight: 700;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
+}
+
+.markdown-p {
+  line-height: 1.8;
+  font-size: 1.12rem;
+  color: #f1f5f9;
+  margin: 0 0 14px 0;
+}
+
+.markdown-li {
+  line-height: 1.75;
+  font-size: 1.08rem;
+  color: #e2e8f0;
+  margin-bottom: 8px;
+}
+
+.inline-code {
+  font-family: "Fira Code", "Consolas", monospace;
+  font-size: 0.95em;
+  color: #a78bfa;
+  background: rgba(167, 139, 250, 0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(167, 139, 250, 0.25);
 }
 
 /* =========================================
    GLOBAL SCROLLBAR
 ========================================= */
 
-*{
-    scrollbar-width:thin;
-    scrollbar-color:#475569 #111827;
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #475569 #111827;
 }
 
-*::-webkit-scrollbar{
-    width:8px;
-    height:8px;
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-*::-webkit-scrollbar-track{
-    background:#111827;
+*::-webkit-scrollbar-track {
+  background: #111827;
 }
 
-*::-webkit-scrollbar-thumb{
-    border-radius:999px;
-    background:#475569;
+*::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #475569;
 }
 
-*::-webkit-scrollbar-thumb:hover{
-    background:#64748b;
+*::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
 
 /* =========================================
@@ -238,231 +270,185 @@ button{
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
-textarea:focus-visible{
-    outline:none;
-
-    box-shadow:
-        0 0 0 4px rgba(139,92,246,.18);
+textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.18);
 }
 
 /* =========================================
    GLOBAL ANIMATIONS
 ========================================= */
 
-@keyframes fadeIn{
-    from{
-        opacity:0;
-        transform:translateY(-8px);
-    }
-
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-@keyframes premiumFloat{
-    0%,
-    100%{
-        transform:translateY(0);
-    }
-
-    50%{
-        transform:translateY(-6px);
-    }
+@keyframes premiumFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 /* =========================================
    CONFIGURATION PAGE LAYOUT
 ========================================= */
 
-.config-active{
-    height:calc(100vh - 74px);
-    min-height:calc(100vh - 74px);
-
-    overflow-y:auto;
-    overflow-x:hidden;
-
-    padding:24px;
+.config-active {
+  height: calc(100vh - 74px);
+  min-height: calc(100vh - 74px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px;
 }
 
-.config-page-content{
-    width:100%;
-    max-width:1480px;
-
-    margin:0 auto;
-    padding-bottom:40px;
+.config-page-content {
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding-bottom: 40px;
 }
 
-.config-start-row{
-    display:flex;
-    justify-content:center;
-
-    margin-top:-8px;
-    padding:0 20px 30px;
+.config-start-row {
+  display: flex;
+  justify-content: center;
+  margin-top: -8px;
+  padding: 0 20px 30px;
 }
 
-.start-interview-btn{
-    min-width:270px;
-    height:58px;
-
-    padding:0 32px;
-
-    border:none;
-    border-radius:16px;
-
-    background:
-        linear-gradient(
-            90deg,
-            #7c3aed,
-            #2563eb
-        );
-
-    color:white;
-
-    font-size:18px;
-    font-weight:900;
-
-    cursor:pointer;
-
-    box-shadow:
-        0 14px 32px rgba(99,102,241,.32);
-
-    transition:
-        transform .2s ease,
-        box-shadow .2s ease,
-        opacity .2s ease;
+.start-interview-btn {
+  min-width: 270px;
+  height: 58px;
+  padding: 0 32px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(90deg, #7c3aed, #2563eb);
+  color: white;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 14px 32px rgba(99, 102, 241, 0.32);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
 }
 
-.start-interview-btn:hover:not(:disabled){
-    transform:translateY(-2px);
-
-    box-shadow:
-        0 20px 40px rgba(99,102,241,.42);
+.start-interview-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(99, 102, 241, 0.42);
 }
 
-.start-interview-btn:disabled{
-    opacity:.6;
-    cursor:not-allowed;
+.start-interview-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* =========================================
    INTERVIEW PAGE LAYOUT
 ========================================= */
 
-.interview-active{
-    height:calc(100vh - 74px);
-
-    overflow:hidden;
-
-    padding:14px;
+.interview-active {
+  height: calc(100vh - 74px);
+  overflow: hidden;
+  padding: 14px;
 }
 
-.interview-active .main-layout{
-    height:100%;
-}
-
-/* =========================================
-   TOAST
-========================================= */
-
-.app-toast{
-    position:fixed;
-    top:92px;
-    right:22px;
-
-    z-index:9999;
-
-    max-width:420px;
-
-    padding:13px 20px;
-
-    border-radius:12px;
-
-    color:white;
-
-    font-size:14px;
-    font-weight:800;
-
-    box-shadow:
-        0 14px 32px rgba(0,0,0,.4);
-
-    animation:fadeIn .3s ease;
-}
-
-.app-toast-success{
-    background:#10b981;
-}
-
-.app-toast-error{
-    background:#ef4444;
-}
-
-.app-toast-info{
-    background:#3b82f6;
+.interview-active .main-layout {
+  height: 100%;
 }
 
 /* =========================================
-   RESPONSIVE
+   TOAST NOTIFICATIONS
 ========================================= */
 
-@media (max-width:1200px){
-
-    .main-layout{
-        grid-template-columns:minmax(300px,34%) minmax(0,66%);
-    }
-
+.app-toast {
+  position: fixed;
+  top: 92px;
+  right: 22px;
+  z-index: 9999;
+  max-width: 420px;
+  padding: 13px 20px;
+  border-radius: 12px;
+  color: white;
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.4);
+  animation: fadeIn 0.3s ease;
 }
 
-@media (max-width:900px){
-
-    .main-layout{
-        grid-template-columns:1fr;
-
-        height:auto;
-
-        overflow:visible;
-    }
-
-    .interview-active{
-        height:auto;
-
-        min-height:calc(100vh - 74px);
-
-        overflow-y:auto;
-    }
-
-    .interview-active .main-layout{
-        height:auto;
-    }
-
+.app-toast-success {
+  background: #10b981;
 }
 
-@media (max-width:720px){
+.app-toast-error {
+  background: #ef4444;
+}
 
-    .app-container{
-        padding:12px;
-    }
+.app-toast-info {
+  background: #3b82f6;
+}
 
-    .config-active{
-        padding:12px;
-    }
+/* =========================================
+   RESPONSIVE LAYOUT
+========================================= */
 
-    .main-layout{
-        gap:14px;
-    }
+@media (max-width: 1200px) {
+  .main-layout {
+    grid-template-columns: minmax(300px, 34%) minmax(0, 66%);
+  }
+}
 
-    .start-interview-btn{
-        width:100%;
-        min-width:0;
-    }
+@media (max-width: 900px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+  }
 
-    .app-toast{
-        top:86px;
-        right:12px;
-        left:12px;
+  .interview-active {
+    height: auto;
+    min-height: calc(100vh - 74px);
+    overflow-y: auto;
+  }
 
-        max-width:none;
-    }
+  .interview-active .main-layout {
+    height: auto;
+  }
+}
 
+@media (max-width: 720px) {
+  .app-container {
+    padding: 12px;
+  }
+
+  .config-active {
+    padding: 12px;
+  }
+
+  .main-layout {
+    gap: 14px;
+  }
+
+  .start-interview-btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .app-toast {
+    top: 86px;
+    right: 12px;
+    left: 12px;
+    max-width: none;
+  }
 }
