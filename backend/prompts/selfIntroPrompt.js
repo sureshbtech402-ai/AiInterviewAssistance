@@ -17,20 +17,49 @@ INTERVIEWER ASKED:
 "${question}"
 
 TASK:
-Provide a natural, 160-180 word first-person self-introduction as the candidate in an Indian corporate interview.
+Give a natural self-introduction that the candidate can speak comfortably in a live technical interview.
 
-SPEECH STRUCTURE:
-1. Start directly with: "Hi, I'm [Name], with around [X] years of experience in [Primary Role/Tech]..."
-2. Current role & company: Mention current company and main technical stack.
-3. Current project & work: Describe hands-on day-to-day work (e.g., framework development, automation, APIs).
-4. Previous work/highlight: 1 brief sentence on past experience if present in profile.
-5. End cleanly with: "That's a brief overview about my background. Thank you."
+The introduction should normally take around 45-60 seconds when spoken. Do not target an exact word count.
 
-STRICT RULES:
-- You are an Indian IT professional speaking in a live technical interview, speak naturally, use simple words how indian candiadte will speak in live interview.
-- Use ONLY facts explicitly present in the Candidate Profile. Never invent metrics or tools.
-- Conversational, spoken phrasing only ("Currently I'm working with...", "My core work involves...", "Basically, we used...").
-- NO markdown, NO bullet points, NO headings, and NO filler intros ("Certainly", "Sure").
-- Return ONLY the exact spoken words. Start speaking immediately.
+CONTENT FLOW:
+- Start naturally with the candidate's name and experience.
+- Mention the current role and company.
+- Mention the main technical skills that are actually supported by the Candidate Profile.
+- Briefly explain the current project and what it is about, if available in the profile.
+- Explain what the candidate personally works on in the project.
+- Mention one relevant responsibility or previous experience only if it is supported by the profile.
+- End naturally without sounding memorized.
+
+FACTUAL ACCURACY:
+- The Candidate Profile is the only source of truth.
+- Use only facts explicitly present in the Candidate Profile.
+- Never invent technologies, tools, projects, clients, responsibilities, achievements, metrics, or experience.
+- Do not mention a technology just because it is common for the candidate's role.
+- If a detail is not available, simply skip it.
+- Do not claim "I worked on", "I implemented", or "we use" unless the profile supports it.
+
+SPEAKING STYLE:
+- Sound like a real Indian IT professional speaking to an interviewer.
+- Use simple, natural Indian spoken English.
+- Keep the sentences easy to speak aloud.
+- Conversational phrases such as "Currently I'm working on...", "My main responsibility is...", "Basically..." can be used when they fit naturally.
+- Do not force the same phrases repeatedly.
+- Do not sound like a resume summary or AI-generated speech.
+- Do not over-explain individual technologies.
+- Do not repeat the same information.
+
+ENDING:
+Use a short, natural closing such as:
+"That's a brief overview of my experience."
+Do not use "yeah that's all about my self".
+
+OUTPUT:
+- Return only the spoken introduction.
+- No headings.
+- No bullets.
+- No markdown.
+- No quotation marks around the answer.
+- No filler such as "Sure", "Certainly", or "Absolutely".
+- Start speaking immediately.
 `.trim();
 }

@@ -178,29 +178,112 @@ app.post("/resume-summary", upload.single("resume"), async (req, res) => {
 
     const pdfBase64 = pdfBuffer.toString("base64");
 
-    const prompt = `Extract factual details from the resume into valid JSON.
+    const prompt = `Extract the candidate's information from the uploaded resume and return ONLY valid JSON.
 
-    You are an Indian IT professional speaking live in a technical interview.
-    Write "selfIntroduction" in clean, natural spoken Indian IT English (160-180 words).
-    Structure:
-    "Hi, I'm [Name]. I have around [X] years of experience as a [Role], and currently I'm working with [Company].
-    My main skills are [Primary Skills like Core Java, Spring Boot, Microservices, REST APIs, etc.]. I also have hands-on experience with [Secondary Skills like Git, Jenkins, Docker, etc.].
-    Currently, I'm working on [Project Name] for [Client/Domain]. It is a [Domain] application mainly related to [Project Purpose]. In this project, I'm mainly involved in [Key Responsibilities].
-    Overall, my experience is mainly in [Core Domain/Role]. yeah that's all about my self. Thank you."
+      IMPORTANT:
+      The uploaded resume is the only source of truth for the candidate's experience.
 
-    Return ONLY valid JSON matching this schema:
-    {
-      "candidateName": "",
-      "experience": "",
-      "currentCompany": "",
-      "primaryRole": "",
-      "primarySkills": [],
-      "secondarySkills": [],
-      "currentProjectName": "",
-      "currentProjectSummary": "",
-      "selfIntroduction": ""
-    }`;
+      FACTUAL EXTRACTION RULES:
+      - Extract only information that is explicitly present in the resume.
+      - Never guess, assume, or add information based on common industry practices.
+      - Do not add technologies just because they are common for the candidate's role.
+      - Do not invent project names, clients, responsibilities, tools, achievements, metrics, domains, or years of experience.
+      - If information is not available in the resume, return an empty string or empty array.
+      - Preserve the candidate's actual terminology where possible.
+      - If the resume contains multiple projects, identify the current/relevant project based on the resume. Do not invent which project is current if it is unclear.
 
+      PROFILE FIELDS:
+      candidateName:
+      The candidate's full name.
+
+      experience:
+      The experience stated in the resume. Do not calculate or change it.
+
+      currentCompany:
+      The company the candidate currently works for, if stated.
+
+      primaryRole:
+      The candidate's actual role/designation.
+
+      primarySkills:
+      The main technical skills explicitly present in the resume.
+
+      secondarySkills:
+      Other relevant tools, technologies, frameworks, platforms, or supporting skills explicitly present in the resume.
+
+      currentProjectName:
+      The current or most relevant project explicitly stated in the resume.
+
+      currentProjectSummary:
+      A short factual summary of what the project does. Use only information supported by the resume.
+
+      projectDomain:
+      The business/domain area explicitly stated in the resume.
+
+      projectResponsibilities:
+      A list of the candidate's actual responsibilities explicitly stated in the resume.
+
+      projectTechnologies:
+      Technologies and tools explicitly associated with the project.
+
+      previousExperience:
+      A short factual summary of previous relevant experience if present. Otherwise return an empty string.
+
+      achievements:
+      Achievements or awards explicitly mentioned in the resume.
+
+      SELF INTRODUCTION:
+      Generate a natural first-person self-introduction using ONLY the extracted resume facts.
+
+      The introduction is for a real candidate speaking during a live Indian technical interview.
+
+      It should normally take around 45-60 seconds when spoken. Do not target an exact word count.
+
+      The natural flow should be:
+      - Name and experience.
+      - Current role and company.
+      - Main technical skills.
+      - Current project and what it does.
+      - What the candidate personally works on.
+      - One relevant responsibility or previous experience if useful.
+      - A short natural closing.
+
+      SPEAKING STYLE:
+      - Use simple, natural Indian spoken English.
+      - Sound like a real candidate talking to an interviewer.
+      - Keep sentences easy to speak.
+      - Do not sound like a resume being read aloud.
+      - Do not use overly formal corporate language.
+      - Do not explain every technology.
+      - Do not repeat the same information.
+      - Natural phrases such as "Currently I'm working on...", "My main responsibility is...", and "Basically..." may be used when they fit naturally.
+      - Do not force these phrases.
+      - Do not use "yeah that's all about my self".
+      - End naturally, for example: "That's a brief overview of my experience."
+
+      SELF INTRODUCTION FACTUAL RULE:
+      - Every statement in selfIntroduction must be supported by the resume.
+      - Never mention a technology, project, client, responsibility, achievement, or experience that is not supported by the resume.
+      - Never turn a general skill listed on the resume into a claim that the candidate used it in the current project unless the resume supports that connection.
+
+      Return ONLY valid JSON using this schema:
+
+      {
+        "candidateName": "",
+        "experience": "",
+        "currentCompany": "",
+        "primaryRole": "",
+        "primarySkills": [],
+        "secondarySkills": [],
+        "currentProjectName": "",
+        "currentProjectSummary": "",
+        "projectDomain": "",
+        "projectResponsibilities": [],
+        "projectTechnologies": [],
+        "previousExperience": "",
+        "achievements": [],
+        "selfIntroduction": ""
+      }`;
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
@@ -263,7 +346,24 @@ function extractDeltaFromOpenAIEvent(event) {
   return "";
 }
 
-// Live Spoken Answer Endpoint
+function buildInterviewProfile(profile = {}) {
+  return `
+Name: ${profile.candidateName || ""}
+Experience: ${profile.experience || ""}
+Role: ${profile.primaryRole || ""}
+Company: ${profile.currentCompany || ""}
+Primary Skills: ${(profile.primarySkills || []).join(", ")}
+Secondary Skills: ${(profile.secondarySkills || []).join(", ")}
+Project: ${profile.currentProjectName || ""}
+Project Summary: ${profile.currentProjectSummary || ""}
+Project Domain: ${profile.projectDomain || ""}
+Project Responsibilities: ${(profile.projectResponsibilities || []).join("; ")}
+Project Technologies: ${(profile.projectTechnologies || []).join(", ")}
+Previous Experience: ${profile.previousExperience || ""}
+Achievements: ${(profile.achievements || []).join(", ")}
+`.trim();
+}
+
 app.post("/answer", async (req, res) => {
   const {
     question,
@@ -275,144 +375,208 @@ app.post("/answer", async (req, res) => {
   } = req.body || {};
 
   const cleanQ = getCleanQuestion(question);
+
   if (!cleanQ.trim() || !process.env.OPENAI_API_KEY) {
     return res.status(400).send("Invalid request");
   }
 
   try {
+    const startTime = Date.now();
+
     const safeHistory = Array.isArray(history) ? history : [];
+
     const questionType = classifyQuestion(cleanQ);
 
     const prompt = buildPrompt({
       question: cleanQ,
-      history: safeHistory,
       interviewLevel,
       company,
       interviewType,
     });
 
-    const profileText = resumeProfile
-      ? JSON.stringify(resumeProfile, null, 2)
-      : "No profile available.";
+    const profileText = buildInterviewProfile(resumeProfile);
 
-    // 1. Force Proxy to Stream Immediately without buffer delay
+    // Start streaming response immediately
     res.status(200);
-    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Cache-Control", "no-cache, no-transform");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
-    if (res.flushHeaders) res.flushHeaders();
+
+    if (res.flushHeaders) {
+      res.flushHeaders();
+    }
+
+    const previousContext = safeHistory
+      .slice(-2)
+      .filter((turn) => turn && turn.content)
+      .map(
+        (turn) =>
+          `${turn.role === "assistant" ? "Candidate" : "Interviewer"}: ${String(
+            turn.content
+          ).slice(0, 500)}`
+      )
+      .join("\n");
 
     const messages = [
       {
         role: "system",
-        content: `You are an Indian IT professional speaking in a live technical interview, speak naturally, use simple words how indian candiadte will speak in live interview.
-    Candidate Profile (Candidate's actual experience & stack):
-    ${profileText}
+        content: `
+You are helping a candidate answer questions during a live IT technical interview.
 
-    CRITICAL RULES:
-    1. SKILL GAP HANDLING:
-      - Check if the question asks about a technology/tool NOT present in the Candidate Profile (e.g., Kafka, Kubernetes, AWS, Redis).
-      - If the candidate HAS NOT worked with it, start naturally with:
-        "I haven't worked hands-on with [tool] in my project, but I understand the concept."
-      - Then immediately explain the concept clearly and practically.
+Speak naturally in simple Indian spoken English, like a real Indian software professional speaking to an interviewer.
 
-    2. HIGHLIGHTING:
-      - ALWAYS highlight 3 to 6 key terms, data structures, annotations, methods, and complexities in bold (**term**).
+  IMPORTANT RULES:
+  - Answer only what the interviewer asks.
+  - The Candidate Profile is the source of truth for the candidate's actual experience.
+  - Never invent projects, technologies, tools, responsibilities, clients, achievements, metrics, or implementation details.
+  - General technical knowledge is allowed.
+  - If a technology is not present in the profile and the interviewer asks about hands-on experience, clearly say that the candidate has not worked hands-on with it, then explain the concept.
+  - Do not claim "In my project we use..." unless the Candidate Profile supports it.
+  - For follow-up questions, answer only the new point and do not repeat the previous explanation.
+  - Keep simple questions short.
+  - Give enough detail for project, scenario, architecture, and other detailed questions.
+  - For coding questions, provide the requested code first and then a short explanation.
+  - Do not use unnecessary filler.
+  - Return only the candidate's answer.
+        `.trim(),
+      },
+      {
+        role: "user",
+        content: `
+Candidate Profile:
+${profileText}
 
-    3. ANSWERING RULES:
-      - For specific/why/how follow-ups: Answer ONLY that specific point directly in 2-3 sentences. DO NOT re-explain the whole concept.
-      - For top-level technical questions: Explain what it is with practical clarity, internal mechanism, and real-time usage in 3-4 sentences (50-70 words max).
-      - For coding questions: Output clean code first, followed by a 1-2 sentence spoken summary.
-      - NO markdown lists, NO bullet points, NO headings, NO filler intros ("Sure", "Certainly"). Output ONLY the spoken response.
+Previous Interview Context:
+${previousContext || "No previous context available."}
 
-    FEW-SHOT EXAMPLES:
-    Q: "What is Kafka?" (Candidate has NOT worked on Kafka)
-    A: "I haven't worked hands-on with **Apache Kafka** in my project, but I understand the concept. Basically, Kafka is a distributed **event streaming platform** used for building real-time data pipelines. It uses **publish-subscribe messaging** with **producers, topics, and consumer groups** to handle high-throughput, fault-tolerant message processing."
+Interview Instructions:
+${prompt}
 
-    Q: "What is HashMap?" (Candidate has Java in profile)
-    A: "**HashMap** is basically a key-value collection in Java that implements the **Map** interface with an average lookup of **O(1)**. Internally, it works on **hashing and bucket arrays** to store entries. In my project, we use it for in-memory caching and session parameters, while preferring **ConcurrentHashMap** for thread safety."
-
-    Q: "Why is it not thread safe?"
-    A: "**HashMap** is not thread-safe because its internal operations like **put()** and **get()** are not **synchronized**. If multiple threads modify it concurrently, it leads to **race conditions** and data inconsistency during rehashing. For thread-safe operations, we switch to **ConcurrentHashMap**."`
+Interviewer Question:
+${cleanQ}
+        `.trim(),
       },
     ];
 
-    safeHistory.slice(-3).forEach((turn) => {
-      if (!turn || !turn.content) return;
-      messages.push({
-        role: turn.role === "assistant" ? "assistant" : "user",
-        content: String(turn.content).slice(0, 600),
-      });
-    });
-
-    messages.push({ role: "user", content: prompt });
-
     const maxTokensByType = {
-      SELF_INTRO: 400,
+      SELF_INTRO: 300,
       CODING: 650,
       SCENARIO: 300,
       ARCHITECTURE: 600,
       CONCEPT: 300,
     };
 
-    // 2. High-speed mini model to eliminate streaming latency
-    const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: ANSWER_MODEL,
-        messages,
-        stream: true,
-        temperature: 0.15,
-        max_completion_tokens: maxTokensByType[questionType] || 180,
-      }),
-    });
+    console.log(
+      `[ANSWER] ${questionType} - sending to OpenAI after ${
+        Date.now() - startTime
+      }ms`
+    );
+
+    const openaiResponse = await fetch(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: ANSWER_MODEL,
+          messages,
+          stream: true,
+          temperature: 0.1,
+          max_completion_tokens:
+            maxTokensByType[questionType] || 180,
+        }),
+      }
+    );
 
     if (!openaiResponse.ok || !openaiResponse.body) {
+      let errorText = "";
+
+      try {
+        errorText = await openaiResponse.text();
+      } catch {
+        errorText = "";
+      }
+
+      console.error(
+        "[ANSWER] OpenAI Error:",
+        openaiResponse.status,
+        errorText
+      );
+
       res.write("Unable to generate answer right now.");
       return res.end();
     }
 
     const reader = openaiResponse.body.getReader();
     const decoder = new TextDecoder("utf-8");
-    let buffer = "";
 
-    // 3. Line-by-line decoding (Zero lag stream delivery)
+    let buffer = "";
+    let firstToken = true;
+
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+
+      if (done) {
+        break;
+      }
 
       buffer += decoder.decode(value, { stream: true });
+
       const lines = buffer.split("\n");
       buffer = lines.pop() || "";
 
       for (const line of lines) {
         const trimmed = line.trim();
-        if (!trimmed.startsWith("data:")) continue;
+
+        if (!trimmed.startsWith("data:")) {
+          continue;
+        }
 
         const dataStr = trimmed.replace(/^data:\s*/, "");
-        if (dataStr === "[DONE]") continue;
+
+        if (dataStr === "[DONE]") {
+          continue;
+        }
 
         try {
           const event = JSON.parse(dataStr);
           const delta = extractDeltaFromOpenAIEvent(event);
+
           if (delta) {
+            if (firstToken) {
+              firstToken = false;
+
+              console.log(
+                `[ANSWER] FIRST TOKEN: ${
+                  Date.now() - startTime
+                }ms`
+              );
+            }
+
             res.write(delta);
-            if (res.flush) res.flush();
+
+            if (res.flush) {
+              res.flush();
+            }
           }
         } catch {
-          // Ignore incomplete JSON stream segments
+          // Ignore incomplete SSE chunks
         }
       }
     }
 
+    console.log(
+      `[ANSWER] COMPLETED: ${Date.now() - startTime}ms`
+    );
+
     res.end();
   } catch (err) {
     console.error("Answer Stream Error:", err);
+
     if (!res.headersSent) {
       res.status(500).send("Server Error");
     } else {
