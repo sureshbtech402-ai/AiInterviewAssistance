@@ -178,28 +178,28 @@ app.post("/resume-summary", upload.single("resume"), async (req, res) => {
 
     const pdfBase64 = pdfBuffer.toString("base64");
 
-    const prompt = `
-Extract factual details from the resume into valid JSON.
+    const prompt = `Extract factual details from the resume into valid JSON.
 
-Write "selfIntroduction" in clean, natural spoken Indian IT English (110-140 words).
-Structure:
-"Hi, I'm [Name]. I have around [X] years of experience as a [Role], and currently I'm working with [Company].
-My main skills are [Primary Skills like Core Java, Spring Boot, Microservices, REST APIs, etc.]. I also have hands-on experience with [Secondary Skills like Git, Jenkins, Docker, etc.].
-Currently, I'm working on [Project Name] for [Client/Domain]. It is a [Domain] application mainly related to [Project Purpose]. In this project, I'm mainly involved in [Key Responsibilities].
-Overall, my experience is mainly in [Core Domain/Role]. That's a brief summary about me. Thank you."
+    You are an Indian IT professional speaking live in a technical interview.
+    Write "selfIntroduction" in clean, natural spoken Indian IT English (160-180 words).
+    Structure:
+    "Hi, I'm [Name]. I have around [X] years of experience as a [Role], and currently I'm working with [Company].
+    My main skills are [Primary Skills like Core Java, Spring Boot, Microservices, REST APIs, etc.]. I also have hands-on experience with [Secondary Skills like Git, Jenkins, Docker, etc.].
+    Currently, I'm working on [Project Name] for [Client/Domain]. It is a [Domain] application mainly related to [Project Purpose]. In this project, I'm mainly involved in [Key Responsibilities].
+    Overall, my experience is mainly in [Core Domain/Role]. yeah that's all about my self. Thank you."
 
-Return ONLY valid JSON matching this schema:
-{
-  "candidateName": "",
-  "experience": "",
-  "currentCompany": "",
-  "primaryRole": "",
-  "primarySkills": [],
-  "secondarySkills": [],
-  "currentProjectName": "",
-  "currentProjectSummary": "",
-  "selfIntroduction": ""
-}`;
+    Return ONLY valid JSON matching this schema:
+    {
+      "candidateName": "",
+      "experience": "",
+      "currentCompany": "",
+      "primaryRole": "",
+      "primarySkills": [],
+      "secondarySkills": [],
+      "currentProjectName": "",
+      "currentProjectSummary": "",
+      "selfIntroduction": ""
+    }`;
 
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
@@ -295,37 +295,46 @@ app.post("/answer", async (req, res) => {
       ? JSON.stringify(resumeProfile, null, 2)
       : "No profile available.";
 
+    // 1. Force Proxy to Stream Immediately without buffer delay
     res.status(200);
     res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
     res.setHeader("Cache-Control", "no-cache, no-transform");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
-    res.flushHeaders?.();
+    if (res.flushHeaders) res.flushHeaders();
 
     const messages = [
       {
         role: "system",
-        content: `You are an articulate Indian IT professional speaking live in a technical interview.
-Candidate Profile:
-${profileText}
+        content: `You are an Indian IT professional speaking in a live technical interview, speak naturally, use simple words how indian candiadte will speak in live interview.
+    Candidate Profile (Candidate's actual experience & stack):
+    ${profileText}
 
-CORE GUIDELINES:
-1. ALWAYS highlight 3 to 6 key terms, annotations, methods, data structures, and complexities in bold (**term**).
-2. For specific/why/how follow-ups: Answer ONLY that specific point directly in 2-3 sentences. DO NOT re-explain the whole concept.
-3. For top-level technical questions: Explain what it is with practical clarity, internal mechanism, and project usage in 3-4 sentences.
-4. For coding questions: Output clean code first, followed by a 1-2 sentence spoken summary.
-5. NO headings, NO bullet points, NO filler intros ("Sure", "Certainly"). Output ONLY the spoken response.
+    CRITICAL RULES:
+    1. SKILL GAP HANDLING:
+      - Check if the question asks about a technology/tool NOT present in the Candidate Profile (e.g., Kafka, Kubernetes, AWS, Redis).
+      - If the candidate HAS NOT worked with it, start naturally with:
+        "I haven't worked hands-on with [tool] in my project, but I understand the concept."
+      - Then immediately explain the concept clearly and practically.
 
-FEW-SHOT EXAMPLES:
+    2. HIGHLIGHTING:
+      - ALWAYS highlight 3 to 6 key terms, data structures, annotations, methods, and complexities in bold (**term**).
 
-Q: "What is HashMap?"
-A: "**HashMap** is basically a key-value collection in Java that implements the **Map** interface. We use it when we want to store and retrieve values using unique keys with average **O(1)** lookup. Internally, it uses **hashing and bucket arrays** to store entries. In our project, we use it for in-memory lookups and caching test data, while preferring **ConcurrentHashMap** for thread safety."
+    3. ANSWERING RULES:
+      - For specific/why/how follow-ups: Answer ONLY that specific point directly in 2-3 sentences. DO NOT re-explain the whole concept.
+      - For top-level technical questions: Explain what it is with practical clarity, internal mechanism, and real-time usage in 3-4 sentences (50-70 words max).
+      - For coding questions: Output clean code first, followed by a 1-2 sentence spoken summary.
+      - NO markdown lists, NO bullet points, NO headings, NO filler intros ("Sure", "Certainly"). Output ONLY the spoken response.
 
-Q: "Why is it not thread safe?"
-A: "**HashMap** is not thread-safe because its methods like **put()** and **get()** are not **synchronized**. If multiple threads access and modify the map concurrently, it can lead to **race conditions** or corrupted bucket structures during rehashing. For thread-safe operations, we switch to **ConcurrentHashMap**."
+    FEW-SHOT EXAMPLES:
+    Q: "What is Kafka?" (Candidate has NOT worked on Kafka)
+    A: "I haven't worked hands-on with **Apache Kafka** in my project, but I understand the concept. Basically, Kafka is a distributed **event streaming platform** used for building real-time data pipelines. It uses **publish-subscribe messaging** with **producers, topics, and consumer groups** to handle high-throughput, fault-tolerant message processing."
 
-Q: "Explain your project."
-A: "In my current project, I work on the **${resumeProfile?.currentProjectName || 'ING Digitization'}** application. It is a banking platform where we migrated monolithic services to a **Spring Boot microservices architecture**. My day-to-day work involves developing **RESTful APIs**, handling service integration using **Spring Data JPA**, and writing unit tests with **Mockito**."`
+    Q: "What is HashMap?" (Candidate has Java in profile)
+    A: "**HashMap** is basically a key-value collection in Java that implements the **Map** interface with an average lookup of **O(1)**. Internally, it works on **hashing and bucket arrays** to store entries. In my project, we use it for in-memory caching and session parameters, while preferring **ConcurrentHashMap** for thread safety."
+
+    Q: "Why is it not thread safe?"
+    A: "**HashMap** is not thread-safe because its internal operations like **put()** and **get()** are not **synchronized**. If multiple threads modify it concurrently, it leads to **race conditions** and data inconsistency during rehashing. For thread-safe operations, we switch to **ConcurrentHashMap**."`
       },
     ];
 
@@ -340,13 +349,14 @@ A: "In my current project, I work on the **${resumeProfile?.currentProjectName |
     messages.push({ role: "user", content: prompt });
 
     const maxTokensByType = {
-      SELF_INTRO: 300,
+      SELF_INTRO: 400,
       CODING: 650,
       SCENARIO: 300,
       ARCHITECTURE: 600,
       CONCEPT: 300,
     };
 
+    // 2. High-speed mini model to eliminate streaming latency
     const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -367,41 +377,38 @@ A: "In my current project, I work on the **${resumeProfile?.currentProjectName |
       return res.end();
     }
 
-    const processSsePart = (part) => {
-      const lines = part.split("\n").filter((line) => line.startsWith("data:"));
-      for (const line of lines) {
-        const data = line.replace(/^data:\s*/, "").trim();
-        if (!data || data === "[DONE]") continue;
-
-        try {
-          const event = JSON.parse(data);
-          const delta = extractDeltaFromOpenAIEvent(event);
-          if (delta) {
-            res.write(delta);
-            res.flush?.();
-          }
-        } catch {
-          // ignore parse error
-        }
-      }
-    };
-
     const reader = openaiResponse.body.getReader();
-    const decoder = new TextDecoder();
+    const decoder = new TextDecoder("utf-8");
     let buffer = "";
 
+    // 3. Line-by-line decoding (Zero lag stream delivery)
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
-      const parts = buffer.split("\n\n");
-      buffer = parts.pop() || "";
-      parts.forEach(processSsePart);
-    }
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
 
-    buffer += decoder.decode();
-    if (buffer.trim()) processSsePart(buffer);
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data:")) continue;
+
+        const dataStr = trimmed.replace(/^data:\s*/, "");
+        if (dataStr === "[DONE]") continue;
+
+        try {
+          const event = JSON.parse(dataStr);
+          const delta = extractDeltaFromOpenAIEvent(event);
+          if (delta) {
+            res.write(delta);
+            if (res.flush) res.flush();
+          }
+        } catch {
+          // Ignore incomplete JSON stream segments
+        }
+      }
+    }
 
     res.end();
   } catch (err) {
