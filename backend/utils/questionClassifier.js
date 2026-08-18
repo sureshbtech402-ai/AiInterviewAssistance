@@ -1,7 +1,7 @@
 function normalizeQuestion(question = "") {
   return String(question || "")
     .toLowerCase()
-    .replace(/[^\w\s-]/g, " ") // Strips punctuation like ?, !, ,, . cleanly
+    .replace(/[^\w\s-]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -20,6 +20,7 @@ export function classifyQuestion(question = "") {
   // ==================================================
   // 1. SELF INTRODUCTION
   // ==================================================
+
   const selfIntroPatterns = [
     "tell me about yourself",
     "tell us about yourself",
@@ -43,11 +44,11 @@ export function classifyQuestion(question = "") {
   }
 
   // ==================================================
-  // 2. CODING / SYNTAX / QUERIES / COMMANDS
+  // 2. CODING / SYNTAX / QUERY / COMMAND
   // ==================================================
+
   const codingPatterns = [
     // General coding
-    "syntax",
     "write code",
     "write the code",
     "give me code",
@@ -58,29 +59,29 @@ export function classifyQuestion(question = "") {
     "write a program",
     "write program",
     "write a method",
+    "write the method",
     "write a function",
+    "write the function",
     "create a method",
+    "create the method",
     "create a function",
-    "implement this",
-    "implement the",
-    "implementation of",
+    "create the function",
     "can you code",
     "could you code",
     "coding question",
     "coding problem",
     "solve this problem",
     "solve the problem",
+    "solve this using",
+    "implement this in",
+    "implement the code",
+    "implementation code",
+    "give me the syntax",
+    "show me the syntax",
+    "write syntax",
+    "give syntax",
 
-    // Java / Core Java
-    "java code",
-    "java syntax",
-    "java program",
-    "java method",
-    "java function",
-    "hashmap code",
-    "hash map code",
-    "arraylist code",
-    "linkedlist code",
+    // Common coding problems
     "reverse string",
     "reverse a string",
     "reverse linked list",
@@ -107,63 +108,68 @@ export function classifyQuestion(question = "") {
     "find missing number",
     "two sum",
 
-    // Selenium
+    // Java
+    "java code",
+    "java syntax",
+    "java program",
+    "java method",
+    "java function",
+    "hashmap code",
+    "hash map code",
+    "arraylist code",
+    "linkedlist code",
+
+    // Selenium / UI
     "selenium code",
     "selenium syntax",
     "selenium script",
     "webdriver code",
     "webdriver syntax",
     "web driver code",
-    "xpath",
     "xpath syntax",
-    "css selector",
+    "xpath code",
+    "css selector syntax",
     "locator syntax",
-    "findelement",
-    "find elements",
-    "webelement",
-    "window handling",
-    "windows handling",
-    "handle windows",
-    "handle browser windows",
-    "switch window",
-    "switch to window",
-    "switch tabs",
-    "handle tabs",
+    "findelement syntax",
+    "find elements code",
+    "webelement code",
+    "handle windows code",
+    "switch window code",
+    "switch tabs code",
     "iframe code",
-    "frame handling",
-    "alert handling",
+    "frame handling code",
+    "alert handling code",
     "dropdown code",
-    "select class",
-    "actions class",
-    "mouse hover",
-    "drag and drop",
+    "actions class code",
+    "mouse hover code",
+    "drag and drop code",
     "screenshot code",
-    "explicit wait",
-    "implicit wait",
-    "fluent wait",
+    "explicit wait code",
+    "implicit wait code",
+    "fluent wait code",
     "wait syntax",
     "broken link code",
     "broken links code",
     "broken server code",
 
-    // TestNG / JUnit
+    // Test frameworks
     "testng code",
     "testng syntax",
-    "testng annotation",
-    "testng annotations",
+    "testng annotation code",
+    "testng annotations code",
     "junit code",
     "junit syntax",
-    "junit annotation",
-    "junit annotations",
-    "beforemethod",
-    "aftermethod",
-    "beforeclass",
-    "afterclass",
-    "dataprovider",
-    "parallel testing",
-    "parallel execution",
+    "junit annotation code",
+    "junit annotations code",
+    "beforemethod code",
+    "aftermethod code",
+    "beforeclass code",
+    "afterclass code",
+    "dataprovider code",
+    "parallel testing code",
+    "parallel execution code",
 
-    // REST Assured / API
+    // API
     "rest assured code",
     "rest assured syntax",
     "rest api code",
@@ -173,20 +179,22 @@ export function classifyQuestion(question = "") {
     "api request code",
     "api automation code",
     "api test code",
-    "get request",
-    "post request",
-    "put request",
-    "delete request",
+    "get request code",
+    "post request code",
+    "put request code",
+    "delete request code",
+    "write a get request",
+    "write a post request",
+    "write a put request",
+    "write a delete request",
 
-    // Cucumber / BDD
+    // BDD
     "cucumber code",
     "cucumber syntax",
-    "feature file",
     "feature file syntax",
-    "gherkin syntax",
-    "step definition",
-    "step definitions",
-    "given when then",
+    "step definition code",
+    "step definitions code",
+    "given when then code",
     "bdd code",
     "bdd syntax",
 
@@ -203,9 +211,9 @@ export function classifyQuestion(question = "") {
     "update query",
     "delete query",
     "join query",
-    "inner join",
-    "left join",
-    "right join",
+    "inner join query",
+    "left join query",
+    "right join query",
     "group by query",
     "having query",
     "subquery",
@@ -229,8 +237,71 @@ export function classifyQuestion(question = "") {
   }
 
   // ==================================================
-  // 3. ARCHITECTURE / FRAMEWORK / PROJECT DESIGN
+  // 3. PROJECT / ROLE / RESPONSIBILITIES
   // ==================================================
+
+  const projectPatterns = [
+    "explain your project",
+    "explain the project",
+    "explain your current project",
+    "tell me about your project",
+    "tell me about the project",
+    "tell me about your current project",
+    "what is your project",
+    "what is the project you are working on",
+    "what project are you working on",
+    "current project",
+    "project explanation",
+    "describe your project",
+    "describe the project",
+    "walk me through your project",
+    "walk me through the project",
+
+    "roles and responsibilities",
+    "role and responsibilities",
+    "your responsibilities",
+    "your responsibility",
+    "what are your responsibilities",
+    "what is your responsibility",
+    "what is your role in the project",
+    "what is your role in this project",
+    "what do you do in your project",
+    "what do you do in the project",
+    "what exactly do you do",
+    "what exactly are you doing",
+    "what is your work in the project",
+    "what is your contribution",
+    "your contribution in the project",
+
+    "daily work",
+    "daily basis",
+    "day to day work",
+    "day-to-day work",
+    "daily activities",
+    "what do you do on a daily basis",
+    "what do you do daily",
+    "what is your day to day work",
+    "what is your daily work",
+    "what are your daily activities",
+
+    "what do you work on",
+    "what are you working on",
+    "what do you mainly work on",
+    "what is your main work",
+    "what is your main responsibility",
+    "what are you mainly responsible for",
+    "what functionality are you working on",
+    "what features do you work on",
+  ];
+
+  if (containsAny(q, projectPatterns)) {
+    return "PROJECT";
+  }
+
+  // ==================================================
+  // 4. ARCHITECTURE / FLOW / DESIGN
+  // ==================================================
+
   const architecturePatterns = [
     "system design",
     "system-design",
@@ -241,31 +312,18 @@ export function classifyQuestion(question = "") {
     "hld",
     "lld",
 
-    // Architecture
     "system architecture",
     "application architecture",
     "software architecture",
     "project architecture",
     "framework architecture",
-    "automation framework architecture",
     "architecture of your project",
     "architecture of the application",
     "explain the architecture",
     "explain your architecture",
+    "how is your application designed",
+    "how is the application designed",
 
-    // Project
-    "explain your project",
-    "explain the project",
-    "explain your current project",
-    "project explanation",
-    "how does your project work",
-    "how does the project work",
-    "project flow",
-    "complete project flow",
-    "end to end project flow",
-    "end-to-end project flow",
-
-    // Automation framework
     "automation framework",
     "test automation framework",
     "framework design",
@@ -273,8 +331,9 @@ export function classifyQuestion(question = "") {
     "selenium architecture",
     "bdd framework",
     "cucumber framework",
+    "framework flow",
+    "explain your framework",
 
-    // Flow
     "request flow",
     "request-response flow",
     "request response flow",
@@ -285,13 +344,16 @@ export function classifyQuestion(question = "") {
     "deployment flow",
     "end to end flow",
     "end-to-end flow",
+    "complete flow",
+    "complete application flow",
 
-    // Services / API
     "service communication",
     "how services communicate",
+    "service to service communication",
     "service-to-service communication",
+    "microservice communication",
+    "how microservices communicate",
 
-    // Design
     "sequence diagram",
     "component design",
     "architecture design",
@@ -314,8 +376,9 @@ export function classifyQuestion(question = "") {
   }
 
   // ==================================================
-  // 4. SCENARIO / TROUBLESHOOTING
+  // 5. SCENARIO / TROUBLESHOOTING
   // ==================================================
+
   const scenarioPatterns = [
     "tell me about a time",
     "tell me about an incident",
@@ -325,6 +388,7 @@ export function classifyQuestion(question = "") {
     "how did you handle",
     "how have you handled",
     "what did you do when",
+
     "what would you do",
     "what will you do",
     "how would you handle",
@@ -333,8 +397,10 @@ export function classifyQuestion(question = "") {
     "how will you approach",
     "what is your approach",
     "what would be your approach",
+    "suppose",
+    "what if",
+    "imagine",
 
-    // Production
     "production issue",
     "production problem",
     "production bug",
@@ -345,7 +411,6 @@ export function classifyQuestion(question = "") {
     "critical bug",
     "production support",
 
-    // Client / team
     "client issue",
     "client problem",
     "customer issue",
@@ -354,7 +419,6 @@ export function classifyQuestion(question = "") {
     "conflict with team member",
     "disagreement with",
 
-    // Troubleshooting
     "bug you fixed",
     "issue you faced",
     "problem you faced",
@@ -365,16 +429,12 @@ export function classifyQuestion(question = "") {
     "how would you troubleshoot",
     "how will you troubleshoot",
     "troubleshoot this",
+    "troubleshoot the issue",
     "debug this issue",
+    "debug the issue",
     "debug a",
-
-    // Hypothetical
-    "what if the",
-    "what if your",
-    "suppose the",
-    "suppose your",
-    "imagine the",
-    "imagine your",
+    "how do you troubleshoot",
+    "how do you debug",
   ];
 
   if (containsAny(q, scenarioPatterns)) {
@@ -382,7 +442,8 @@ export function classifyQuestion(question = "") {
   }
 
   // ==================================================
-  // 5. DEFAULT
+  // 6. DEFAULT
   // ==================================================
+
   return "CONCEPT";
 }

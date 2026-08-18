@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import "../styles/answerPanel.css";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
@@ -39,9 +40,7 @@ function AnswerPanel({ answerData, loading }) {
       behavior: "smooth",
     });
 
-    answerBody.focus({
-      preventScroll: true,
-    });
+    answerBody.focus({ preventScroll: true });
   };
 
   const scrollToBottom = () => {
@@ -53,9 +52,7 @@ function AnswerPanel({ answerData, loading }) {
       behavior: "smooth",
     });
 
-    answerBody.focus({
-      preventScroll: true,
-    });
+    answerBody.focus({ preventScroll: true });
   };
 
   const handleAnswerKeyDown = (event) => {
@@ -129,6 +126,7 @@ function AnswerPanel({ answerData, loading }) {
         ) : (
           <div className="stream-card">
             <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
               components={{
                 h1: ({ children }) => (
                   <h1 className="markdown-h1">{children}</h1>

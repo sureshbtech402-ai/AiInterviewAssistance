@@ -5,6 +5,7 @@ import { buildConceptPrompt } from "../prompts/conceptPrompt.js";
 import { buildScenarioPrompt } from "../prompts/scenarioPrompt.js";
 import { buildArchitecturePrompt } from "../prompts/architecturePrompt.js";
 import { buildCodingPrompt } from "../prompts/codingPrompt.js";
+import { buildProjectPrompt } from "../prompts/projectPrompt.js";
 
 export function buildPrompt({
   question,
@@ -35,6 +36,9 @@ export function buildPrompt({
 
     case "CODING":
       return buildCodingPrompt(payload);
+
+    case "PROJECT":
+      return buildProjectPrompt(payload);
 
     case "SCENARIO":
       return buildScenarioPrompt(payload);

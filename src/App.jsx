@@ -412,63 +412,115 @@ function App() {
     }
 
     answerAbortRef.current?.abort();
+
     conversationHistoryRef.current = [];
     setConversationHistory([]);
 
-    setInterviewStarted(true);
-    setShowConfig(false);
+    setQuestion("");
+    setAnswerData("");
 
-    await startInterviewMode();
+    questionLockedRef.current = false;
+    waitingForNextQuestionRef.current = false;
+    ignoreStaleTranscriptRef.current = false;
 
-    if (resumeProfile?.selfIntroduction) {
-      setAnswerData(resumeProfile.selfIntroduction);
-      saveConversationTurn(
-        "Tell me about yourself, explain your project, and describe your roles and responsibilities.",
-        resumeProfile.selfIntroduction
-      );
-      return;
-    }
+    liveQuestionRef.current = "";
+    finalTranscriptRef.current = "";
+    interimTranscriptRef.current = "";
+
+    clearTimeout(silenceTimerRef.current);
 
     try {
+      setInterviewStarted(true);
+      setShowConfig(false);
+
+      let profile = resumeProfile;
+
+      // 1. Extract a factual resume profile if it has not already been created.
+      if (!profile) {
+        setLoading(true);
+        setAnswerData(
+          "⏳ Reading your resume and preparing your interview profile..."
+        );
+
+        const formData = new FormData();
+        formData.append("resume", resumeFile);
+
+        const response = await fetch(`${API_BASE_URL}/resume-summary`, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          let errorMessage = "Unable to create resume profile";
+
+          try {
+            const errorData = await response.json();
+            if (errorData?.error) {
+              errorMessage = errorData.error;
+            }
+          } catch {
+            // Keep the default error message.
+          }
+
+          throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+
+        if (!data.resumeProfile) {
+          throw new Error("Resume profile is empty");
+        }
+
+        profile = data.resumeProfile;
+
+        setResumeProfile(profile);
+
+        if (Array.isArray(profile.primarySkills)) {
+          setSkills(profile.primarySkills);
+        }
+      }
+
+      // 2. Generate the self-introduction through the same /answer pipeline
+      //    used for the rest of the live interview.
       setLoading(true);
-      setAnswerData("⏳ GPT-4o is analyzing your resume and preparing your interview profile...");
+      setAnswerData("⏳ Preparing your self-introduction...");
 
-      const formData = new FormData();
-      formData.append("resume", resumeFile);
+      const introQuestion = "Tell me about yourself";
 
-      const response = await fetch(`${API_BASE_URL}/resume-summary`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Unable to create resume profile");
-      }
-
-      const data = await response.json();
-
-      if (!data.resumeProfile) {
-        throw new Error("Resume profile is empty");
-      }
-
-      setResumeProfile(data.resumeProfile);
-
-      if (Array.isArray(data.resumeProfile.primarySkills)) {
-        setSkills(data.resumeProfile.primarySkills);
-      }
-
-      const intro = String(
-        data.resumeProfile.selfIntroduction || "Self introduction is not available."
-      ).trim();
-
-      setAnswerData(intro);
-      saveConversationTurn(
-        "Tell me about yourself, explain your project, and describe your roles and responsibilities.",
-        intro
+      const generatedIntro = await streamAnswer(
+        {
+          question: introQuestion,
+          company: company === "Others" ? customCompany : company,
+          interviewLevel,
+          interviewType,
+          history: [],
+          resumeProfile: profile,
+        },
+        "Unable to generate self-introduction right now. Please try again."
       );
+
+      if (!generatedIntro?.trim()) {
+        throw new Error("Self-introduction generation failed");
+      }
+
+      // Save the real question and generated answer so future follow-ups
+      // have clean interview context.
+      saveConversationTurn(introQuestion, generatedIntro);
+
+      // 3. Start live audio only after the resume profile and introduction
+      //    are ready.
+      await startInterviewMode();
     } catch (error) {
-      console.error("Resume Profile Error:", error);
-      setAnswerData("Failed to generate profile. You can still ask questions directly.");
+      console.error("Interview Start Error:", error);
+
+      setAnswerData(
+        "Unable to start the interview. Please try again."
+      );
+
+      showToast(
+        "Unable to start interview.",
+        "error"
+      );
     } finally {
       setLoading(false);
     }
