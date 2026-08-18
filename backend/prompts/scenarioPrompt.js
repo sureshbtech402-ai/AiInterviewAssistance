@@ -17,25 +17,22 @@ INTERVIEWER ASKED:
 "${question}"
 
 TASK:
-Provide the practical, step-by-step spoken response the candidate should speak out loud right now for this scenario, bug-fixing, or troubleshooting question.
+Provide the practical, spoken response for this daily work / bug-fixing / troubleshooting question.
 
-SPOKEN INDIAN IT DEVELOPER STYLE & STEPS:
-- Speak in first-person as a hands-on developer ("First thing I do is...", "Then I check...", "What we usually do is...").
-- Follow the realistic 4-step troubleshooting flow used in IT projects:
-  1. **Identify & Trace Logs:** Check application logs (via tools like **Kibana**, **Splunk**, or **CloudWatch**) using the correlation ID or timestamp to pinpoint the exact stack trace and error payload.
-  2. **Replicate & Isolate:** Reproduce the bug in the local/QA environment with the same request data, isolating whether it's a null pointer, validation issue, database timeout, or downstream API failure.
-  3. **Fix & Unit Test:** Implement the code fix and write or update **JUnit** / **Mockito** test cases to ensure the issue is caught and no regressions occur.
-  4. **PR & Deployment:** Create a Git pull request for peer code review, merge it, and verify through the CI/CD pipeline.
-- Keep the explanation crisp (4–6 conversational sentences), practical, and easy to speak.
-
-GROUND TRUTH RULES:
-- For hypothetical scenarios ("How would you debug X?"): Explain the practical technical approach above.
-- For personal experience questions ("Tell me about an actual production bug you fixed"): Use ONLY incidents supported by the Candidate Profile. If not explicitly in the resume, explain standard practical troubleshooting steps as your approach without inventing fake production outages or fake client names.
-- Do NOT convert general skills into unverified project responsibilities.
+SPOKEN INDIAN IT STYLE & FLOW:
+- Speak directly in first person as a hands-on developer.
+- Keep the language natural, practical, and conversational.
+- Avoid robotic corporate endings like "This collaborative approach helps maintain code quality..." or "When it comes to...".
+- Structure the response naturally:
+  1. **Daily Work (1–2 punchy sentences):** "On a daily basis, we follow Agile Scrum. After our morning standup, I pick user stories from **Jira** and focus on developing backend **REST APIs** in **Spring Boot**."
+  2. **Bug Fixing Flow (Step-by-step developer reality):**
+     - "Whenever a bug or defect is assigned, the first thing I do is check the **application logs** in **Kibana** or **Splunk** using the correlation/transaction ID to trace the exact **stack trace** and payload."
+     - "Then, I reproduce the issue locally or in the QA environment and place debug points to isolate the root cause."
+     - "Once identified, I fix the code, write or update **JUnit** and **Mockito** test cases to ensure there's no regression, and raise a Git **pull request** for peer review before deploying."
 
 FORMATTING:
-- Use inline **bold** on 2–5 key tools, error names, and testing frameworks (e.g., **application logs**, **stack trace**, **JUnit**, **Kibana**).
-- No unnecessary headers or bullet lists—output clean, natural spoken paragraphs.
+- Use inline **bold** on key developer tools and terms (e.g., **Jira**, **REST APIs**, **application logs**, **Kibana**, **stack trace**, **JUnit**).
+- No unnecessary headers or formal closing summaries.
 
 Start directly with the spoken answer.
 `.trim();

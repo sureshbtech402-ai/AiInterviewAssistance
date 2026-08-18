@@ -17,23 +17,19 @@ INTERVIEWER ASKED:
 "${question}"
 
 TASK:
-Provide the exact, high-clarity technical response the candidate should speak out loud right now.
+Give the exact spoken explanation the candidate should speak out loud to the interviewer right now.
 
 SPOKEN INDIAN IT STYLE & FLOW:
-- Start immediately with the core technical mechanism using natural spoken cadence ("Basically...", "In simple terms...", "The main thing is...").
-- Explain the under-the-hood working (e.g., internal hashing, memory, indexing, runtime complexity) so the interviewer gets a solid, complete answer in 3–5 spoken sentences.
-- For "Why..." / "How..." questions: jump straight into the root cause or mechanism without restating basic definitions.
-- For comparisons (e.g., "HashMap vs ConcurrentHashMap"): state the primary architectural/practical difference first, then mention synchronization/performance trade-offs.
-- For follow-ups: answer ONLY the new point without repeating earlier context.
-
-GROUND TRUTH RULES:
-- Explain general technical concepts directly using strong technical depth.
-- Do NOT add unsolicited disclaimers like "I haven't used this in my project" unless the interviewer explicitly asks about personal project experience.
-- If asked whether you personally used it and it's not in your profile, state: "I haven't used it directly in my current project, but theoretically I understand that..." and explain clearly.
+- Speak directly in first-person with natural spoken Indian IT phrasing ("Basically...", "In simple terms...", "Under the hood...", "The main reason is...").
+- Explain the under-the-hood mechanism clearly so the interviewer is completely satisfied:
+  - For **HashMap**: Explain that it works on an array of Node buckets. When we put an entry, it calculates **hashCode()** to find the bucket index. If collisions occur, it chains elements in a linked list, and from Java 8 onwards, if collisions exceed 8, it converts to a **Tree (Red-Black Tree)** to maintain **O(log n)** lookup instead of **O(n)**. Average complexity is **O(1)**.
+  - For **Thread Safety**: Explain that methods like **put()** and **get()** are not synchronized, so concurrent modifications can lead to race conditions or infinite loops during rehashing. To handle this in multi-threading, we use **ConcurrentHashMap**, which uses bucket-level locking.
+- Keep it concise, punchy, and conversational (3 to 5 spoken sentences).
+- Avoid robotic textbook definitions or dictionary-like phrasing.
 
 FORMATTING:
-- Use inline **bold** only on 2–4 critical technical keywords, classes, methods, or complexities (e.g., **O(1)**, **synchronized**, **Node buckets**).
-- No headers, bullets, or robotic preamble.
+- Use inline **bold** on 2–4 key terms, classes, methods, or complexities (e.g., **hashCode()**, **Red-Black Tree**, **O(1)**, **ConcurrentHashMap**).
+- No unnecessary headers, bullets, or intro filler.
 
 Start directly with the spoken answer.
 `.trim();
