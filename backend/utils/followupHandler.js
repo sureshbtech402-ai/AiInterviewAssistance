@@ -10,7 +10,6 @@ function normalizeQuestion(question = "") {
     .trim();
 }
 
-
 // ==================================================
 // FOLLOW-UP DETECTION
 // ==================================================
@@ -23,6 +22,7 @@ const SHORT_FOLLOW_UPS = new Set([
   "what next",
   "and then",
   "why is that",
+  "why so",
   "how so",
   "what about that",
   "what do you mean",
@@ -30,13 +30,23 @@ const SHORT_FOLLOW_UPS = new Set([
   "can you elaborate",
   "and why",
   "and how",
+  "give an example",
+  "give example",
+  "can you give an example",
+  "any alternative",
+  "what is the alternative",
+  "what else",
 ]);
 
 const FOLLOW_UP_PATTERNS = [
   "what about",
+  "how about",
   "what if",
+  "then how",
+  "then what",
+  "then why",
   "tell me more",
-  "tell me more about that",
+  "tell me more about",
   "go on",
   "continue",
   "after that",
@@ -47,9 +57,11 @@ const FOLLOW_UP_PATTERNS = [
   "how did you",
   "how do you",
   "how would you",
-  "what do you mean by that",
+  "what do you mean by",
   "can you explain that",
-  "can you elaborate on that",
+  "can you elaborate on",
+  "in that case",
+  "for example",
 ];
 
 export function isFollowUpQuestion(question = "") {
@@ -72,7 +84,6 @@ export function isFollowUpQuestion(question = "") {
   );
 }
 
-
 // ==================================================
 // SHORT INTERVIEW QUESTION
 // ==================================================
@@ -87,27 +98,16 @@ export function isShortInterviewQuestion(question = "") {
   return q.split(" ").length <= 8;
 }
 
-
 // ==================================================
 // RECENT HISTORY
 // ==================================================
 
-// Keep a small amount of history so follow-ups have
-// enough context without unnecessarily increasing
-// prompt size and latency.
-
-export function getRecentConversationHistory(
-  history = [],
-  limit = 4
-) {
+export function getRecentConversationHistory(history = [], limit = 4) {
   if (!Array.isArray(history)) {
     return [];
   }
 
-  const safeLimit = Math.max(
-    1,
-    Number(limit) || 4
-  );
+  const safeLimit = Math.max(1, Number(limit) || 4);
 
   return history
     .filter(
@@ -119,17 +119,12 @@ export function getRecentConversationHistory(
     .slice(-safeLimit);
 }
 
-
 // ==================================================
 // BUILD SIMPLE CONVERSATION HISTORY
 // ==================================================
 
-export function buildConversationHistory(
-  history = [],
-  limit = 4
-) {
-  const recentHistory =
-    getRecentConversationHistory(history, limit);
+export function buildConversationHistory(history = [], limit = 4) {
+  const recentHistory = getRecentConversationHistory(history, limit);
 
   if (!recentHistory.length) {
     return "";
@@ -137,16 +132,14 @@ export function buildConversationHistory(
 
   return recentHistory
     .map((item) => {
-      const content =
-        String(item.content || "").trim();
+      const content = String(item.content || "").trim();
 
       if (!content) {
         return "";
       }
 
       const role =
-        item.role === "assistant" ||
-        item.role === "candidate"
+        item.role === "assistant" || item.role === "candidate"
           ? "Candidate"
           : "Interviewer";
 
@@ -156,16 +149,12 @@ export function buildConversationHistory(
     .join("\n");
 }
 
-
 // ==================================================
 // INTERVIEW CONTEXT
 // ==================================================
 
-export function buildInterviewContext(
-  history = []
-) {
-  const recentHistory =
-    getRecentConversationHistory(history, 4);
+export function buildInterviewContext(history = []) {
+  const recentHistory = getRecentConversationHistory(history, 4);
 
   if (!recentHistory.length) {
     return {
@@ -179,43 +168,28 @@ export function buildInterviewContext(
   let previousQuestion = "";
   let previousAnswer = "";
 
-  // Find the most recent candidate answer.
-  for (
-    let i = recentHistory.length - 1;
-    i >= 0;
-    i--
-  ) {
+  for (let i = recentHistory.length - 1; i >= 0; i--) {
     const item = recentHistory[i];
 
     if (!item || !item.content) {
       continue;
     }
 
-    const content =
-      String(item.content).trim();
+    const content = String(item.content).trim();
 
     if (
       !previousAnswer &&
-      (
-        item.role === "assistant" ||
-        item.role === "candidate"
-      )
+      (item.role === "assistant" || item.role === "candidate")
     ) {
       previousAnswer = content;
       continue;
     }
 
-    if (
-      !previousQuestion &&
-      item.role === "user"
-    ) {
+    if (!previousQuestion && item.role === "user") {
       previousQuestion = content;
     }
 
-    if (
-      previousQuestion &&
-      previousAnswer
-    ) {
+    if (previousQuestion && previousAnswer) {
       break;
     }
   }
@@ -223,26 +197,16 @@ export function buildInterviewContext(
   return {
     previousQuestion,
     previousAnswer,
-    historyText:
-      buildConversationHistory(
-        recentHistory,
-        4
-      ),
-    questionAnswerCount:
-      countQuestionAnswerPairs(
-        recentHistory
-      ),
+    historyText: buildConversationHistory(recentHistory, 4),
+    questionAnswerCount: countQuestionAnswerPairs(recentHistory),
   };
 }
-
 
 // ==================================================
 // COUNT QUESTION / ANSWER PAIRS
 // ==================================================
 
-function countQuestionAnswerPairs(
-  history = []
-) {
+function countQuestionAnswerPairs(history = []) {
   if (!Array.isArray(history)) {
     return 0;
   }
@@ -259,34 +223,22 @@ function countQuestionAnswerPairs(
       questions++;
     }
 
-    if (
-      item.role === "assistant" ||
-      item.role === "candidate"
-    ) {
+    if (item.role === "assistant" || item.role === "candidate") {
       answers++;
     }
   }
 
-  return Math.min(
-    questions,
-    answers
-  );
+  return Math.min(questions, answers);
 }
-
 
 // ==================================================
 // CHECK WHETHER FOLLOW-UP CONTEXT EXISTS
 // ==================================================
 
-export function hasEnoughFollowUpContext(
-  history = []
-) {
+export function hasEnoughFollowUpContext(history = []) {
   return (
     countQuestionAnswerPairs(
-      getRecentConversationHistory(
-        history,
-        4
-      )
+      getRecentConversationHistory(history, 4)
     ) >= 1
   );
 }

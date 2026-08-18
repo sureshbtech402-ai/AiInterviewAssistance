@@ -185,7 +185,6 @@ function App() {
       const completedQuestion = finalTranscriptRef.current.trim();
       liveQuestionRef.current = completedQuestion;
       setQuestion(completedQuestion);
-      console.log("Question Completed");
     }, 4000);
   };
 
@@ -199,7 +198,7 @@ function App() {
         try {
           socketRef.current.close();
         } catch {
-          console.log("Previous socket closed");
+          // Socket cleanup
         }
       }
 
@@ -212,7 +211,6 @@ function App() {
 
       socket.onopen = () => {
         clearTimeout(timeout);
-        console.log("✅ WebSocket Connected");
         resolve(socket);
       };
 
@@ -225,8 +223,6 @@ function App() {
             updateQuestionFromTranscript(payload);
           } else if (payload.error) {
             console.error("Deepgram Error:", payload.error);
-          } else if (payload.status) {
-            console.log("Deepgram Status:", payload.status);
           }
         } catch {
           updateQuestionFromTranscript({
@@ -244,7 +240,7 @@ function App() {
       };
 
       socket.onclose = () => {
-        console.log("WebSocket Closed");
+        // Socket closed
       };
     });
   };
@@ -254,7 +250,7 @@ function App() {
       try {
         socketRef.current.close();
       } catch {
-        console.log("Socket already closed");
+        // Socket cleanup
       }
     }
     socketRef.current = null;
@@ -301,12 +297,12 @@ function App() {
 
       if (!audioTrack) {
         showToast(
-          "Select a Chrome tab and enable Share tab audio.",
+          "Select a Chrome tab and enable 'Share tab audio'.",
           "error"
         );
         setIsInterviewRunning(false);
         stream.getTracks().forEach((track) => track.stop());
-        return;
+        return false;
       }
 
       const socket = await openInterviewSocket();
@@ -339,15 +335,8 @@ function App() {
         }
       };
 
-      recorder.onstop = () => {
-        console.log("Recorder Stopped");
-      };
-
-      recorder.onerror = (error) => {
-        console.error("Recorder Error:", error);
-      };
-
       recorder.start(100);
+      return true;
     } catch (error) {
       console.error(error);
       showToast(
@@ -355,6 +344,7 @@ function App() {
         "error"
       );
       stopInterviewMode();
+      return false;
     }
   };
 
@@ -405,6 +395,9 @@ function App() {
     }
   };
 
+  // ============================================================
+  // START INTERVIEW FLOW (Fixed Step Order)
+  // ============================================================
   const startInterviewFlow = async () => {
     if (!resumeFile && !resumeProfile) {
       showToast("Please upload a PDF resume first.", "info");
@@ -430,12 +423,19 @@ function App() {
     clearTimeout(silenceTimerRef.current);
 
     try {
+      // 1. Ask for Screen & Audio permission FIRST (direct user gesture response)
+      const audioStarted = await startInterviewMode();
+      if (!audioStarted) {
+        return;
+      }
+
+      // Switch views to interview panel
       setInterviewStarted(true);
       setShowConfig(false);
 
       let profile = resumeProfile;
 
-      // 1. Extract a factual resume profile if it has not already been created.
+      // 2. Extract resume profile if not already cached
       if (!profile) {
         setLoading(true);
         setAnswerData(
@@ -452,27 +452,21 @@ function App() {
 
         if (!response.ok) {
           let errorMessage = "Unable to create resume profile";
-
           try {
             const errorData = await response.json();
-            if (errorData?.error) {
-              errorMessage = errorData.error;
-            }
+            if (errorData?.error) errorMessage = errorData.error;
           } catch {
-            // Keep the default error message.
+            // Keep default message
           }
-
           throw new Error(errorMessage);
         }
 
         const data = await response.json();
-
         if (!data.resumeProfile) {
           throw new Error("Resume profile is empty");
         }
 
         profile = data.resumeProfile;
-
         setResumeProfile(profile);
 
         if (Array.isArray(profile.primarySkills)) {
@@ -480,8 +474,7 @@ function App() {
         }
       }
 
-      // 2. Generate the self-introduction through the same /answer pipeline
-      //    used for the rest of the live interview.
+      // 3. Generate self-introduction
       setLoading(true);
       setAnswerData("⏳ Preparing your self-introduction...");
 
@@ -503,24 +496,11 @@ function App() {
         throw new Error("Self-introduction generation failed");
       }
 
-      // Save the real question and generated answer so future follow-ups
-      // have clean interview context.
       saveConversationTurn(introQuestion, generatedIntro);
-
-      // 3. Start live audio only after the resume profile and introduction
-      //    are ready.
-      await startInterviewMode();
     } catch (error) {
       console.error("Interview Start Error:", error);
-
-      setAnswerData(
-        "Unable to start the interview. Please try again."
-      );
-
-      showToast(
-        "Unable to start interview.",
-        "error"
-      );
+      setAnswerData("Unable to start the interview. Please try again.");
+      showToast("Unable to start interview.", "error");
     } finally {
       setLoading(false);
     }

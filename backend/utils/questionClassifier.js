@@ -7,7 +7,15 @@ function normalizeQuestion(question = "") {
 }
 
 function containsAny(question, patterns = []) {
-  return patterns.some((pattern) => question.includes(pattern));
+  return patterns.some((pattern) => {
+    // If pattern contains spaces or hyphens, simple include check is safe
+    if (pattern.includes(" ") || pattern.includes("-")) {
+      return question.includes(pattern);
+    }
+    // Single words matched via whole word regex to prevent substring collisions
+    const regex = new RegExp(`\\b${pattern}\\b`, "i");
+    return regex.test(question);
+  });
 }
 
 export function classifyQuestion(question = "") {
@@ -29,14 +37,18 @@ export function classifyQuestion(question = "") {
     "could you introduce yourself",
     "please introduce yourself",
     "give me your introduction",
+    "give your introduction",
     "your introduction",
     "self introduction",
     "self-introduction",
     "about yourself",
     "walk me through your resume",
     "walk me through your cv",
+    "walk me through your profile",
     "walk me through your background",
     "tell me about your background",
+    "give a brief about yourself",
+    "give a quick intro",
   ];
 
   if (containsAny(q, selfIntroPatterns)) {
@@ -44,11 +56,11 @@ export function classifyQuestion(question = "") {
   }
 
   // ==================================================
-  // 2. CODING / SYNTAX / QUERY / COMMAND
+  // 2. CODING / SYNTAX / QUERY / COMMAND / ALGORITHMS
   // ==================================================
 
   const codingPatterns = [
-    // General coding
+    // General coding actions
     "write code",
     "write the code",
     "give me code",
@@ -80,11 +92,14 @@ export function classifyQuestion(question = "") {
     "show me the syntax",
     "write syntax",
     "give syntax",
+    "write logic",
+    "write a logic",
 
-    // Common coding problems
+    // Common coding DSA problems
     "reverse string",
     "reverse a string",
     "reverse linked list",
+    "reverse array",
     "find duplicate",
     "find duplicates",
     "duplicate characters",
@@ -100,6 +115,7 @@ export function classifyQuestion(question = "") {
     "sort an array",
     "sort the array",
     "merge arrays",
+    "merge two sorted",
     "find maximum",
     "find minimum",
     "count characters",
@@ -107,98 +123,55 @@ export function classifyQuestion(question = "") {
     "frequency of characters",
     "find missing number",
     "two sum",
+    "three sum",
+    "valid parentheses",
+    "balanced brackets",
+    "sliding window",
+    "linked list cycle",
 
-    // Java
+    // Language code triggers
     "java code",
-    "java syntax",
-    "java program",
-    "java method",
-    "java function",
+    "python code",
+    "javascript code",
+    "typescript code",
+    "c# code",
+    "golang code",
+    "react code",
+    "write a custom hook",
+    "write component",
     "hashmap code",
-    "hash map code",
     "arraylist code",
-    "linkedlist code",
+    "stream api code",
+    "lambda expression code",
 
-    // Selenium / UI
+    // Automation / UI / API test code
     "selenium code",
-    "selenium syntax",
     "selenium script",
+    "playwright code",
+    "playwright script",
+    "cypress code",
     "webdriver code",
-    "webdriver syntax",
-    "web driver code",
     "xpath syntax",
-    "xpath code",
     "css selector syntax",
     "locator syntax",
     "findelement syntax",
-    "find elements code",
-    "webelement code",
-    "handle windows code",
     "switch window code",
-    "switch tabs code",
     "iframe code",
-    "frame handling code",
-    "alert handling code",
-    "dropdown code",
     "actions class code",
-    "mouse hover code",
-    "drag and drop code",
-    "screenshot code",
     "explicit wait code",
     "implicit wait code",
     "fluent wait code",
-    "wait syntax",
-    "broken link code",
-    "broken links code",
-    "broken server code",
-
-    // Test frameworks
     "testng code",
-    "testng syntax",
-    "testng annotation code",
-    "testng annotations code",
     "junit code",
-    "junit syntax",
-    "junit annotation code",
-    "junit annotations code",
-    "beforemethod code",
-    "aftermethod code",
-    "beforeclass code",
-    "afterclass code",
-    "dataprovider code",
-    "parallel testing code",
-    "parallel execution code",
-
-    // API
+    "cucumber code",
     "rest assured code",
-    "rest assured syntax",
-    "rest api code",
-    "rest api syntax",
-    "api code",
-    "api syntax",
-    "api request code",
-    "api automation code",
-    "api test code",
-    "get request code",
-    "post request code",
-    "put request code",
-    "delete request code",
+    "postman script",
     "write a get request",
     "write a post request",
     "write a put request",
     "write a delete request",
 
-    // BDD
-    "cucumber code",
-    "cucumber syntax",
-    "feature file syntax",
-    "step definition code",
-    "step definitions code",
-    "given when then code",
-    "bdd code",
-    "bdd syntax",
-
-    // SQL
+    // SQL / DB queries
     "sql query",
     "sql syntax",
     "write sql",
@@ -221,7 +194,7 @@ export function classifyQuestion(question = "") {
     "second highest salary",
     "nth highest salary",
 
-    // Git / Shell
+    // Shell / CLI / Git / Docker commands
     "git command",
     "git commands",
     "git syntax",
@@ -229,6 +202,10 @@ export function classifyQuestion(question = "") {
     "shell command",
     "bash script",
     "bash command",
+    "docker command",
+    "dockerfile syntax",
+    "kubernetes command",
+    "kubectl command",
     "write a script",
   ];
 
@@ -256,6 +233,8 @@ export function classifyQuestion(question = "") {
     "describe the project",
     "walk me through your project",
     "walk me through the project",
+    "tech stack in your project",
+    "what is your tech stack",
 
     "roles and responsibilities",
     "role and responsibilities",
@@ -283,6 +262,7 @@ export function classifyQuestion(question = "") {
     "what is your day to day work",
     "what is your daily work",
     "what are your daily activities",
+    "daily routine in your project",
 
     "what do you work on",
     "what are you working on",
@@ -292,6 +272,8 @@ export function classifyQuestion(question = "") {
     "what are you mainly responsible for",
     "what functionality are you working on",
     "what features do you work on",
+    "modules you worked on",
+    "which module did you develop",
   ];
 
   if (containsAny(q, projectPatterns)) {
@@ -299,7 +281,7 @@ export function classifyQuestion(question = "") {
   }
 
   // ==================================================
-  // 4. ARCHITECTURE / FLOW / DESIGN
+  // 4. ARCHITECTURE / FLOW / SYSTEM DESIGN
   // ==================================================
 
   const architecturePatterns = [
@@ -328,7 +310,7 @@ export function classifyQuestion(question = "") {
     "test automation framework",
     "framework design",
     "selenium framework",
-    "selenium architecture",
+    "playwright framework",
     "bdd framework",
     "cucumber framework",
     "framework flow",
@@ -342,6 +324,8 @@ export function classifyQuestion(question = "") {
     "api request flow",
     "data flow",
     "deployment flow",
+    "cicd pipeline flow",
+    "ci cd pipeline",
     "end to end flow",
     "end-to-end flow",
     "complete flow",
@@ -353,6 +337,7 @@ export function classifyQuestion(question = "") {
     "service-to-service communication",
     "microservice communication",
     "how microservices communicate",
+    "event driven architecture",
 
     "sequence diagram",
     "component design",
@@ -376,7 +361,7 @@ export function classifyQuestion(question = "") {
   }
 
   // ==================================================
-  // 5. SCENARIO / TROUBLESHOOTING
+  // 5. SCENARIO / TROUBLESHOOTING / BEHAVIORAL
   // ==================================================
 
   const scenarioPatterns = [
@@ -432,9 +417,9 @@ export function classifyQuestion(question = "") {
     "troubleshoot the issue",
     "debug this issue",
     "debug the issue",
-    "debug a",
     "how do you troubleshoot",
     "how do you debug",
+    "how do you handle exception",
   ];
 
   if (containsAny(q, scenarioPatterns)) {
@@ -442,7 +427,7 @@ export function classifyQuestion(question = "") {
   }
 
   // ==================================================
-  // 6. DEFAULT
+  // 6. DEFAULT TO CONCEPT
   // ==================================================
 
   return "CONCEPT";

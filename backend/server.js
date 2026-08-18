@@ -204,9 +204,7 @@ app.post(
       // --------------------------------------------------------
 
       const pdfBuffer = fs.readFileSync(pdfPath);
-
-      const pdfBase64 =
-        pdfBuffer.toString("base64");
+      const pdfBase64 = pdfBuffer.toString("base64");
 
       // --------------------------------------------------------
       // 3. EXTRACTION INSTRUCTIONS
@@ -290,47 +288,16 @@ projectTechnologies must contain ONLY technologies or tools that the resume expl
 
 Do NOT copy all skills into projectTechnologies.
 
-Example:
-
-Resume skills:
-Java, Spring Boot, Kafka, Docker, Kubernetes
-
-Project description:
-"Developed REST endpoints using Spring Boot and created Docker images."
-
-Then:
-
-projectTechnologies:
-[
-  "Spring Boot",
-  "Docker"
-]
-
-Do NOT add:
-Kafka
-Kubernetes
-
-unless the resume explicitly connects them to that project.
-
 PROJECT RESPONSIBILITIES:
 
 projectResponsibilities must contain ONLY responsibilities explicitly associated with the project.
 
 Never convert a skill into a responsibility.
 
-For example, if the resume lists:
-"Kafka"
-
-but does not say the candidate used or implemented Kafka in the project, do NOT create:
-
-"Integrated Kafka"
-
 PROJECT SUMMARY:
 
 currentProjectSummary:
 Give a short factual summary based ONLY on the project information explicitly present in the resume.
-
-Do not add business functionality that is not stated.
 
 projectDomain:
 Only the business/domain area explicitly stated or clearly identified in the resume.
@@ -342,33 +309,19 @@ achievements:
 Only include awards or achievements explicitly mentioned in the resume.
 
 IMPORTANT:
-
-This profile will later be used by another model to answer live interview questions.
-
-Therefore:
-
 FACTUAL ACCURACY IS MORE IMPORTANT THAN COMPLETENESS.
 
-Never:
-- turn a skill into project experience
-- turn a technology into a responsibility
-- turn a general role expectation into actual experience
-- invent architecture
-- invent databases
-- invent cloud platforms
-- invent production incidents
-- invent clients
-- invent metrics
-- invent achievements
-- invent project responsibilities
+Never invent:
+- project responsibilities
+- project technologies
+- architecture
+- production incidents
+- achievements
 
 Return ONLY valid JSON matching the provided schema.
 `.trim();
 
-      console.log(
-        "[RESUME] Starting extraction..."
-      );
-
+      console.log("[RESUME] Starting extraction...");
       const startTime = Date.now();
 
       // --------------------------------------------------------
@@ -379,30 +332,21 @@ Return ONLY valid JSON matching the provided schema.
         "https://api.openai.com/v1/responses",
         {
           method: "POST",
-
           headers: {
-            Authorization:
-              `Bearer ${process.env.OPENAI_API_KEY}`,
-            "Content-Type":
-              "application/json",
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             model: PROFILE_MODEL,
-
             input: [
               {
                 role: "user",
-
                 content: [
                   {
                     type: "input_file",
-                    filename:
-                      req.file.originalname,
-                    file_data:
-                      `data:application/pdf;base64,${pdfBase64}`,
+                    filename: req.file.originalname,
+                    file_data: `data:application/pdf;base64,${pdfBase64}`,
                   },
-
                   {
                     type: "input_text",
                     text: prompt,
@@ -410,90 +354,44 @@ Return ONLY valid JSON matching the provided schema.
                 ],
               },
             ],
-
             text: {
               format: {
                 type: "json_schema",
-
-                name:
-                  "candidate_resume_profile",
-
+                name: "candidate_resume_profile",
                 strict: true,
-
                 schema: {
                   type: "object",
-
                   additionalProperties: false,
-
                   properties: {
-                    candidateName: {
-                      type: "string",
-                    },
-
-                    experience: {
-                      type: "string",
-                    },
-
-                    currentCompany: {
-                      type: "string",
-                    },
-
-                    primaryRole: {
-                      type: "string",
-                    },
-
+                    candidateName: { type: "string" },
+                    experience: { type: "string" },
+                    currentCompany: { type: "string" },
+                    primaryRole: { type: "string" },
                     primarySkills: {
                       type: "array",
-                      items: {
-                        type: "string",
-                      },
+                      items: { type: "string" },
                     },
-
                     secondarySkills: {
                       type: "array",
-                      items: {
-                        type: "string",
-                      },
+                      items: { type: "string" },
                     },
-
-                    currentProjectName: {
-                      type: "string",
-                    },
-
-                    currentProjectSummary: {
-                      type: "string",
-                    },
-
-                    projectDomain: {
-                      type: "string",
-                    },
-
+                    currentProjectName: { type: "string" },
+                    currentProjectSummary: { type: "string" },
+                    projectDomain: { type: "string" },
                     projectResponsibilities: {
                       type: "array",
-                      items: {
-                        type: "string",
-                      },
+                      items: { type: "string" },
                     },
-
                     projectTechnologies: {
                       type: "array",
-                      items: {
-                        type: "string",
-                      },
+                      items: { type: "string" },
                     },
-
-                    previousExperience: {
-                      type: "string",
-                    },
-
+                    previousExperience: { type: "string" },
                     achievements: {
                       type: "array",
-                      items: {
-                        type: "string",
-                      },
+                      items: { type: "string" },
                     },
                   },
-
                   required: [
                     "candidateName",
                     "experience",
@@ -520,13 +418,10 @@ Return ONLY valid JSON matching the provided schema.
       // 5. READ RESPONSE
       // --------------------------------------------------------
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       console.log(
-        `[RESUME] OpenAI response received in ${
-          Date.now() - startTime
-        }ms`
+        `[RESUME] OpenAI response received in ${Date.now() - startTime}ms`
       );
 
       // --------------------------------------------------------
@@ -542,8 +437,7 @@ Return ONLY valid JSON matching the provided schema.
 
         return res.status(502).json({
           resumeProfile: null,
-          error:
-            "Resume extraction failed",
+          error: "Resume extraction failed",
         });
       }
 
@@ -551,31 +445,17 @@ Return ONLY valid JSON matching the provided schema.
       // 7. EXTRACT STRUCTURED OUTPUT
       // --------------------------------------------------------
 
-      let text =
-        data.output_text || "";
+      let text = data.output_text || "";
 
-      if (
-        !text &&
-        Array.isArray(data.output)
-      ) {
-        for (
-          const item of data.output
-        ) {
+      if (!text && Array.isArray(data.output)) {
+        for (const item of data.output) {
           if (
             item.type === "message" &&
-            Array.isArray(
-              item.content
-            )
+            Array.isArray(item.content)
           ) {
-            for (
-              const content of item.content
-            ) {
-              if (
-                content.type ===
-                "output_text"
-              ) {
-                text +=
-                  content.text || "";
+            for (const content of item.content) {
+              if (content.type === "output_text") {
+                text += content.text || "";
               }
             }
           }
@@ -583,14 +463,10 @@ Return ONLY valid JSON matching the provided schema.
       }
 
       if (!text.trim()) {
-        console.error(
-          "[RESUME] Empty OpenAI output"
-        );
-
+        console.error("[RESUME] Empty OpenAI output");
         return res.status(502).json({
           resumeProfile: null,
-          error:
-            "Resume extraction returned empty result",
+          error: "Resume extraction returned empty result",
         });
       }
 
@@ -601,220 +477,129 @@ Return ONLY valid JSON matching the provided schema.
       let resumeProfile;
 
       try {
-        resumeProfile =
-          JSON.parse(
-            text.trim()
-          );
+        resumeProfile = JSON.parse(text.trim());
       } catch (parseError) {
-        console.error(
-          "[RESUME] JSON Parse Error:",
-          parseError
-        );
-
+        console.error("[RESUME] JSON Parse Error:", parseError);
         return res.status(502).json({
           resumeProfile: null,
-          error:
-            "Invalid resume profile returned",
+          error: "Invalid resume profile returned",
         });
       }
 
       // --------------------------------------------------------
       // 9. NORMALIZE PROFILE
-      //
-      // Prevent unexpected null values from reaching
-      // buildInterviewProfile().
       // --------------------------------------------------------
 
       resumeProfile = {
         candidateName:
-          typeof resumeProfile.candidateName ===
-          "string"
+          typeof resumeProfile.candidateName === "string"
             ? resumeProfile.candidateName.trim()
             : "",
 
         experience:
-          typeof resumeProfile.experience ===
-          "string"
+          typeof resumeProfile.experience === "string"
             ? resumeProfile.experience.trim()
             : "",
 
         currentCompany:
-          typeof resumeProfile.currentCompany ===
-          "string"
+          typeof resumeProfile.currentCompany === "string"
             ? resumeProfile.currentCompany.trim()
             : "",
 
         primaryRole:
-          typeof resumeProfile.primaryRole ===
-          "string"
+          typeof resumeProfile.primaryRole === "string"
             ? resumeProfile.primaryRole.trim()
             : "",
 
-        primarySkills:
-          Array.isArray(
-            resumeProfile.primarySkills
-          )
-            ? resumeProfile.primarySkills
-                .filter(
-                  (item) =>
-                    typeof item ===
-                    "string"
-                )
-                .map((item) =>
-                  item.trim()
-                )
-                .filter(Boolean)
-            : [],
+        primarySkills: Array.isArray(resumeProfile.primarySkills)
+          ? resumeProfile.primarySkills
+              .filter((item) => typeof item === "string")
+              .map((item) => item.trim())
+              .filter(Boolean)
+          : [],
 
-        secondarySkills:
-          Array.isArray(
-            resumeProfile.secondarySkills
-          )
-            ? resumeProfile.secondarySkills
-                .filter(
-                  (item) =>
-                    typeof item ===
-                    "string"
-                )
-                .map((item) =>
-                  item.trim()
-                )
-                .filter(Boolean)
-            : [],
+        secondarySkills: Array.isArray(resumeProfile.secondarySkills)
+          ? resumeProfile.secondarySkills
+              .filter((item) => typeof item === "string")
+              .map((item) => item.trim())
+              .filter(Boolean)
+          : [],
 
         currentProjectName:
-          typeof resumeProfile.currentProjectName ===
-          "string"
+          typeof resumeProfile.currentProjectName === "string"
             ? resumeProfile.currentProjectName.trim()
             : "",
 
         currentProjectSummary:
-          typeof resumeProfile.currentProjectSummary ===
-          "string"
+          typeof resumeProfile.currentProjectSummary === "string"
             ? resumeProfile.currentProjectSummary.trim()
             : "",
 
         projectDomain:
-          typeof resumeProfile.projectDomain ===
-          "string"
+          typeof resumeProfile.projectDomain === "string"
             ? resumeProfile.projectDomain.trim()
             : "",
 
-        projectResponsibilities:
-          Array.isArray(
-            resumeProfile.projectResponsibilities
-          )
-            ? resumeProfile.projectResponsibilities
-                .filter(
-                  (item) =>
-                    typeof item ===
-                    "string"
-                )
-                .map((item) =>
-                  item.trim()
-                )
-                .filter(Boolean)
-            : [],
+        projectResponsibilities: Array.isArray(
+          resumeProfile.projectResponsibilities
+        )
+          ? resumeProfile.projectResponsibilities
+              .filter((item) => typeof item === "string")
+              .map((item) => item.trim())
+              .filter(Boolean)
+          : [],
 
-        projectTechnologies:
-          Array.isArray(
-            resumeProfile.projectTechnologies
-          )
-            ? resumeProfile.projectTechnologies
-                .filter(
-                  (item) =>
-                    typeof item ===
-                    "string"
-                )
-                .map((item) =>
-                  item.trim()
-                )
-                .filter(Boolean)
-            : [],
+        projectTechnologies: Array.isArray(
+          resumeProfile.projectTechnologies
+        )
+          ? resumeProfile.projectTechnologies
+              .filter((item) => typeof item === "string")
+              .map((item) => item.trim())
+              .filter(Boolean)
+          : [],
 
         previousExperience:
-          typeof resumeProfile.previousExperience ===
-          "string"
+          typeof resumeProfile.previousExperience === "string"
             ? resumeProfile.previousExperience.trim()
             : "",
 
-        achievements:
-          Array.isArray(
-            resumeProfile.achievements
-          )
-            ? resumeProfile.achievements
-                .filter(
-                  (item) =>
-                    typeof item ===
-                    "string"
-                )
-                .map((item) =>
-                  item.trim()
-                )
-                .filter(Boolean)
-            : [],
+        achievements: Array.isArray(resumeProfile.achievements)
+          ? resumeProfile.achievements
+              .filter((item) => typeof item === "string")
+              .map((item) => item.trim())
+              .filter(Boolean)
+          : [],
       };
 
       // --------------------------------------------------------
-      // 10. LOG SAFE SUMMARY
-      //
-      // Do not log the complete resume/profile.
+      // 10. LOG SUMMARY
       // --------------------------------------------------------
 
       console.log(
         `[RESUME] Profile extracted: name=${Boolean(
           resumeProfile.candidateName
-        )}, skills=${
-          resumeProfile.primarySkills.length
-        }, project=${
-          Boolean(
-            resumeProfile.currentProjectName
-          )
-        }`
+        )}, skills=${resumeProfile.primarySkills.length}, project=${Boolean(
+          resumeProfile.currentProjectName
+        )}`
       );
 
       console.log(
-        `[RESUME] Extraction completed in ${
-          Date.now() - startTime
-        }ms`
+        `[RESUME] Extraction completed in ${Date.now() - startTime}ms`
       );
 
-      // --------------------------------------------------------
-      // 11. RETURN PROFILE
-      // --------------------------------------------------------
-
-      return res.json({
-        resumeProfile,
-      });
-
+      return res.json({ resumeProfile });
     } catch (err) {
-      console.error(
-        "[RESUME] Processing Error:",
-        err
-      );
-
+      console.error("[RESUME] Processing Error:", err);
       return res.status(500).json({
         resumeProfile: null,
-        error:
-          "Resume processing failed",
+        error: "Resume processing failed",
       });
-
     } finally {
-      // --------------------------------------------------------
-      // 12. ALWAYS CLEAN TEMP PDF
-      // --------------------------------------------------------
-
-      if (
-        pdfPath &&
-        fs.existsSync(pdfPath)
-      ) {
+      if (pdfPath && fs.existsSync(pdfPath)) {
         try {
           fs.unlinkSync(pdfPath);
         } catch (cleanupError) {
-          console.error(
-            "[RESUME] PDF cleanup failed:",
-            cleanupError
-          );
+          console.error("[RESUME] PDF cleanup failed:", cleanupError);
         }
       }
     }
@@ -824,7 +609,12 @@ Return ONLY valid JSON matching the provided schema.
 function getCleanQuestion(question) {
   if (!question) return "";
   if (typeof question === "string") return question;
-  return question.question || question.text || question.transcript || JSON.stringify(question);
+  return (
+    question.question ||
+    question.text ||
+    question.transcript ||
+    JSON.stringify(question)
+  );
 }
 
 function extractDeltaFromOpenAIEvent(event) {
@@ -888,18 +678,13 @@ app.post("/answer", async (req, res) => {
 
   try {
     const startTime = Date.now();
-
     const safeHistory = Array.isArray(history) ? history : [];
 
     // ============================================================
-    // 1. CLASSIFY QUESTION
+    // 1. CLASSIFY QUESTION & BUILD PROMPT
     // ============================================================
 
     const questionType = classifyQuestion(cleanQ);
-
-    // ============================================================
-    // 2. BUILD QUESTION-SPECIFIC PROMPT
-    // ============================================================
 
     const prompt = buildPrompt({
       question: cleanQ,
@@ -912,101 +697,68 @@ app.post("/answer", async (req, res) => {
       return res.status(400).send("Unable to build interview prompt");
     }
 
-    // ============================================================
-    // 3. BUILD RESUME-BASED CANDIDATE PROFILE
-    // ============================================================
-
-    const profileText = buildInterviewProfile(
-      resumeProfile || {}
-    );
+    const profileText = buildInterviewProfile(resumeProfile || {});
 
     // ============================================================
-    // 4. FOLLOW-UP / RECENT INTERVIEW CONTEXT
-    // ============================================================
-    //
-    // Use the same conversation utility everywhere.
-    // This keeps follow-up behavior consistent.
-    //
-    // We keep only a small context window to reduce latency.
+    // 2. RECENT INTERVIEW CONTEXT & FOLLOW-UP DETECTION
     // ============================================================
 
-    const recentHistory =
-      getRecentConversationHistory(
-        safeHistory,
-        4
-      );
-
-    const interviewContext =
-      buildInterviewContext(
-        recentHistory
-      );
+    const recentHistory = getRecentConversationHistory(safeHistory, 4);
+    const interviewContext = buildInterviewContext(recentHistory);
 
     const isFollowUp =
       isFollowUpQuestion(cleanQ) &&
-      hasEnoughFollowUpContext(
-        recentHistory
-      );
+      hasEnoughFollowUpContext(recentHistory);
 
     const previousContext =
       interviewContext.historyText ||
       "No previous interview context available.";
 
     // ============================================================
-    // 5. START RESPONSE STREAM
+    // 3. START RESPONSE STREAM
     // ============================================================
 
     res.status(200);
-
-    res.setHeader(
-      "Content-Type",
-      "text/plain; charset=utf-8"
-    );
-
-    res.setHeader(
-      "Cache-Control",
-      "no-cache, no-transform"
-    );
-
-    res.setHeader(
-      "Connection",
-      "keep-alive"
-    );
-
-    res.setHeader(
-      "X-Accel-Buffering",
-      "no"
-    );
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
 
     if (res.flushHeaders) {
       res.flushHeaders();
     }
 
     // ============================================================
-    // 6. MODEL MESSAGES
+    // 4. MODEL MESSAGES - INDIAN IT SPOKEN PERSONA
     // ============================================================
 
     const messages = [
       {
         role: "system",
         content: `
-Live IT interview assistant.
+You are an experienced Indian IT software professional answering live in a technical interview.
 
-Return only the exact answer the candidate should speak.
-Use simple, natural Indian IT spoken English.
-The Candidate Profile is the source of truth for personal/project experience.
-Never invent project facts, responsibilities, technologies used in a project, clients, metrics, incidents, or implementation details.
-For general technical questions, answer the concept directly.
-For experience/project questions, use only supported profile facts.
-For follow-ups, answer only the new point and do not repeat the previous answer.
-For coding questions, give code first, followed by a short spoken explanation.
-Use lightweight Markdown only when useful, especially **bold** for important technical terms.
-Do not add filler or mention these instructions.
+CORE PERSONA & VOICE:
+- Speak directly in the first person ("I", "we", "in our project").
+- Use natural, fluent Indian IT spoken English (confident, practical, and conversational).
+- Never use robotic AI filler phrases like "Certainly!", "Sure thing!", "That's a great question!", "In conclusion", or "As an AI".
+- Answer immediately with zero introductory preamble.
+
+GROUND TRUTH RULES:
+- The CANDIDATE PROFILE is the single source of truth for personal and project experience.
+- NEVER fabricate project facts, responsibilities, tools used in a project, metrics, incidents, or architecture.
+- If a skill is listed only in primary/secondary skills (not in project technologies/responsibilities), treat it as technical theoretical knowledge—do NOT claim it was implemented in the current project.
+- For concept questions (e.g., "What is HashMap?", "Explain indexing"), explain the technical concept directly and crisply without adding unsolicited personal disclaimers.
+- For coding questions: output the code snippet first, followed by a concise spoken explanation of logic and time/space complexity.
+- For follow-ups: answer ONLY the specific follow-up point; do not re-explain earlier points.
+
+FORMATTING & HIGHLIGHTING:
+- Use light inline markdown **bold** only on essential technical keywords for quick scannability.
+- Keep answers appropriately sized for natural spoken delivery (30-60 seconds equivalent).
         `.trim(),
       },
-
       {
         role: "user",
-
         content: `
 CANDIDATE PROFILE:
 ${profileText || "No resume profile available."}
@@ -1033,65 +785,58 @@ CURRENT INTERVIEWER QUESTION:
 ${cleanQ}
 
 IMPORTANT:
-If FOLLOW-UP STATUS is YES, answer only the new point being asked.
-Do not repeat the previous candidate answer.
+If FOLLOW-UP STATUS is YES, answer only the specific follow-up point asked. Do not repeat previous answers.
         `.trim(),
       },
     ];
 
     // ============================================================
-    // 7. OUTPUT LIMIT
+    // 5. OUTPUT TOKEN LIMITS (OPTIMIZED FOR FAST STREAMING)
     // ============================================================
 
     const maxTokensByType = {
-      SELF_INTRO: 280,
-      CODING: 550,
-      PROJECT: 360,
-      SCENARIO: 300,
-      ARCHITECTURE: 500,
+      SELF_INTRO: 320,
+      CODING: 500,
+      PROJECT: 340,
+      SCENARIO: 280,
+      ARCHITECTURE: 420,
       CONCEPT: 220,
     };
 
-    const maxTokens =
-      maxTokensByType[questionType] || 220;
+    const maxTokens = maxTokensByType[questionType] || 250;
 
     console.log(
       `[ANSWER] ${questionType} | followUp=${isFollowUp} | model=${ANSWER_MODEL} | preparing=${Date.now() - startTime}ms`
     );
 
     // ============================================================
-    // 8. OPENAI STREAMING REQUEST
+    // 6. OPENAI STREAMING REQUEST
     // ============================================================
 
     const openaiResponse = await fetch(
       "https://api.openai.com/v1/chat/completions",
       {
         method: "POST",
-
         headers: {
           Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
           "Content-Type": "application/json",
         },
-
         body: JSON.stringify({
           model: ANSWER_MODEL,
           messages,
           stream: true,
-
           temperature: 0.1,
-
           max_completion_tokens: maxTokens,
         }),
       }
     );
 
     // ============================================================
-    // 9. OPENAI ERROR
+    // 7. OPENAI ERROR HANDLING
     // ============================================================
 
     if (!openaiResponse.ok || !openaiResponse.body) {
       let errorText = "";
-
       try {
         errorText = await openaiResponse.text();
       } catch {
@@ -1109,129 +854,75 @@ Do not repeat the previous candidate answer.
           .send("Unable to generate answer right now.");
       }
 
-      res.write(
-        "Unable to generate answer right now."
-      );
-
+      res.write("Unable to generate answer right now.");
       return res.end();
     }
 
     // ============================================================
-    // 10. STREAM RESPONSE
+    // 8. STREAM RESPONSE TO CLIENT
     // ============================================================
 
-    const reader =
-      openaiResponse.body.getReader();
-
-    const decoder =
-      new TextDecoder("utf-8");
+    const reader = openaiResponse.body.getReader();
+    const decoder = new TextDecoder("utf-8");
 
     let buffer = "";
     let firstToken = true;
 
     const processLine = (line) => {
       const trimmed = line.trim();
+      if (!trimmed || !trimmed.startsWith("data:")) return;
 
-      if (!trimmed) {
-        return;
-      }
-
-      if (!trimmed.startsWith("data:")) {
-        return;
-      }
-
-      const dataStr =
-        trimmed.replace(/^data:\s*/, "");
-
-      if (
-        !dataStr ||
-        dataStr === "[DONE]"
-      ) {
-        return;
-      }
+      const dataStr = trimmed.replace(/^data:\s*/, "");
+      if (!dataStr || dataStr === "[DONE]") return;
 
       try {
-        const event =
-          JSON.parse(dataStr);
-
-        const delta =
-          extractDeltaFromOpenAIEvent(
-            event
-          );
-
-        if (!delta) {
-          return;
-        }
+        const event = JSON.parse(dataStr);
+        const delta = extractDeltaFromOpenAIEvent(event);
+        if (!delta) return;
 
         if (firstToken) {
           firstToken = false;
-
           console.log(
-            `[ANSWER] ${questionType} FIRST TOKEN: ${
-              Date.now() - startTime
-            }ms`
+            `[ANSWER] ${questionType} FIRST TOKEN: ${Date.now() - startTime}ms`
           );
         }
 
         res.write(delta);
-
         if (res.flush) {
           res.flush();
         }
       } catch {
-        // Ignore incomplete SSE chunks.
+        // Ignore incomplete SSE chunks
       }
     };
 
     while (true) {
-      const {
-        done,
-        value,
-      } = await reader.read();
+      const { done, value } = await reader.read();
+      if (done) break;
 
-      if (done) {
-        break;
-      }
-
-      buffer += decoder.decode(
-        value,
-        { stream: true }
-      );
-
-      const lines =
-        buffer.split("\n");
-
-      buffer =
-        lines.pop() || "";
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
 
       for (const line of lines) {
         processLine(line);
       }
     }
 
-    // Process any final incomplete line.
     if (buffer.trim()) {
       processLine(buffer);
     }
 
     console.log(
-      `[ANSWER] ${questionType} COMPLETED: ${
-        Date.now() - startTime
-      }ms`
+      `[ANSWER] ${questionType} COMPLETED: ${Date.now() - startTime}ms`
     );
 
     res.end();
-
   } catch (err) {
-    console.error(
-      "[ANSWER] Stream Error:",
-      err
-    );
+    console.error("[ANSWER] Stream Error:", err);
 
     if (!res.headersSent) {
-      return res
-        .status(500)
-        .send("Server Error");
+      return res.status(500).send("Server Error");
     }
 
     res.end();
