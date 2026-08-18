@@ -18,13 +18,13 @@
 }
 
 .answer-header {
-    min-height: 58px;
+    min-height: 60px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    padding: 8px 18px;
+    padding: 10px 20px;
     border-bottom: 1px solid rgba(148, 163, 184, 0.12);
     background: linear-gradient(
         90deg,
@@ -36,7 +36,7 @@
 .answer-title {
     margin: 0;
     color: #f8fafc;
-    font-size: 24px; /* Increased from 22px */
+    font-size: 26px !important;
     font-weight: 850;
     line-height: 1.2;
 }
@@ -49,14 +49,14 @@
 }
 
 .answer-scroll-btn {
-    min-width: 78px;
+    min-width: 80px;
     height: 38px;
     padding: 0 12px;
     border: 1px solid rgba(147, 197, 253, 0.24);
     border-radius: 9px;
     background: rgba(30, 41, 59, 0.92);
     color: #dbeafe;
-    font-size: 14px; /* Increased from 13px */
+    font-size: 15px !important;
     font-weight: 800;
     cursor: pointer;
     user-select: none;
@@ -75,7 +75,7 @@
     flex: 1 1 auto;
     min-height: 0;
     height: 0;
-    padding: 14px 26px 14px 14px;
+    padding: 18px 28px 18px 16px;
     overflow-y: auto !important;
     overflow-x: auto !important;
     overscroll-behavior-y: contain;
@@ -101,7 +101,7 @@
 .stream-card {
     width: 100%;
     min-height: max-content;
-    padding: 26px 28px 26px;
+    padding: 26px 30px;
     border: 1px solid rgba(148, 163, 184, 0.1);
     border-radius: 14px;
     background: linear-gradient(
@@ -121,92 +121,84 @@
     pointer-events: none;
 }
 
-.markdown-h1,
-.markdown-h2,
-.markdown-h3 {
-    position: relative;
-    margin: 28px 0 16px;
-    color: #facc15;
-    font-weight: 900;
-    letter-spacing: -0.2px;
-    line-height: 1.3;
+/* ========================================================
+   FORCE ALL ANSWER TEXT SIZES TO INCREASE FOR EASY READING
+   ======================================================== */
+
+.answer-body p,
+.stream-card p,
+.markdown-p {
+    margin: 0 0 22px !important;
+    color: #f8fafc !important;
+    font-size: 26px !important; /* Increased for clear reading on screen */
+    font-weight: 450 !important;
+    line-height: 1.85 !important;
+    cursor: text;
+    user-select: text;
 }
 
-.markdown-h1:first-child,
-.markdown-h2:first-child,
-.markdown-h3:first-child {
-    margin-top: 0;
+.answer-body strong,
+.stream-card strong,
+.markdown-strong {
+    display: inline-block;
+    padding: 1px 7px !important;
+    margin: 0 2px;
+    border-radius: 6px;
+    background: rgba(96, 165, 250, 0.16) !important;
+    color: #93c5fd !important;
+    font-size: 26px !important;
+    font-weight: 800 !important;
+    line-height: 1.6 !important;
+    border: 1px solid rgba(96, 165, 250, 0.3) !important;
+}
+
+.answer-body li,
+.stream-card li,
+.markdown-li {
+    margin-bottom: 14px !important;
+    color: #f8fafc !important;
+    font-size: 26px !important;
+    line-height: 1.8 !important;
+    cursor: text;
+    user-select: text;
+}
+
+.answer-body code:not(pre code),
+.stream-card code:not(pre code),
+.inline-code {
+    padding: 3px 8px !important;
+    border: 1px solid rgba(56, 189, 248, 0.2) !important;
+    border-radius: 6px !important;
+    background: #1e293b !important;
+    color: #38bdf8 !important;
+    font-size: 24px !important;
+    font-family: Consolas, Monaco, 'Courier New', Courier, monospace !important;
 }
 
 .markdown-h1 {
-    font-size: 35px; /* Increased from 32px */
+    font-size: 36px !important;
+    color: #facc15 !important;
+    font-weight: 900;
+    margin: 28px 0 16px;
 }
 
 .markdown-h2 {
-    font-size: 32px; /* Increased from 29px */
+    font-size: 32px !important;
+    color: #facc15 !important;
+    font-weight: 900;
+    margin: 28px 0 16px;
 }
 
 .markdown-h3 {
-    font-size: 28px; /* Increased from 25px */
-}
-
-.markdown-h2::after,
-.markdown-h3::after {
-    content: "";
-    display: block;
-    width: 56px;
-    height: 4px;
-    margin-top: 8px;
-    border-radius: 999px;
-    background: linear-gradient(
-        90deg,
-        #8b5cf6,
-        #2563eb
-    );
-}
-
-.markdown-p {
-    margin: 0 0 20px;
-    color: #f8fafc;
-    font-size: 23.5px; /* Increased from 21px for easier live reading */
-    font-weight: 450;
-    line-height: 1.85;
-    cursor: text;
-    user-select: text;
-}
-
-.markdown-strong {
-    display: inline;
-    padding: 1px 5px;
-    border-radius: 5px;
-    background: rgba(96, 165, 250, 0.14);
-    color: #93c5fd;
+    font-size: 28px !important;
+    color: #facc15 !important;
     font-weight: 900;
-    box-decoration-break: clone;
-    -webkit-box-decoration-break: clone;
+    margin: 28px 0 16px;
 }
 
-.markdown-li {
-    margin-bottom: 14px;
-    color: #f8fafc;
-    font-size: 23.5px; /* Increased from 21px */
-    line-height: 1.82;
-    cursor: text;
-    user-select: text;
-}
-
-.markdown-li::marker {
-    color: #8b5cf6;
-}
-
-.inline-code {
-    padding: 3px 8px;
-    border: 1px solid rgba(56, 189, 248, 0.16);
-    border-radius: 6px;
-    background: #1e293b;
-    color: #38bdf8;
-    font-size: 0.98em;
-}
+/* ========================================================
+   LOADER & EMPTY STATES
+   ======================================================== */
 
 .loading-container,
 .empty-container {
@@ -223,14 +215,14 @@
 .loading-text {
     margin-top: 16px;
     color: #60a5fa;
-    font-size: 21px; /* Increased from 19px */
+    font-size: 24px !important;
     font-weight: 850;
 }
 
 .empty-container h3 {
     margin: 0 0 10px;
     color: #f8fafc;
-    font-size: 25px; /* Increased from 23px */
+    font-size: 28px !important;
     font-weight: 850;
 }
 
@@ -238,7 +230,7 @@
     max-width: 540px;
     margin: 0;
     color: #94a3b8;
-    font-size: 19px; /* Increased from 17px */
+    font-size: 20px !important;
     line-height: 1.7;
 }
 
@@ -253,20 +245,20 @@
 }
 
 .copy-footer {
-    min-height: 54px;
+    min-height: 56px;
     flex-shrink: 0;
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    padding: 8px 18px;
+    padding: 8px 20px;
     border-top: 1px solid rgba(148, 163, 184, 0.12);
     background: rgba(15, 23, 42, 0.97);
 }
 
 .copy-btn {
-    min-width: 98px;
+    min-width: 100px;
     height: 40px;
-    padding: 0 16px;
+    padding: 0 18px;
     border: 1px solid rgba(196, 181, 253, 0.2);
     border-radius: 9px;
     background: linear-gradient(
@@ -275,7 +267,7 @@
         #7c3aed
     );
     color: white;
-    font-size: 15px; /* Increased from 14px */
+    font-size: 15px !important;
     font-weight: 850;
     cursor: pointer;
     transition: 0.2s;
@@ -329,52 +321,14 @@
 }
 
 @media (max-width: 760px) {
-    .answer-header {
-        min-height: 52px;
-        padding: 7px 11px;
+    .answer-body p,
+    .stream-card p,
+    .markdown-p {
+        font-size: 20px !important;
     }
-
-    .answer-title {
-        font-size: 20px;
-    }
-
-    .answer-scroll-btn {
-        min-width: 56px;
-        height: 34px;
-        padding: 0 8px;
-        font-size: 12px;
-    }
-
-    .answer-body {
-        padding: 10px 18px 10px 10px;
-    }
-
-    .stream-card {
-        padding: 20px 18px 20px;
-    }
-
-    .stream-card::after {
-        height: clamp(320px, 62vh, 560px);
-    }
-
-    .markdown-h1 {
-        font-size: 28px;
-    }
-
-    .markdown-h2 {
-        font-size: 26px;
-    }
-
-    .markdown-h3 {
-        font-size: 24px;
-    }
-
-    .markdown-p,
-    .markdown-li {
-        font-size: 20px; /* Scaled up for mobile too */
-    }
-
+    .answer-body strong,
+    .stream-card strong,
     .markdown-strong {
-        padding: 1px 4px;
+        font-size: 20px !important;
     }
 }

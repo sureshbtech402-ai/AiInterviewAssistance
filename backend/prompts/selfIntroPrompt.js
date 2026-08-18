@@ -17,33 +17,20 @@ INTERVIEWER ASKED:
 "${question}"
 
 TASK:
-Generate the exact 45-60 second spoken self-introduction that the candidate should speak out loud to the interviewer.
+Provide a 60-80 second natural spoken introduction for an Indian IT professional speaking in a live interview.
 
-PERSONA & SPOKEN INDIAN IT ENGLISH:
-- Speak in first-person as an experienced Indian software developer / IT professional.
-- Use natural, fluid spoken English commonly heard in Indian tech interviews.
-- Use natural transitions like:
-  - "Hi, good morning / afternoon, my name is..."
-  - "Overall, I have around [Experience] of experience working as a [Role]..."
-  - "Currently, I am associated with [Company]..."
-  - "Coming to my technical skill set, my primary focus is on [Top Skills]..."
-  - "In my current project, we are developing [Project Summary / Domain]..."
-  - "My day-to-day responsibilities involve [Key Project Responsibilities]..."
-  - "Yeah, that's a brief summary about my background."
-- Keep sentences concise, conversational, and smooth to speak.
-- Avoid robotic CV buzzwords like "spearheading", "leveraging", "proficient in", "facilitating".
-- Do NOT sound like you are reading bullet points from a PDF.
+SPOKEN STRUCTURE:
+1. Warm, natural start: "Hi, good morning/afternoon, my name is [Name]. Overall I have around [Years] of experience as a [Role], currently working with [Company]."
+2. Primary skill set: "Coming to my core tech stack, I primarily work on [Top Skills from Profile]."
+3. Current project snapshot: "In my current project, we are developing [Project Domain/Summary]. Basically, my day-to-day work involves [Key Responsibilities from Profile]."
+4. Achievement (only if present in profile): "Recently, I also received [Award/Achievement]."
+5. Short, natural wrap-up: "Yeah, that's all about my self. Thank you"
 
-GROUND TRUTH RULES:
-- Use ONLY facts explicitly present in the Candidate Profile.
-- Never invent project details, client names, certifications, awards, or responsibilities not in the profile.
-- If a skill is listed under skills but not in the project, mention it as a primary skill, but do NOT say you implemented it in the current project unless supported.
-- State the exact total years of experience, current designation, and current company as given in the profile.
+STRICT RULES:
+- Use ONLY facts explicitly in the Candidate Profile.
+- Do NOT sound like you are reading a CV or listing every single skill.
+- Keep sentences short, punchy, and conversational.
 
-FORMATTING:
-- Lightly **bold** 3-5 key technical terms (e.g. **Java**, **Spring Boot**, **Microservices**) so they stand out clearly while reading on screen.
-- Return ONLY the spoken answer text with no introductory pleasantries or meta text.
-
-Start directly with the introduction greeting.
+Start directly with the natural spoken introduction for an Indian IT professional speaking in a live interview.
 `.trim();
 }

@@ -17,27 +17,19 @@ INTERVIEWER ASKED:
 "${question}"
 
 TASK:
-Provide the exact, confident spoken response the candidate should speak out loud right now when explaining their project, role, tech stack, or daily workflow.
+Explain the project, role, or daily responsibilities naturally as an Indian IT professional speaking in a live interview.
 
-SPOKEN INDIAN IT WORK STYLE & STRUCTURE:
-- Speak in the first person ("In our project...", "My primary module is...", "Coming to my day-to-day work...").
-- Deliver a clear, practical 30–45 second spoken answer covering:
-  1. **Project & Domain Snapshot:** High-level overview of the application purpose based on the candidate profile (e.g., banking transactions, customer onboarding, order processing).
-  2. **Candidate's Focus Module:** What the candidate personally develops (e.g., building backend **REST APIs**, business services, integration layers).
-  3. **Daily Agile Workflow:** Daily standup, picking user stories in Jira, coding features in **Spring Boot**, writing **JUnit** / **Mockito** unit tests, and raising PRs for code review.
-- Sound like a real software engineer talking about their daily office work—not reading bullet points from a PDF resume.
+SPOKEN FLOW:
+- Speak in first-person ("In our project...", "Coming to my module...", "What I mainly do is...").
+- Cover:
+  1. High-level domain & goal: "In our project with [Company/Domain], we are basically building [Purpose of App]..."
+  2. Candidate's exact module: "My primary responsibility is developing backend **REST APIs** in **Spring Boot** and implementing business logic."
+  3. Agile routine: "We work in Agile sprints. I pick user stories in **Jira**, write unit tests using **JUnit** and **Mockito**, and raise PRs for peer review."
+- Avoid robotic corporate endings like "This structured workflow helps us maintain high standards."
 
-STRICT GROUND TRUTH RULES:
-- The Candidate Profile is the ONLY source of truth.
-- Use ONLY the technologies listed in **projectTechnologies** and responsibilities listed in **projectResponsibilities**.
-- If a skill is listed only under general skills (and not in the project details), do NOT claim it was implemented in this project.
-- Never fabricate client names, cloud architecture, databases, or metrics that are not in the profile.
-- If asked about a tool not used in the project, say naturally: "In my current project we haven't used that directly, our tech stack is primarily focused on..." and state the supported stack.
+GROUND TRUTH RULES:
+- Use ONLY technologies and responsibilities explicitly in the Candidate Profile.
 
-FORMATTING:
-- Use inline **bold** on 3–6 key technologies, modules, and processes (e.g., **REST APIs**, **Spring Boot**, **Microservices**, **JUnit**, **Agile sprint**).
-- No unnecessary headers or bulleted lists—output clean, natural spoken paragraphs.
-
-Start directly with the spoken answer.
+Start directly with the natural spoken answer an Indian IT professional speaking in a live interview.
 `.trim();
 }
