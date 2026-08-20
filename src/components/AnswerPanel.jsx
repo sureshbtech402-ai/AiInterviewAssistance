@@ -146,36 +146,48 @@ function AnswerPanel({ answerData, loading }) {
                 strong: ({ children }) => (
                   <strong className="markdown-strong">{children}</strong>
                 ),
-                code({ inline, className, children, ...props }) {
-                  const match = /language-(\w+)/.exec(className || "");
-                  const codeText = String(children).replace(/\n$/, "");
+              code({ inline, className, children, ...props }) {
+                const match = /language-(\w+)/.exec(className || "");
+                const codeText = String(children).replace(/\n$/, "");
+                const isBlock = !inline && (match || codeText.includes("\n"));
 
-                  if (!inline && match) {
-                    return (
+                if (isBlock) {
+                  return (
+                    <div className="code-block-container">
                       <SyntaxHighlighter
                         style={oneDark}
-                        language={match[1]}
+                        language={match ? match[1] : "text"}
                         PreTag="div"
                         customStyle={{
                           borderRadius: "12px",
-                          fontSize: "17px",
-                          padding: "18px",
-                          margin: "14px 0",
-                          lineHeight: "1.75",
+                          fontSize: "20px",
+                          padding: "20px",
+                          margin: "18px 0",
+                          lineHeight: "1.7",
+                          background: "#0d1117",
+                          border: "1px solid rgba(148, 163, 184, 0.16)",
+                        }}
+                        codeTagProps={{
+                          style: {
+                            fontSize: "20px",
+                            fontFamily:
+                              "Consolas, Monaco, 'Courier New', Courier, monospace",
+                          },
                         }}
                         {...props}
                       >
                         {codeText}
                       </SyntaxHighlighter>
-                    );
-                  }
-
-                  return (
-                    <code className="inline-code" {...props}>
-                      {children}
-                    </code>
+                    </div>
                   );
-                },
+                }
+
+                return (
+                  <code className="inline-code" {...props}>
+                    {children}
+                  </code>
+                );
+              },
               }}
             >
               {answerText}

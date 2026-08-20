@@ -134,7 +134,7 @@ export function classifyQuestion(question = "") {
   }
 
   // ==================================================
-  // 3. SCENARIO / TROUBLESHOOTING / BUG RESOLUTION (Evaluated before Project)
+  // 3. SCENARIO / TROUBLESHOOTING / BUG RESOLUTION
   // ==================================================
   const scenarioPatterns = [
     "if any bug",
@@ -180,9 +180,24 @@ export function classifyQuestion(question = "") {
   }
 
   // ==================================================
-  // 4. ARCHITECTURE / FLOW
+  // 4. ARCHITECTURE / SYSTEM DESIGN / FROM SCRATCH SETUP
   // ==================================================
   const architecturePatterns = [
+    // "From Scratch" & Step-by-Step triggers
+    "from scratch",
+    "step by step",
+    "how do you build from scratch",
+    "how to build from scratch",
+    "how to create from scratch",
+    "explain from scratch",
+    "how you created from scratch",
+    "start from scratch",
+    "end to end setup",
+    "how to setup",
+    "how do you setup",
+    "how to develop from scratch",
+
+    // System Design & Architecture
     "system design",
     "high level design",
     "low level design",

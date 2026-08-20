@@ -1,14 +1,7 @@
 import Login from "./Login";
 import { auth } from "./firebase";
-import {
-  signOut,
-  onAuthStateChanged,
-} from "firebase/auth";
-import {
-  useState,
-  useEffect,
-  useRef,
-} from "react";
+import { signOut, onAuthStateChanged } from "firebase/auth";
+import { useState, useEffect, useRef } from "react";
 
 import Header from "./components/Header";
 import UploadResume from "./components/UploadResume";
@@ -17,8 +10,7 @@ import AnswerPanel from "./components/AnswerPanel";
 
 import "./styles/app.css";
 
-const trimTrailingSlash = (value) =>
-  (value || "").replace(/\/+$/, "");
+const trimTrailingSlash = (value) => (value || "").replace(/\/+$/, "");
 
 const API_BASE_URL = trimTrailingSlash(
   import.meta.env.VITE_API_BASE_URL ||
@@ -27,9 +19,7 @@ const API_BASE_URL = trimTrailingSlash(
 
 const WS_URL = trimTrailingSlash(
   import.meta.env.VITE_WS_URL ||
-    API_BASE_URL
-      .replace(/^https:/, "wss:")
-      .replace(/^http:/, "ws:")
+    API_BASE_URL.replace(/^https:/, "wss:").replace(/^http:/, "ws:")
 );
 
 function App() {
@@ -118,14 +108,8 @@ function App() {
 
     const updatedHistory = [
       ...conversationHistoryRef.current,
-      {
-        role: "user",
-        content: cleanQuestion,
-      },
-      {
-        role: "assistant",
-        content: cleanAnswer,
-      },
+      { role: "user", content: cleanQuestion },
+      { role: "assistant", content: cleanAnswer },
     ].slice(-6);
 
     conversationHistoryRef.current = updatedHistory;
@@ -272,6 +256,42 @@ function App() {
     showToast("Resume attached! Ready to start.", "success");
   };
 
+  const stopInterviewMode = () => {
+    clearTimeout(silenceTimerRef.current);
+
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch {
+        // Safe stop
+      }
+    }
+    mediaRecorderRef.current = null;
+
+    if (
+      audioContextRef.current &&
+      audioContextRef.current.state !== "closed"
+    ) {
+      try {
+        audioContextRef.current.close();
+      } catch {
+        // Safe close
+      }
+    }
+    audioContextRef.current = null;
+
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach((track) => track.stop());
+      screenStreamRef.current = null;
+    }
+
+    closeInterviewSocket();
+    setIsInterviewRunning(false);
+  };
+
   const startInterviewMode = async () => {
     setQuestion("");
     questionLockedRef.current = false;
@@ -305,11 +325,16 @@ function App() {
         return false;
       }
 
-      const socket = await openInterviewSocket();
-
-      audioTrack.onended = () => {
+      // Handle user stopping screen share via Chrome native bar
+      stream.getVideoTracks()[0]?.addEventListener("ended", () => {
         stopInterviewMode();
-      };
+      });
+
+      audioTrack.addEventListener("ended", () => {
+        stopInterviewMode();
+      });
+
+      const socket = await openInterviewSocket();
 
       const audioContext = new AudioContext({ sampleRate: 48000 });
       audioContextRef.current = audioContext;
@@ -395,9 +420,6 @@ function App() {
     }
   };
 
-  // ============================================================
-  // START INTERVIEW FLOW (Fixed Step Order)
-  // ============================================================
   const startInterviewFlow = async () => {
     if (!resumeFile && !resumeProfile) {
       showToast("Please upload a PDF resume first.", "info");
@@ -423,19 +445,18 @@ function App() {
     clearTimeout(silenceTimerRef.current);
 
     try {
-      // 1. Ask for Screen & Audio permission FIRST (direct user gesture response)
+      // 1. Direct user gesture: Ask for Screen & Audio permission first
       const audioStarted = await startInterviewMode();
       if (!audioStarted) {
         return;
       }
 
-      // Switch views to interview panel
       setInterviewStarted(true);
       setShowConfig(false);
 
       let profile = resumeProfile;
 
-      // 2. Extract resume profile if not already cached
+      // 2. Extract profile if not already cached
       if (!profile) {
         setLoading(true);
         setAnswerData(
@@ -456,7 +477,7 @@ function App() {
             const errorData = await response.json();
             if (errorData?.error) errorMessage = errorData.error;
           } catch {
-            // Keep default message
+            // Keep fallback message
           }
           throw new Error(errorMessage);
         }
@@ -479,6 +500,7 @@ function App() {
       setAnswerData("⏳ Preparing your self-introduction...");
 
       const introQuestion = "Tell me about yourself";
+      setQuestion(introQuestion); // Set question in UI for context consistency
 
       const generatedIntro = await streamAnswer(
         {
@@ -504,32 +526,6 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const stopInterviewMode = () => {
-    clearTimeout(silenceTimerRef.current);
-
-    if (
-      mediaRecorderRef.current &&
-      mediaRecorderRef.current.state !== "inactive"
-    ) {
-      mediaRecorderRef.current.stop();
-    }
-    mediaRecorderRef.current = null;
-
-    if (
-      audioContextRef.current &&
-      audioContextRef.current.state !== "closed"
-    ) {
-      audioContextRef.current.close();
-    }
-    audioContextRef.current = null;
-
-    screenStreamRef.current?.getTracks().forEach((track) => track.stop());
-    screenStreamRef.current = null;
-
-    closeInterviewSocket();
-    setIsInterviewRunning(false);
   };
 
   const clearQuestionAndAnswer = () => {
@@ -665,10 +661,7 @@ function App() {
               stopInterviewMode={stopInterviewMode}
             />
 
-            <AnswerPanel
-              answerData={answerData}
-              loading={loading}
-            />
+            <AnswerPanel answerData={answerData} loading={loading} />
           </div>
         )}
       </main>

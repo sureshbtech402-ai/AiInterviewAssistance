@@ -20,17 +20,18 @@ TASK:
 Provide a 60-80 second natural spoken introduction for an Indian IT professional speaking in a live interview.
 
 SPOKEN STRUCTURE:
-1. Warm, natural start: "Hi, good morning/afternoon, my name is [Name]. Overall I have around [Years] of experience as a [Role], currently working with [Company]."
-2. Primary skill set: "Coming to my core tech stack, I primarily work on [Top Skills from Profile]."
-3. Current project snapshot: "In my current project, we are developing [Project Domain/Summary]. Basically, my day-to-day work involves [Key Responsibilities from Profile]."
-4. Achievement (only if present in profile): "Recently, I also received [Award/Achievement]."
-5. Short, natural wrap-up: "Yeah, that's all about my self. Thank you"
+1. Natural Opening: "Hi, good morning/afternoon, my name is [Name]. Overall I have around [Years] of experience working as a [Role], currently associated with [Company]."
+2. Core Tech Stack: "Coming to my technical skill set, my primary focus is on [Top Skills from Profile]."
+3. Current Project & Daily Work: "In my current project with [Company/Domain], we are basically developing [Project Domain/Summary]. My day-to-day responsibilities mainly involve [Key Responsibilities from Profile]."
+4. Highlight/Award (ONLY if present in profile): "Recently, I also received [Award/Achievement]."
+5. Polite Wrap-up: "Yeah, that's pretty much a quick summary about myself. Thank you."
 
 STRICT RULES:
-- Use ONLY facts explicitly in the Candidate Profile.
-- Do NOT sound like you are reading a CV or listing every single skill.
-- Keep sentences short, punchy, and conversational.
+- Use ONLY facts explicitly present in the Candidate Profile.
+- Do NOT sound like you are reading a CV or reciting a resume line by line.
+- Keep sentences concise, conversational, and direct.
+- Highlight 2-4 primary technical keywords with inline markdown **bold**.
 
-Start directly with the natural spoken introduction for an Indian IT professional speaking in a live interview.
+Start directly with the spoken introduction.
 `.trim();
 }

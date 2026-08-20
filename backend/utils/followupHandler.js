@@ -36,6 +36,13 @@ const SHORT_FOLLOW_UPS = new Set([
   "any alternative",
   "what is the alternative",
   "what else",
+  "is it thread safe",
+  "is it thread-safe",
+  "why not",
+  "what about collisions",
+  "can you optimize",
+  "can we optimize this",
+  "any other way",
 ]);
 
 const FOLLOW_UP_PATTERNS = [
@@ -62,6 +69,9 @@ const FOLLOW_UP_PATTERNS = [
   "can you elaborate on",
   "in that case",
   "for example",
+  "how it handles",
+  "what happens if",
+  "how does it work internally",
 ];
 
 export function isFollowUpQuestion(question = "") {
