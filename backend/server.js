@@ -438,6 +438,7 @@ function extractDeltaFromOpenAIEvent(event) {
 app.post("/answer", async (req, res) => {
   const {
     question,
+    screenshot = null,
     interviewLevel = "",
     company = "",
     interviewType = "",
@@ -447,7 +448,7 @@ app.post("/answer", async (req, res) => {
 
   const cleanQ = getCleanQuestion(question).trim();
 
-  if (!cleanQ) {
+  if (!cleanQ && !screenshot) {
     return res.status(400).send("Question is empty");
   }
 
@@ -459,13 +460,18 @@ app.post("/answer", async (req, res) => {
     const startTime = Date.now();
     const safeHistory = Array.isArray(history) ? history : [];
 
-    const questionType = classifyQuestion(cleanQ);
+    const candidateRole = resumeProfile?.primaryRole?.trim() || "IT professional";
+
+    const effectiveQuestion =
+      cleanQ || "Analyze the attached screenshot and provide the solution.";
+    const questionType = classifyQuestion(effectiveQuestion);
 
     const prompt = buildPrompt({
-      question: cleanQ,
+      question: effectiveQuestion,
       interviewLevel,
       company,
       interviewType,
+      candidateRole,
     });
 
     if (!prompt) {
@@ -477,13 +483,12 @@ app.post("/answer", async (req, res) => {
     const interviewContext = buildInterviewContext(recentHistory);
 
     const isFollowUp =
-      isFollowUpQuestion(cleanQ) &&
+      isFollowUpQuestion(effectiveQuestion) &&
       hasEnoughFollowUpContext(recentHistory);
 
     const previousContext =
       interviewContext.historyText || "No previous interview context.";
 
-    // Immediate header dispatch
     res.status(200);
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Cache-Control", "no-cache, no-transform");
@@ -494,25 +499,15 @@ app.post("/answer", async (req, res) => {
       res.flushHeaders();
     }
 
-    const messages = [
-      {
-        role: "system",
-        content: `You are an experienced Indian IT software developer speaking live in an interview.
-- Speak directly in the first person ("I", "we", "in our project") using simple, spoken Indian English.
-- Start directly with the answer on the very first word. No intro filler, no "Certainly", no "In conclusion".
-- The Candidate Profile is the ONLY truth for project experience. Never invent unmentioned tools, metrics, or client names.
-- If asked "from scratch" or "step by step", explain the chronological developer steps (Setup -> Config -> Entities -> Service -> Controller -> Testing).
-- Use inline **bold** on 2-4 key technical terms only.`.trim(),
-      },
-      {
-        role: "user",
-        content: `PROFILE:
+    const userPromptText = `PROFILE:
 ${profileText}
+
+ROLE: ${candidateRole}
 
 CONTEXT:
 ${previousContext}
 
-FOLLOW-UP: ${isFollowUp ? "YES (Answer only the new specific point)" : "NO"}
+FOLLOW-UP: ${isFollowUp ? "YES (Answer only the new specific point directly in 2 short lines)" : "NO"}
 
 QUESTION TYPE: ${questionType}
 
@@ -520,17 +515,51 @@ INSTRUCTIONS:
 ${prompt}
 
 QUESTION:
-"${cleanQ}"`.trim(),
+"${effectiveQuestion}"
+${
+  screenshot
+    ? "\nATTACHED SCREENSHOT: Inspect the attached screenshot (e.g. code snippet, test error, pipeline config, or architecture diagram) and answer accordingly."
+    : ""
+}`.trim();
+
+    const userContent = screenshot
+      ? [
+          { type: "text", text: userPromptText },
+          {
+            type: "image_url",
+            image_url: {
+              url: screenshot,
+              detail: "low",
+            },
+          },
+        ]
+      : userPromptText;
+
+    const messages = [
+      {
+        role: "system",
+        content: `You are an experienced Indian ${candidateRole} speaking live in a 1-on-1 technical interview.
+- Speak in natural, everyday Indian IT English using simple spoken connectors ("So basically...", "What happens is...", "Like...", "They will...", "What we usually do is...").
+- Keep sentences short (10-14 words max) so the candidate can glance at the screen and speak naturally without stumbling.
+- Strictly avoid heavy textbook jargon, tongue-twisters, or bookish definitions.
+- Start directly on word #1 with no intro fluff, no "Certainly", no "In conclusion".
+- If the question involves both practical work/code/scripts and theory: provide the script or solution first, followed by the simple spoken explanation.
+- The Candidate Profile is the ONLY truth for project experience. Never invent tools, client names, or metrics.
+- Use inline **bold** on only 2-3 key terms for fast eye-scanning.`.trim(),
+      },
+      {
+        role: "user",
+        content: userContent,
       },
     ];
 
     const maxTokensByType = {
-      SELF_INTRO: 300,
-      CODING: 480,
-      PROJECT: 320,
-      SCENARIO: 260,
-      ARCHITECTURE: 380,
-      CONCEPT: 200,
+      SELF_INTRO: 350,
+      CODING: 650,
+      PROJECT: 350,
+      SCENARIO: 300,
+      ARCHITECTURE: 400,
+      CONCEPT: 220,
     };
 
     const maxTokens = maxTokensByType[questionType] || 250;
@@ -592,7 +621,7 @@ QUESTION:
           res.flush();
         }
       } catch {
-        // Incomplete chunk handler
+        // Stream parse handler
       }
     };
 

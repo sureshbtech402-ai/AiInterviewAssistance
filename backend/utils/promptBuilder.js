@@ -21,14 +21,15 @@ export function buildPrompt({
     return "";
   }
 
+  const questionType = classifyQuestion(cleanQuestion);
+
   const payload = {
     question: cleanQuestion,
+    questionType,
     interviewLevel,
     company,
     interviewType,
   };
-
-  const questionType = classifyQuestion(cleanQuestion);
 
   switch (questionType) {
     case "SELF_INTRO":

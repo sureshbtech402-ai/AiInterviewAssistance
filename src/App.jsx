@@ -27,6 +27,7 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true);
 
   const [question, setQuestion] = useState("");
+  const [screenshotImage, setScreenshotImage] = useState(null);
   const [showConfig, setShowConfig] = useState(true);
   const [answerData, setAnswerData] = useState(null);
   const [, setConversationHistory] = useState([]);
@@ -67,6 +68,11 @@ function App() {
   const finalTranscriptRef = useRef("");
   const interimTranscriptRef = useRef("");
   const ignoreStaleTranscriptRef = useRef(false);
+
+  // Pre-warm Render backend on initial app load to eliminate cold-start issues
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/health`).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -190,8 +196,8 @@ function App() {
       socketRef.current = socket;
 
       const timeout = setTimeout(() => {
-        reject(new Error("WebSocket connection timeout"));
-      }, 10000);
+        reject(new Error("WebSocket connection timeout - server waking up"));
+      }, 35000);
 
       socket.onopen = () => {
         clearTimeout(timeout);
@@ -248,6 +254,8 @@ function App() {
       showToast("Please upload a PDF resume.", "error");
       return;
     }
+
+    fetch(`${API_BASE_URL}/health`).catch(() => {});
 
     setResumeFile(file);
     setResumeName(file.name);
@@ -325,7 +333,6 @@ function App() {
         return false;
       }
 
-      // Handle user stopping screen share via Chrome native bar
       stream.getVideoTracks()[0]?.addEventListener("ended", () => {
         stopInterviewMode();
       });
@@ -432,6 +439,7 @@ function App() {
     setConversationHistory([]);
 
     setQuestion("");
+    setScreenshotImage(null);
     setAnswerData("");
 
     questionLockedRef.current = false;
@@ -444,25 +452,31 @@ function App() {
 
     clearTimeout(silenceTimerRef.current);
 
+    let audioStarted;
     try {
-      // 1. Direct user gesture: Ask for Screen & Audio permission first
-      const audioStarted = await startInterviewMode();
-      if (!audioStarted) {
-        return;
-      }
+      audioStarted = await startInterviewMode();
+    } catch (err) {
+      console.error("Audio start failed:", err);
+      showToast("Audio permission failed. Try again.", "error");
+      return;
+    }
 
-      setInterviewStarted(true);
-      setShowConfig(false);
+    if (!audioStarted) {
+      return;
+    }
 
-      let profile = resumeProfile;
+    setInterviewStarted(true);
+    setShowConfig(false);
 
-      // 2. Extract profile if not already cached
-      if (!profile) {
-        setLoading(true);
-        setAnswerData(
-          "⏳ Reading your resume and preparing your interview profile..."
-        );
+    let profile = resumeProfile;
 
+    if (!profile) {
+      setLoading(true);
+      setAnswerData(
+        "⏳ Reading your resume and preparing your interview profile..."
+      );
+
+      try {
         const formData = new FormData();
         formData.append("resume", resumeFile);
 
@@ -477,7 +491,7 @@ function App() {
             const errorData = await response.json();
             if (errorData?.error) errorMessage = errorData.error;
           } catch {
-            // Keep fallback message
+            // Keep default message
           }
           throw new Error(errorMessage);
         }
@@ -493,15 +507,24 @@ function App() {
         if (Array.isArray(profile.primarySkills)) {
           setSkills(profile.primarySkills);
         }
+      } catch (extractError) {
+        console.error("Resume Extraction Error:", extractError);
+        setAnswerData(
+          "⚠️ Could not extract profile details. You can continue speaking or ask questions directly."
+        );
+        showToast("Resume extraction failed. Server might be waking up.", "error");
+        setLoading(false);
+        return;
       }
+    }
 
-      // 3. Generate self-introduction
-      setLoading(true);
-      setAnswerData("⏳ Preparing your self-introduction...");
+    setLoading(true);
+    setAnswerData("⏳ Preparing your self-introduction...");
 
-      const introQuestion = "Tell me about yourself";
-      setQuestion(introQuestion); // Set question in UI for context consistency
+    const introQuestion = "Tell me about yourself";
+    setQuestion(introQuestion);
 
+    try {
       const generatedIntro = await streamAnswer(
         {
           question: introQuestion,
@@ -514,15 +537,12 @@ function App() {
         "Unable to generate self-introduction right now. Please try again."
       );
 
-      if (!generatedIntro?.trim()) {
-        throw new Error("Self-introduction generation failed");
+      if (generatedIntro?.trim()) {
+        saveConversationTurn(introQuestion, generatedIntro);
       }
-
-      saveConversationTurn(introQuestion, generatedIntro);
-    } catch (error) {
-      console.error("Interview Start Error:", error);
-      setAnswerData("Unable to start the interview. Please try again.");
-      showToast("Unable to start interview.", "error");
+    } catch (introError) {
+      console.error("Self-intro generation failed:", introError);
+      setAnswerData("Self-introduction generation failed. Please click Generate Answer.");
     } finally {
       setLoading(false);
     }
@@ -538,16 +558,51 @@ function App() {
     interimTranscriptRef.current = "";
 
     setQuestion("");
+    setScreenshotImage(null);
 
     if (textareaRef.current) {
       textareaRef.current.scrollTop = 0;
     }
   };
 
+  const takeTabScreenshot = () => {
+    const stream = screenStreamRef.current;
+    if (!stream) {
+      showToast("Start the interview first to share screen tab.", "error");
+      return;
+    }
+
+    const videoTrack = stream.getVideoTracks()[0];
+    if (!videoTrack || videoTrack.readyState !== "live") {
+      showToast("Screen video track is not active.", "error");
+      return;
+    }
+
+    const video = document.createElement("video");
+    video.srcObject = new MediaStream([videoTrack]);
+    video.muted = true;
+
+    video.onloadedmetadata = () => {
+      video.play();
+      const canvas = document.createElement("canvas");
+      const scale = Math.min(1, 1280 / (video.videoWidth || 1280));
+      canvas.width = (video.videoWidth || 1280) * scale;
+      canvas.height = (video.videoHeight || 720) * scale;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const base64Image = canvas.toDataURL("image/jpeg", 0.72);
+      video.srcObject = null;
+      setScreenshotImage(base64Image);
+      showToast("Screenshot captured! 📸", "success");
+    };
+  };
+
   const generateAnswer = async () => {
     questionLockedRef.current = true;
 
-    if (!question.trim()) {
+    if (!question.trim() && !screenshotImage) {
       showToast("Question panel is empty.", "info");
       questionLockedRef.current = false;
       return;
@@ -558,6 +613,7 @@ function App() {
     const generatedAnswer = await streamAnswer(
       {
         question: askedQuestion,
+        screenshot: screenshotImage || null,
         company: company === "Others" ? customCompany : company,
         interviewLevel,
         interviewType,
@@ -568,9 +624,10 @@ function App() {
     );
 
     if (generatedAnswer?.trim()) {
-      saveConversationTurn(askedQuestion, generatedAnswer);
+      saveConversationTurn(askedQuestion || "Analyze screenshot", generatedAnswer);
     }
 
+    setScreenshotImage(null);
     questionLockedRef.current = false;
     waitingForNextQuestionRef.current = true;
   };
@@ -655,10 +712,13 @@ function App() {
               setQuestion={setQuestion}
               textareaRef={textareaRef}
               isInterviewRunning={isInterviewRunning}
+              stopInterviewMode={stopInterviewMode}
               loading={loading}
               generateAnswer={generateAnswer}
               clearQuestionAndAnswer={clearQuestionAndAnswer}
-              stopInterviewMode={stopInterviewMode}
+              screenshotImage={screenshotImage}
+              onTakeScreenshot={takeTabScreenshot}
+              onRemoveScreenshot={() => setScreenshotImage(null)}
             />
 
             <AnswerPanel answerData={answerData} loading={loading} />

@@ -7,6 +7,9 @@ function QuestionPanel({
   loading,
   generateAnswer,
   clearQuestionAndAnswer,
+  screenshotImage,
+  onTakeScreenshot,
+  onRemoveScreenshot,
 }) {
   return (
     <div className="question-panel">
@@ -22,24 +25,55 @@ function QuestionPanel({
           placeholder="The interviewer's question will appear here..."
           className="question-box"
         />
+
+        {screenshotImage && (
+          <div className="screenshot-preview-bar">
+            <span className="screenshot-badge-text">📸 Attached:</span>
+            <img
+              src={screenshotImage}
+              alt="Screenshot preview"
+              className="screenshot-thumb"
+            />
+            <button
+              type="button"
+              onClick={onRemoveScreenshot}
+              className="screenshot-remove-btn"
+            >
+              ✕ Remove
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="question-footer">
-        <button
-          type="button"
-          className="clear-btn"
-          onClick={clearQuestionAndAnswer}
-        >
-          🗑 Clear
-        </button>
+        {/* Top Row: Clear and Generate Answer */}
+        <div className="footer-top-row">
+          <button
+            type="button"
+            className="clear-btn"
+            onClick={clearQuestionAndAnswer}
+          >
+            🗑 Clear
+          </button>
 
+          <button
+            type="button"
+            disabled={loading || (!question.trim() && !screenshotImage)}
+            onClick={generateAnswer}
+            className="generate-btn"
+          >
+            {loading ? "⚡ Generating..." : "✨ Generate Answer"}
+          </button>
+        </div>
+
+        {/* Bottom Row: Dedicated Screenshot Button */}
         <button
           type="button"
-          disabled={loading || !question.trim()}
-          onClick={generateAnswer}
-          className="generate-btn"
+          onClick={onTakeScreenshot}
+          className={`screenshot-btn ${screenshotImage ? "screenshot-attached" : ""}`}
+          disabled={loading}
         >
-          {loading ? "⚡ Generating..." : "✨ Generate Answer"}
+          {screenshotImage ? "✓ Screen Attached" : "📸 Take Screenshot"}
         </button>
       </div>
     </div>

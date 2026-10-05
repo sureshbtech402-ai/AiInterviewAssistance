@@ -17,20 +17,27 @@ INTERVIEWER ASKED:
 "${question}"
 
 TASK:
-Provide a 60-80 second natural spoken introduction for an Indian IT professional speaking in a live interview.
+Provide a natural, spoken 60-second introduction for an Indian IT professional on a live 1-on-1 interview call.
+The candidate will look at the screen and speak this out loud. It must sound completely casual, spontaneous, and conversational.
 
-SPOKEN STRUCTURE:
-1. Natural Opening: "Hi, good morning/afternoon, my name is [Name]. Overall I have around [Years] of experience working as a [Role], currently associated with [Company]."
-2. Core Tech Stack: "Coming to my technical skill set, my primary focus is on [Top Skills from Profile]."
-3. Current Project & Daily Work: "In my current project with [Company/Domain], we are basically developing [Project Domain/Summary]. My day-to-day responsibilities mainly involve [Key Responsibilities from Profile]."
-4. Highlight/Award (ONLY if present in profile): "Recently, I also received [Award/Achievement]."
-5. Polite Wrap-up: "Yeah, that's pretty much a quick summary about myself. Thank you."
+SPOKEN FLOW (SIMPLE & NATURAL):
+1. Greeting & Years of Experience:
+   - "Hi, good morning/afternoon, my name is [Name]. Overall I have around [Years] of experience as a [Role], currently working with [Company]."
+2. Primary Skills:
+   - "Coming to my technical skill set, I mainly work with **[Top 2-3 Skills from Profile]**."
+3. Current Project & Daily Work:
+   - "In my current project, we are basically working on [Project Domain/Summary from Profile]."
+   - "Day-to-day, what I mainly do is [Key Responsibilities from Profile]—like developing features, writing unit tests, and handling API integrations."
+4. Award / Achievement (ONLY if present in profile):
+   - "Recently, I was also recognized with [Award/Achievement from Profile]."
+5. Natural Wrap-up:
+   - "Yeah, so that is a quick overview about me and my work."
 
 STRICT RULES:
 - Use ONLY facts explicitly present in the Candidate Profile.
-- Do NOT sound like you are reading a CV or reciting a resume line by line.
-- Keep sentences concise, conversational, and direct.
-- Highlight 2-4 primary technical keywords with inline markdown **bold**.
+- Never invent tools, client names, certifications, or achievements that are not listed in the profile.
+- Keep sentences short (10–14 words max) so the candidate speaks with ease and never fumbles.
+- Use inline **bold** on only 2–4 primary technical keywords for quick eye-scanning.
 
 Start directly with the spoken introduction.
 `.trim();

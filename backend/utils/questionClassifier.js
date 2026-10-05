@@ -46,6 +46,7 @@ export function classifyQuestion(question = "") {
     "tell me about your background",
     "give a brief about yourself",
     "give a quick intro",
+    "brief about yourself",
   ];
 
   if (containsAny(q, selfIntroPatterns)) {
@@ -65,6 +66,7 @@ export function classifyQuestion(question = "") {
     "code snippet",
     "write a program",
     "write program",
+    "write one program",
     "write a method",
     "write the method",
     "write a function",
@@ -73,6 +75,9 @@ export function classifyQuestion(question = "") {
     "create a function",
     "can you code",
     "could you code",
+    "can you write",
+    "how you will write",
+    "how will you write code",
     "coding question",
     "coding problem",
     "solve this problem",
@@ -257,6 +262,7 @@ export function classifyQuestion(question = "") {
     "daily work",
     "daily basis",
     "day to day work",
+    "day-to-day",
     "daily activities",
     "what do you do on a daily basis",
     "what do you do daily",

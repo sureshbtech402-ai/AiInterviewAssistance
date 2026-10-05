@@ -43,6 +43,11 @@ const SHORT_FOLLOW_UPS = new Set([
   "can you optimize",
   "can we optimize this",
   "any other way",
+  "what if",
+  "and then what",
+  "why do we use that",
+  "how to handle that",
+  "what happens internally",
 ]);
 
 const FOLLOW_UP_PATTERNS = [
@@ -72,6 +77,9 @@ const FOLLOW_UP_PATTERNS = [
   "how it handles",
   "what happens if",
   "how does it work internally",
+  "why we need",
+  "any issue with that",
+  "can you explain with code",
 ];
 
 export function isFollowUpQuestion(question = "") {
