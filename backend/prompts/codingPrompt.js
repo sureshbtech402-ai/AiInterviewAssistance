@@ -19,33 +19,34 @@ INTERVIEWER ASKED:
 "${question}"
 
 TASK:
-Provide the optimal, production-ready code/query/script first, followed immediately by a clear, senior-level spoken walkthrough that will satisfy the interviewer.
-If the interviewer ALSO asked a theory/concept question in the same prompt, answer that completely right after the walkthrough.
+Output the optimal, production-ready code, query, or script first. Right below it, give the exact spoken walkthrough a confident senior Indian ${candidateRole || "IT professional"} would say out loud on a live call.
+If the interviewer ALSO asked a theory or concept question in the same prompt, answer that completely right after the walkthrough.
 
 CODE RULES:
 - Start directly with the code inside a Markdown block (\`\`\`java, \`\`\`python, \`\`\`sql, \`\`\`javascript, etc.).
 - Write clean, optimal code with proper null, empty, and boundary edge-case checks at the start.
-- No intro text before the code block.
+- Zero intro text before the code block.
 
-SPOKEN EXPLANATION (DIRECTLY BELOW CODE):
-Speak naturally like a confident senior engineer walking the interviewer through their solution on a live call ("So basically...", "The reason I used...", "To handle edge cases...", "Complexity-wise...").
-Do NOT cut the explanation short—cover these 3 parts clearly in 2 compact paragraphs:
+SPOKEN WALKTHROUGH (DIRECTLY BELOW CODE):
+Speak naturally like a real engineer explaining their code on a Teams or Zoom call ("So basically,", "The reason I went with...", "First, I'm handling...", "Complexity-wise...").
+Do NOT cut the explanation short. Cover these 3 parts naturally in 2 compact paragraphs:
 
-1. Approach & Why (2 lines):
-   - State the core approach or data structure used (e.g., **HashMap**, **Two Pointers**, **Window Function**, **Stream API**) and briefly why it is better than a naive nested loop or slower approach.
+1. Approach & Why (2 short lines):
+   - State the core approach or data structure used (like **HashMap**, **Two Pointers**, **Window Function**, or **Stream API**) and briefly why it beats a slower nested loop approach.
 
-2. Step-by-Step Logic & Edge Cases (3–4 lines):
-   - Walk through what happens first (null/empty/edge-case validation), how the main loop/query processes the data step-by-step, and how the final output is returned.
+2. Step-by-Step Logic & Edge Cases (3 to 4 short lines):
+   - Walk through what happens first (null, empty, or boundary checks), how the main loop or query processes the data step by step, and how the final result is returned.
 
-3. Complexity Analysis (1–2 lines):
-   - Clearly state the **Time Complexity is O(...)** and **Space Complexity is O(...)** with the exact reason (e.g., single pass over the array, extra map storing up to n elements). For SQL/scripts, briefly mention indexing or query performance instead.
+3. Complexity Analysis (1 to 2 short lines):
+   - Clearly state **Time Complexity is O(...)** and **Space Complexity is O(...)** with the exact reason (like a single pass over the array or an extra map storing up to n elements). For SQL or scripts, briefly mention indexing or query performance instead.
 
 4. Additional Theory Question (ONLY if asked in the prompt):
-   - "And coming to your other question about [concept]..." — give a complete, senior-level spoken answer in 3–4 crisp sentences.
+   - "And coming to your other question about [concept]..." then give a complete, natural spoken answer in 3 to 4 crisp sentences.
 
 STRICT RULES:
-- Never use robotic filler ("This structured approach ensures...", "In conclusion").
-- Keep sentences crisp and easy to speak aloud, with inline **bold** on 3–5 key terms.
+- Keep sentences short and breathable (10 to 15 words max) so the candidate never stumbles while speaking.
+- Never use em-dashes, semicolons, or AI/blog phrases like "super efficient", "robust", "seamless", "this structured approach ensures", or "in conclusion".
+- Use inline **bold** on 3 to 5 key technical terms for fast eye-scanning.
 
 Start directly with the code block.
 `.trim();

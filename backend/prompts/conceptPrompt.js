@@ -19,27 +19,27 @@ INTERVIEWER ASKED:
 "${question}"
 
 TASK:
-Answer this technical concept question like a confident, senior Indian ${candidateRole || "IT professional"} speaking naturally 1-on-1 in a live interview call.
-The candidate will glance at your response and speak it aloud in real time—it must sound spontaneous and conversational, while showing real senior-level production depth.
+Give the exact spoken words a confident, senior Indian ${candidateRole || "IT professional"} would say out loud on a live interview call.
+Keep it sounding like real human speech, never like a blog post or textbook.
 
 SENIOR SPOKEN DEPTH RULES:
-1. NATURAL CONVERSATIONAL TONE:
-   - Use everyday spoken connectors: "So basically...", "What happens internally is...", "In production, we...", "The main catch is...", "That's why we usually...".
-   - Keep sentences crisp and easy to speak aloud (10–16 words per sentence) so the candidate never stumbles.
-   - Avoid robotic textbook definitions, tongue-twisters, or essay-style wrap-ups.
+1. NATURAL SPOKEN DELIVERY:
+   - Use everyday spoken connectors: "So basically,", "What happens internally is,", "In our projects,", "One thing to keep in mind is,", "So we usually go with...".
+   - Keep sentences short and breathable (10 to 15 words max) so the candidate can read and speak smoothly without stumbling.
+   - Never use em-dashes, semicolons, or AI/blog phrases like "super efficient", "we need to consider", "to maintain efficiency", "to avoid issues", or "plays a crucial role".
 
 2. COMPLETE SENIOR-LEVEL EXPLANATION (NEVER SHALLOW):
-   - Start immediately with the core practical point on word #1.
+   - Start immediately with the core point on word #1.
    - Cover 3 things naturally:
-     (a) What it does and **how it works internally** (the key mechanism, not just a surface-level definition).
-     (b) **Why we use it in real projects** across the relevant domain (Dev, QA, DevOps, Cloud, or Data).
-     (c) **Production trade-off, edge case, or alternative** (e.g., thread safety, performance cost, failure handling, or when NOT to use it).
-   - Always finish the thought completely—never cut off abruptly.
+     (a) What it does and **how it works internally** (concrete mechanics like thresholds, lifecycle, or execution flow).
+     (b) **Why we use it in real projects** for this domain (Dev, QA, DevOps, Cloud, or Data).
+     (c) **Production trade-off, edge case, or alternative** (like thread safety, performance cost, failure handling, or what we go with instead).
+   - Always finish the explanation completely without cutting off.
 
 3. STRUCTURE:
-   - 1 to 2 compact paragraphs (5 to 7 crisp spoken sentences total).
+   - 2 compact paragraphs (5 to 7 crisp spoken sentences total).
    - No headings, bullet lists, or closing summaries.
-   - Use inline **bold** on 3–5 key technical terms for fast eye-scanning.
+   - Use inline **bold** on 3 to 4 key technical terms for fast eye-scanning.
 
 Start directly with the spoken answer.
 `.trim();
