@@ -506,16 +506,28 @@ app.post("/answer", async (req, res) => {
     const candidateRole = resumeProfile?.primaryRole?.trim() || "IT professional";
 
     const effectiveQuestion =
-      cleanQ || "Analyze the attached screenshot and provide the solution.";
-    const questionType = classifyQuestion(effectiveQuestion);
+      cleanQ ||
+      "Read the question shown in the attached screenshot and answer it directly.";
 
-    const prompt = buildPrompt({
-      question: effectiveQuestion,
-      interviewLevel,
-      company,
-      interviewType,
-      candidateRole,
-    });
+    const questionType =
+      screenshot && !cleanQ
+        ? "SCREENSHOT"
+        : classifyQuestion(effectiveQuestion);
+
+    const prompt =
+      screenshot && !cleanQ
+        ? `Read the attached screenshot carefully and identify the exact question shown on screen.
+- If it is a CODING or SQL question: output the clean, optimal code/query first in a Markdown code block, followed by a short, simple spoken walkthrough (approach, steps, Time/Space complexity).
+- If it is an MCQ (multiple choice): state the exact correct option first, then give a 2-line simple explanation why.
+- If it is a THEORY, SCENARIO, or BEHAVIORAL question: give a direct, natural spoken answer in simple daily Indian IT English (1 to 2 short paragraphs).
+- Start directly with the answer on word #1.`
+        : buildPrompt({
+            question: effectiveQuestion,
+            interviewLevel,
+            company,
+            interviewType,
+            candidateRole,
+          });
 
     if (!prompt) {
       return res.status(400).send("Unable to build interview prompt");
@@ -561,7 +573,7 @@ LIVE TRANSCRIPT QUESTION (May contain an older question at the top and a newer q
 "${effectiveQuestion}"
 ${
   screenshot
-    ? "\nATTACHED SCREENSHOT: Inspect the attached screenshot (e.g. code snippet, test error, pipeline config, or architecture diagram) and answer accordingly."
+    ? "\nATTACHED SCREENSHOT: Inspect the attached screenshot carefully (coding problem, MCQ, theory question, error, or architecture diagram) and answer directly."
     : ""
 }`.trim();
 
@@ -572,7 +584,7 @@ ${
             type: "image_url",
             image_url: {
               url: screenshot,
-              detail: "low",
+              detail: "high",
             },
           },
         ]
@@ -582,11 +594,11 @@ ${
       {
         role: "system",
         content: `You are a Senior Indian ${candidateRole} speaking live in a 1-on-1 technical interview.
-- TONE: Speak naturally in everyday Indian IT English ("So basically...", "What happens is...", "In production, we...", "The main advantage is..."). Sound like a confident senior engineer on a call, NOT a textbook.
-- DEPTH: Give complete, senior-level technical answers across any domain (Dev, QA, DevOps, Cloud, Data). Cover how it works internally, real-world production trade-offs, and edge cases—never give shallow beginner definitions, and always finish your answer completely.
+- TONE: Speak naturally in simple, everyday Indian IT English ("So basically,", "What happens is,", "In our project,", "So we just go with..."). Sound like a confident senior engineer on a call, NOT a textbook.
+- DEPTH: Give complete, senior-level technical answers across any domain (Dev, QA, DevOps, Cloud, Data). Cover how it works internally, real-world production trade-offs, and edge cases without cutting off.
 - LIVE TRANSCRIPT RULE: The question comes from live speech-to-text. Silently correct obvious STT typos from context (e.g. "has map" -> HashMap, "spring board" -> Spring Boot, "cube net" -> Kubernetes). If the transcript has multiple questions, ALWAYS prioritize the LATEST question at the bottom (and briefly cover the earlier one if both are unanswered).
-- CODING EXPLANATION RULE: For coding/query questions, output the clean optimal code first. Right below it, give a proper senior walkthrough the interviewer will be satisfied with: (1) why you chose this approach/data structure, (2) step-by-step logic and edge cases handled, and (3) exact Time and Space complexity with the reason.
-- FORMAT: Start directly on word #1 (no "Certainly", no "In conclusion"). Keep sentences crisp and easy to speak aloud, with inline **bold** on 3-5 key technical terms.
+- CODING EXPLANATION RULE: For coding/query questions, output the clean optimal code first. Right below it, give a proper senior walkthrough in simple daily English: (1) why you chose this approach/data structure, (2) step-by-step logic and edge cases handled, and (3) exact Time and Space complexity with the reason.
+- FORMAT: Start directly on word #1 (no "Certainly", no "In conclusion"). Keep sentences short and easy to speak aloud, with inline **bold** on 3-5 key technical terms.
 - GROUND TRUTH: The Candidate Profile is the ONLY truth for personal/project experience. Never invent unmentioned tools, client names, or metrics.`.trim(),
       },
       {
@@ -602,9 +614,12 @@ ${
       SCENARIO: 450,
       ARCHITECTURE: 550,
       CONCEPT: 420,
+      SCREENSHOT: 900,
     };
 
-    const maxTokens = maxTokensByType[questionType] || 420;
+    const maxTokens = screenshot
+      ? 900
+      : maxTokensByType[questionType] || 420;
 
     const openaiResponse = await fetch(
       "https://api.openai.com/v1/chat/completions",

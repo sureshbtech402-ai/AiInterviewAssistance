@@ -182,6 +182,10 @@ function App() {
   };
 
   const startMediaRecorder = (stream) => {
+    if (!stream || stream.getAudioTracks().length === 0) {
+      return;
+    }
+
     if (
       mediaRecorderRef.current &&
       mediaRecorderRef.current.state !== "inactive"
@@ -282,8 +286,12 @@ function App() {
       };
 
       socket.onclose = () => {
-        // Auto-reconnect silently if screen is still shared
-        if (isInterviewRunningRef.current && screenStreamRef.current) {
+        // Auto-reconnect silently if screen + audio is still shared
+        if (
+          isInterviewRunningRef.current &&
+          screenStreamRef.current &&
+          screenStreamRef.current.getAudioTracks().length > 0
+        ) {
           clearTimeout(reconnectTimerRef.current);
           reconnectTimerRef.current = setTimeout(async () => {
             if (!isInterviewRunningRef.current || !screenStreamRef.current) {
@@ -393,22 +401,21 @@ function App() {
       });
 
       screenStreamRef.current = stream;
-      const audioTrack = stream.getAudioTracks()[0];
-
-      if (!audioTrack) {
-        showToast(
-          "Select a Chrome tab and enable 'Share tab audio'.",
-          "error"
-        );
-        setIsInterviewRunning(false);
-        isInterviewRunningRef.current = false;
-        stream.getTracks().forEach((track) => track.stop());
-        return false;
-      }
 
       stream.getVideoTracks()[0]?.addEventListener("ended", () => {
         stopInterviewMode();
       });
+
+      const audioTrack = stream.getAudioTracks()[0];
+
+      if (!audioTrack) {
+        // Allow screen-only / screenshot mode when no tab audio is shared
+        showToast(
+          "Screen shared in Screenshot Mode (no tab audio detected).",
+          "info"
+        );
+        return true;
+      }
 
       audioTrack.addEventListener("ended", () => {
         stopInterviewMode();
@@ -420,7 +427,7 @@ function App() {
     } catch (error) {
       console.error(error);
       showToast(
-        "Unable to start interview audio. Check sharing permissions.",
+        "Unable to start screen sharing. Check permissions.",
         "error"
       );
       stopInterviewMode();
@@ -504,8 +511,8 @@ function App() {
     try {
       audioStarted = await startInterviewMode();
     } catch (err) {
-      console.error("Audio start failed:", err);
-      showToast("Audio permission failed. Try again.", "error");
+      console.error("Screen/Audio start failed:", err);
+      showToast("Screen sharing permission failed. Try again.", "error");
       return;
     }
 
@@ -558,7 +565,7 @@ function App() {
       } catch (extractError) {
         console.error("Resume Extraction Error:", extractError);
         setAnswerData(
-          "⚠️ Could not extract profile details. You can continue speaking or ask questions directly."
+          "⚠️ Could not extract profile details. You can continue speaking or take screenshots directly."
         );
         showToast("Resume extraction failed. Server might be waking up.", "error");
         setLoading(false);
@@ -613,7 +620,7 @@ function App() {
     }
   };
 
-  const takeTabScreenshot = () => {
+  const takeTabScreenshot = async () => {
     const stream = screenStreamRef.current;
     if (!stream) {
       showToast("Start the interview first to share screen tab.", "error");
@@ -626,25 +633,38 @@ function App() {
       return;
     }
 
-    const video = document.createElement("video");
-    video.srcObject = new MediaStream([videoTrack]);
-    video.muted = true;
+    try {
+      const video = document.createElement("video");
+      video.srcObject = new MediaStream([videoTrack]);
+      video.muted = true;
+      video.playsInline = true;
 
-    video.onloadedmetadata = () => {
-      video.play();
+      await new Promise((resolve) => {
+        video.onloadeddata = resolve;
+      });
+      await video.play();
+
+      // Wait one animation frame so Chrome renders the actual tab image
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
       const canvas = document.createElement("canvas");
-      const scale = Math.min(1, 1280 / (video.videoWidth || 1280));
+      const scale = Math.min(1, 1600 / (video.videoWidth || 1600));
       canvas.width = (video.videoWidth || 1280) * scale;
       canvas.height = (video.videoHeight || 720) * scale;
 
       const ctx = canvas.getContext("2d");
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      const base64Image = canvas.toDataURL("image/jpeg", 0.72);
+      const base64Image = canvas.toDataURL("image/jpeg", 0.85);
+      video.pause();
       video.srcObject = null;
+
       setScreenshotImage(base64Image);
       showToast("Screenshot captured! 📸", "success");
-    };
+    } catch (err) {
+      console.error("Screenshot capture failed:", err);
+      showToast("Failed to capture screenshot.", "error");
+    }
   };
 
   const generateAnswer = async () => {
