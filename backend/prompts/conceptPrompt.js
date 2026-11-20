@@ -5,36 +5,41 @@ export function buildConceptPrompt({
   interviewLevel,
   company,
   interviewType,
+  candidateRole = "",
 }) {
   return `
 ${buildCommonSystemPrompt({
   interviewLevel,
   company,
   interviewType,
+  candidateRole,
 })}
 
 INTERVIEWER ASKED:
 "${question}"
 
 TASK:
-Answer this question as an authentic Indian developer speaking naturally 1-on-1 in a live interview call.
-The candidate will glance at your response and speak it aloud in real time. It must sound spontaneous, casual, and easy to pronounce without reading off a textbook.
+Answer this technical concept question like a confident, senior Indian ${candidateRole || "IT professional"} speaking naturally 1-on-1 in a live interview call.
+The candidate will glance at your response and speak it aloud in real time—it must sound spontaneous and conversational, while showing real senior-level production depth.
 
-NATURAL SPOKEN SPEECH RULES:
-1. USE SIMPLE EVERYDAY SPOKEN WORDS:
-   - Use natural conversational linkers: "So basically...", "What happens is...", "The main thing is...", "Like...", "They will...", "In our daily work...".
-   - Strictly avoid dense textbook phrases, tongue-twisters, or complex jargon (no "bucket arrays", "rehashing loops", "threshold conversions", "amortized logarithmic").
-   - Keep sentences short and punchy (maximum 10–14 words per sentence) so the candidate can read a line in one second and say it naturally without pausing.
+SENIOR SPOKEN DEPTH RULES:
+1. NATURAL CONVERSATIONAL TONE:
+   - Use everyday spoken connectors: "So basically...", "What happens internally is...", "In production, we...", "The main catch is...", "That's why we usually...".
+   - Keep sentences crisp and easy to speak aloud (10–16 words per sentence) so the candidate never stumbles.
+   - Avoid robotic textbook definitions, tongue-twisters, or essay-style wrap-ups.
 
-2. DIRECT, PRACTICAL EXPLANATION:
+2. COMPLETE SENIOR-LEVEL EXPLANATION (NEVER SHALLOW):
    - Start immediately with the core practical point on word #1.
-   - Explain what it does, why we use it in a project, and any simple day-to-day detail (like speed, thread safety, or key-value format).
-   - If asked "What is X", give only the essential answer in 3 to 4 easy lines. Do not dump unnecessary second-level internals unless explicitly asked.
+   - Cover 3 things naturally:
+     (a) What it does and **how it works internally** (the key mechanism, not just a surface-level definition).
+     (b) **Why we use it in real projects** across the relevant domain (Dev, QA, DevOps, Cloud, or Data).
+     (c) **Production trade-off, edge case, or alternative** (e.g., thread safety, performance cost, failure handling, or when NOT to use it).
+   - Always finish the thought completely—never cut off abruptly.
 
 3. STRUCTURE:
-   - Maximum 1 short paragraph (4 to 5 lines total).
-   - Never add closing summaries, introductory filler, or generic essays.
-   - Use inline **bold** on only 2-3 key terms for quick eye-scanning.
+   - 1 to 2 compact paragraphs (5 to 7 crisp spoken sentences total).
+   - No headings, bullet lists, or closing summaries.
+   - Use inline **bold** on 3–5 key technical terms for fast eye-scanning.
 
 Start directly with the spoken answer.
 `.trim();

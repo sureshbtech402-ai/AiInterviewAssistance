@@ -38,6 +38,44 @@ app.use(express.json({ limit: "10mb" }));
 
 const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 
+// Boost common IT / interview terms so Deepgram transcribes them accurately
+const TECH_KEYWORDS = [
+  "Java:2",
+  "Spring Boot:2",
+  "Microservices:2",
+  "HashMap:2",
+  "ConcurrentHashMap:2",
+  "ArrayList:2",
+  "LinkedList:2",
+  "Kafka:2",
+  "Kubernetes:2",
+  "Docker:2",
+  "Jenkins:2",
+  "REST API:2",
+  "SQL:2",
+  "PL/SQL:2",
+  "PostgreSQL:2",
+  "MongoDB:2",
+  "Redis:2",
+  "Selenium:2",
+  "Playwright:2",
+  "TestNG:2",
+  "JUnit:2",
+  "Mockito:2",
+  "Terraform:2",
+  "AWS:2",
+  "Azure:2",
+  "React:2",
+  "Angular:2",
+  "Node.js:2",
+  "Python:2",
+  "JWT:2",
+  "OAuth:2",
+  "CI/CD:2",
+  "Git:2",
+  "Jira:2",
+];
+
 app.get("/", (req, res) => {
   res.send("AI Interview Assistant Backend Running 🚀");
 });
@@ -78,14 +116,16 @@ wss.on("connection", (client) => {
   try {
     dgConnection = deepgram.listen.live({
       model: "nova-2",
-      language: "en-US",
+      language: "en-IN",
       smart_format: true,
       interim_results: true,
-      endpointing: 250,
+      endpointing: 400,
       vad_events: true,
+      keywords: TECH_KEYWORDS,
     });
   } catch (err) {
     console.error("Deepgram live init error:", err);
+    client.close(1011, "Deepgram init failed");
     return;
   }
 
@@ -149,7 +189,8 @@ wss.on("connection", (client) => {
     });
   });
 
-  dgConnection.on(LiveTranscriptionEvents.Error, () => {
+  dgConnection.on(LiveTranscriptionEvents.Error, (err) => {
+    console.error("Deepgram Error:", err);
     sendToClient({ type: "error", error: "Deepgram error" });
   });
 
@@ -158,6 +199,8 @@ wss.on("connection", (client) => {
     clearInterval(keepAlive);
     if (!closedByClient && client.readyState === WebSocket.OPEN) {
       sendToClient({ type: "status", status: "deepgram_closed" });
+      // Close client socket so App.jsx auto-reconnects seamlessly
+      client.close(1011, "Deepgram session closed");
     }
   });
 
@@ -507,14 +550,14 @@ ROLE: ${candidateRole}
 CONTEXT:
 ${previousContext}
 
-FOLLOW-UP: ${isFollowUp ? "YES (Answer only the new specific point directly in 2 short lines)" : "NO"}
+FOLLOW-UP: ${isFollowUp ? "YES (Answer only the new specific point directly with senior-level clarity)" : "NO"}
 
 QUESTION TYPE: ${questionType}
 
 INSTRUCTIONS:
 ${prompt}
 
-QUESTION:
+LIVE TRANSCRIPT QUESTION (May contain an older question at the top and a newer question at the bottom—ALWAYS prioritize the LATEST question at the bottom; if two distinct questions are asked, answer both cleanly):
 "${effectiveQuestion}"
 ${
   screenshot
@@ -538,14 +581,13 @@ ${
     const messages = [
       {
         role: "system",
-        content: `You are an experienced Indian ${candidateRole} speaking live in a 1-on-1 technical interview.
-- Speak in natural, everyday Indian IT English using simple spoken connectors ("So basically...", "What happens is...", "Like...", "They will...", "What we usually do is...").
-- Keep sentences short (10-14 words max) so the candidate can glance at the screen and speak naturally without stumbling.
-- Strictly avoid heavy textbook jargon, tongue-twisters, or bookish definitions.
-- Start directly on word #1 with no intro fluff, no "Certainly", no "In conclusion".
-- If the question involves both practical work/code/scripts and theory: provide the script or solution first, followed by the simple spoken explanation.
-- The Candidate Profile is the ONLY truth for project experience. Never invent tools, client names, or metrics.
-- Use inline **bold** on only 2-3 key terms for fast eye-scanning.`.trim(),
+        content: `You are a Senior Indian ${candidateRole} speaking live in a 1-on-1 technical interview.
+- TONE: Speak naturally in everyday Indian IT English ("So basically...", "What happens is...", "In production, we...", "The main advantage is..."). Sound like a confident senior engineer on a call, NOT a textbook.
+- DEPTH: Give complete, senior-level technical answers across any domain (Dev, QA, DevOps, Cloud, Data). Cover how it works internally, real-world production trade-offs, and edge cases—never give shallow beginner definitions, and always finish your answer completely.
+- LIVE TRANSCRIPT RULE: The question comes from live speech-to-text. Silently correct obvious STT typos from context (e.g. "has map" -> HashMap, "spring board" -> Spring Boot, "cube net" -> Kubernetes). If the transcript has multiple questions, ALWAYS prioritize the LATEST question at the bottom (and briefly cover the earlier one if both are unanswered).
+- CODING EXPLANATION RULE: For coding/query questions, output the clean optimal code first. Right below it, give a proper senior walkthrough the interviewer will be satisfied with: (1) why you chose this approach/data structure, (2) step-by-step logic and edge cases handled, and (3) exact Time and Space complexity with the reason.
+- FORMAT: Start directly on word #1 (no "Certainly", no "In conclusion"). Keep sentences crisp and easy to speak aloud, with inline **bold** on 3-5 key technical terms.
+- GROUND TRUTH: The Candidate Profile is the ONLY truth for personal/project experience. Never invent unmentioned tools, client names, or metrics.`.trim(),
       },
       {
         role: "user",
@@ -554,15 +596,15 @@ ${
     ];
 
     const maxTokensByType = {
-      SELF_INTRO: 350,
-      CODING: 650,
-      PROJECT: 350,
-      SCENARIO: 300,
-      ARCHITECTURE: 400,
-      CONCEPT: 220,
+      SELF_INTRO: 450,
+      CODING: 900,
+      PROJECT: 450,
+      SCENARIO: 450,
+      ARCHITECTURE: 550,
+      CONCEPT: 420,
     };
 
-    const maxTokens = maxTokensByType[questionType] || 250;
+    const maxTokens = maxTokensByType[questionType] || 420;
 
     const openaiResponse = await fetch(
       "https://api.openai.com/v1/chat/completions",

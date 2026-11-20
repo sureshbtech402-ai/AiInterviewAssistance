@@ -12,6 +12,7 @@ export function buildPrompt({
   interviewLevel = "",
   company = "",
   interviewType = "",
+  candidateRole = "",
 }) {
   const cleanQuestion = String(question || "")
     .trim()
@@ -29,6 +30,7 @@ export function buildPrompt({
     interviewLevel,
     company,
     interviewType,
+    candidateRole,
   };
 
   switch (questionType) {

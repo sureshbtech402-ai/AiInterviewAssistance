@@ -69,6 +69,9 @@ function App() {
   const interimTranscriptRef = useRef("");
   const ignoreStaleTranscriptRef = useRef(false);
 
+  const isInterviewRunningRef = useRef(false);
+  const reconnectTimerRef = useRef(null);
+
   // Pre-warm Render backend on initial app load to eliminate cold-start issues
   useEffect(() => {
     fetch(`${API_BASE_URL}/health`).catch(() => {});
@@ -178,6 +181,53 @@ function App() {
     }, 4000);
   };
 
+  const startMediaRecorder = (stream) => {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch {
+        // Safe stop
+      }
+    }
+
+    if (
+      !audioContextRef.current ||
+      audioContextRef.current.state === "closed"
+    ) {
+      audioContextRef.current = new AudioContext({ sampleRate: 48000 });
+    }
+
+    if (audioContextRef.current.state === "suspended") {
+      audioContextRef.current.resume().catch(() => {});
+    }
+
+    const source = audioContextRef.current.createMediaStreamSource(stream);
+    const destination = audioContextRef.current.createMediaStreamDestination();
+    source.connect(destination);
+
+    const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+      ? "audio/webm;codecs=opus"
+      : "audio/webm";
+
+    const recorder = new MediaRecorder(destination.stream, { mimeType });
+    mediaRecorderRef.current = recorder;
+
+    recorder.ondataavailable = (event) => {
+      if (
+        event.data &&
+        event.data.size > 0 &&
+        socketRef.current?.readyState === WebSocket.OPEN
+      ) {
+        socketRef.current.send(event.data);
+      }
+    };
+
+    recorder.start(100);
+  };
+
   const openInterviewSocket = () => {
     return new Promise((resolve, reject) => {
       if (socketRef.current?.readyState === WebSocket.OPEN) {
@@ -186,6 +236,7 @@ function App() {
 
       if (socketRef.current) {
         try {
+          socketRef.current.onclose = null;
           socketRef.current.close();
         } catch {
           // Socket cleanup
@@ -201,6 +252,7 @@ function App() {
 
       socket.onopen = () => {
         clearTimeout(timeout);
+        clearTimeout(reconnectTimerRef.current);
         resolve(socket);
       };
 
@@ -230,14 +282,31 @@ function App() {
       };
 
       socket.onclose = () => {
-        // Socket closed
+        // Auto-reconnect silently if screen is still shared
+        if (isInterviewRunningRef.current && screenStreamRef.current) {
+          clearTimeout(reconnectTimerRef.current);
+          reconnectTimerRef.current = setTimeout(async () => {
+            if (!isInterviewRunningRef.current || !screenStreamRef.current) {
+              return;
+            }
+            try {
+              await openInterviewSocket();
+              startMediaRecorder(screenStreamRef.current);
+              console.log("🔄 Interview audio socket reconnected automatically.");
+            } catch (err) {
+              console.error("Auto-reconnect failed, retrying...", err);
+            }
+          }, 1500);
+        }
       };
     });
   };
 
   const closeInterviewSocket = () => {
+    clearTimeout(reconnectTimerRef.current);
     if (socketRef.current) {
       try {
+        socketRef.current.onclose = null;
         socketRef.current.close();
       } catch {
         // Socket cleanup
@@ -265,7 +334,9 @@ function App() {
   };
 
   const stopInterviewMode = () => {
+    isInterviewRunningRef.current = false;
     clearTimeout(silenceTimerRef.current);
+    clearTimeout(reconnectTimerRef.current);
 
     if (
       mediaRecorderRef.current &&
@@ -314,6 +385,7 @@ function App() {
 
     try {
       setIsInterviewRunning(true);
+      isInterviewRunningRef.current = true;
 
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
@@ -329,6 +401,7 @@ function App() {
           "error"
         );
         setIsInterviewRunning(false);
+        isInterviewRunningRef.current = false;
         stream.getTracks().forEach((track) => track.stop());
         return false;
       }
@@ -341,33 +414,8 @@ function App() {
         stopInterviewMode();
       });
 
-      const socket = await openInterviewSocket();
-
-      const audioContext = new AudioContext({ sampleRate: 48000 });
-      audioContextRef.current = audioContext;
-
-      const source = audioContext.createMediaStreamSource(stream);
-      const destination = audioContext.createMediaStreamDestination();
-      source.connect(destination);
-
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-        ? "audio/webm;codecs=opus"
-        : "audio/webm";
-
-      const recorder = new MediaRecorder(destination.stream, { mimeType });
-      mediaRecorderRef.current = recorder;
-
-      recorder.ondataavailable = (event) => {
-        if (
-          event.data &&
-          event.data.size > 0 &&
-          socket.readyState === WebSocket.OPEN
-        ) {
-          socket.send(event.data);
-        }
-      };
-
-      recorder.start(100);
+      await openInterviewSocket();
+      startMediaRecorder(stream);
       return true;
     } catch (error) {
       console.error(error);
