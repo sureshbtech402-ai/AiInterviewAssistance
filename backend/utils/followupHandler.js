@@ -65,10 +65,6 @@ const FOLLOW_UP_PATTERNS = [
   "why is that",
   "why is it",
   "why was that",
-  "why did you",
-  "how did you",
-  "how do you",
-  "how would you",
   "what do you mean by",
   "can you explain that",
   "can you elaborate on",
@@ -77,9 +73,10 @@ const FOLLOW_UP_PATTERNS = [
   "how it handles",
   "what happens if",
   "how does it work internally",
-  "why we need",
+  "why we need that",
   "any issue with that",
   "can you explain with code",
+  "can you optimize",
 ];
 
 export function isFollowUpQuestion(question = "") {

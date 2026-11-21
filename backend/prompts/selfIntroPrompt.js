@@ -5,39 +5,48 @@ export function buildSelfIntroductionPrompt({
   interviewLevel,
   company,
   interviewType,
+  candidateRole = "",
 }) {
   return `
 ${buildCommonSystemPrompt({
   interviewLevel,
   company,
   interviewType,
+  candidateRole,
 })}
 
 INTERVIEWER ASKED:
 "${question}"
 
 TASK:
-Provide a natural, spoken 60-second introduction for an Indian IT professional on a live 1-on-1 interview call.
-The candidate will look at the screen and speak this out loud. It must sound completely casual, spontaneous, and conversational.
+Give the exact spoken words for a clean, confident 60-second self-introduction on a live 1-on-1 interview call.
+The candidate will glance at the screen and speak it out loud. It must sound natural, smooth, and senior-level—never like someone reading resume bullets.
 
-SPOKEN FLOW (SIMPLE & NATURAL):
-1. Greeting & Years of Experience:
-   - "Hi, good morning/afternoon, my name is [Name]. Overall I have around [Years] of experience as a [Role], currently working with [Company]."
-2. Primary Skills:
-   - "Coming to my technical skill set, I mainly work with **[Top 2-3 Skills from Profile]**."
-3. Current Project & Daily Work:
-   - "In my current project, we are basically working on [Project Domain/Summary from Profile]."
-   - "Day-to-day, what I mainly do is [Key Responsibilities from Profile]—like developing features, writing unit tests, and handling API integrations."
-4. Award / Achievement (ONLY if present in profile):
-   - "Recently, I was also recognized with [Award/Achievement from Profile]."
-5. Natural Wrap-up:
-   - "Yeah, so that is a quick overview about me and my work."
+SPOKEN FLOW (CLEAN & NATURAL):
+1. Greeting & Experience:
+   - "Hi, my name is [Name]. I have around [Years] of experience as a [Role], currently working with [Company]."
+   - NEVER say "good morning" or "good afternoon" so it works at any time of day.
+
+2. Core Stack & Key Tools:
+   - "My core stack is **[Top 3–4 Primary Skills]**, along with **[2–3 Key Cloud, Messaging, or Secondary Tools from Profile if available]**."
+
+3. Current Project & Daily Work (SPOKEN, NOT RESUME BULLETS):
+   - "In my current project, I work on [Project Name and short 1-line domain/business summary from Profile]."
+   - "Day-to-day, I [rewrite 3–4 key responsibilities from Profile into simple, natural spoken English like 'build and maintain...', 'integrate...', 'write unit tests...', 'handle deployments...']."
+   - NEVER copy-paste stiff resume verbs like "conduct unit testing", "leveraging", or "spearheaded".
+
+4. Achievement (ONLY if present in profile):
+   - Mention it naturally without saying "Recently" (e.g., "I was also recognized with [Award/Achievement from Profile].").
+
+5. Clean Wrap-up:
+   - "That's a quick summary of my background and current work."
 
 STRICT RULES:
 - Use ONLY facts explicitly present in the Candidate Profile.
-- Never invent tools, client names, certifications, or achievements that are not listed in the profile.
-- Keep sentences short (10–14 words max) so the candidate speaks with ease and never fumbles.
-- Use inline **bold** on only 2–4 primary technical keywords for quick eye-scanning.
+- Never invent tools, client names, certifications, or achievements not in the profile.
+- Keep sentences short and breathable (10 to 14 words max) with no em-dashes or semicolons.
+- Format as 2 short paragraphs plus the 1-line wrap-up.
+- Use inline **bold** on 3 to 5 key technical terms for fast eye-scanning.
 
 Start directly with the spoken introduction.
 `.trim();

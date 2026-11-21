@@ -92,7 +92,7 @@ export function classifyQuestion(question = "") {
     "give syntax",
     "write logic",
 
-    // Common coding problem keywords
+    // Common coding & Java 8 Stream problem keywords
     "reverse string",
     "reverse a string",
     "reverse linked list",
@@ -107,6 +107,7 @@ export function classifyQuestion(question = "") {
     "anagram",
     "fibonacci",
     "factorial",
+    "prime number",
     "binary search",
     "linear search",
     "sort an array",
@@ -114,13 +115,22 @@ export function classifyQuestion(question = "") {
     "merge arrays",
     "find maximum",
     "find minimum",
+    "second largest",
+    "second highest",
+    "nth highest",
     "count characters",
     "count frequency",
     "frequency of characters",
+    "first non repeating",
+    "first non-repeating",
+    "longest substring",
+    "balanced parentheses",
     "find missing number",
     "two sum",
+    "using streams",
+    "using java 8",
 
-    // Language triggers
+    // Language & SQL triggers
     "java code",
     "python code",
     "javascript code",
@@ -128,6 +138,8 @@ export function classifyQuestion(question = "") {
     "write sql",
     "write a query",
     "write query",
+    "query to find",
+    "sql to find",
     "select query",
     "git command",
     "shell script",
@@ -188,9 +200,10 @@ export function classifyQuestion(question = "") {
   // 4. ARCHITECTURE / SYSTEM DESIGN / FROM SCRATCH SETUP
   // ==================================================
   const architecturePatterns = [
-    // "From Scratch" & Step-by-Step triggers
+    // "From Scratch" & Step-by-Step setup triggers
     "from scratch",
-    "step by step",
+    "step by step setup",
+    "step by step architecture",
     "how do you build from scratch",
     "how to build from scratch",
     "how to create from scratch",
@@ -199,7 +212,9 @@ export function classifyQuestion(question = "") {
     "start from scratch",
     "end to end setup",
     "how to setup",
+    "how to set up",
     "how do you setup",
+    "how do you set up",
     "how to develop from scratch",
 
     // System Design & Architecture
