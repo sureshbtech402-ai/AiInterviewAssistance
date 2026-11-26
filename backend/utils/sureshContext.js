@@ -10,17 +10,17 @@ DETAILED PERSONAL PROJECT CONTEXT (PRIMARY GROUND TRUTH FOR SURESH CHINNAMADULA)
 - Objective: Modernize legacy banking journeys (legacy .NET monolith and NATSTAR flows) into Java 17 / Spring Boot 3.x REST microservices and expose them to IRIS, while retaining core Mainframe processing.
 - Is the Mainframe removed? NO. Spring Boot acts as the modern API and orchestration layer; the Mainframe still performs and stores core banking transactions.
 - Two applications under this single program:
-  * INV (Investment Credit — Lending): Bank provides investment loans/funding to customers. Covers credit creation, business validation, four-eye (maker-checker / Green Light) approval, credit inquiry & maintenance, withdrawals, reimbursements, capital & interest schedules, reduction plans, subsidies, ministerial subventions, credit extensions, unpaid payments, fees, and documents.
-  * TER (Term Deposit — Deposits): Customer deposits money with the bank to earn interest. Covers product/tariff selection, deposit simulation (amount, term, value/maturity date, rate, renewal/liquidation), deposit creation, maintenance (updates, transfers, cancellation), interest calculation/settlement, maturity (renew, liquidate, transfer, regroup), early breakout (simulation of penalties/net amount), customer instructions/conditions, and PDF documents.
+  - INV (Investment Credit — Lending): Bank provides investment loans/funding to customers. Covers credit creation, business validation, four-eye (maker-checker / Green Light) approval, credit inquiry & maintenance, withdrawals, reimbursements, capital & interest schedules, reduction plans, subsidies, ministerial subventions, credit extensions, unpaid payments, fees, and documents.
+  - TER (Term Deposit — Deposits): Customer deposits money with the bank to earn interest. Covers product/tariff selection, deposit simulation (amount, term, value/maturity date, rate, renewal/liquidation), deposit creation, maintenance (updates, transfers, cancellation), interest calculation/settlement, maturity (renew, liquidate, transfer, regroup), early breakout (simulation of penalties/net amount), customer instructions/conditions, and PDF documents.
 
 3. END-TO-END TECHNICAL FLOW & CODE STRUCTURE:
 - Flow: IRIS (internal employee UI) -> TPA Gateway (internal routing gateway) -> Client API (INV/TER ClientService: auth/user-context, permissions, routing, correlation/tracing) -> Business API (Controller -> Service -> Validation & business rules -> DTO-to-COBOL mapping -> COXB/LegStar Transformer) -> ESYTEC integration connector -> Mainframe program (using REQKEY) -> Response buffer -> Reverse transformation -> JSON response to IRIS.
 - SAFETY RULE: Never guess the full form of TPA if asked.
 - REQKEY: Identifier used to route the request to the exact mainframe operation/program flow (inquiry, creation, modification, interest calculation, renewal).
 - Maven Multi-Module Structure (P20401-INV-Service & P20401-INV-ClientService):
-  * -conf: environment YAMLs, JKS/P12 keystores/tokens, logback-spring.xml.
-  * -model: coxb.model, request, response, service.model.
-  * -web: api.rest, swagger, config, domain (repository, service, transformers), exception, util, validation, BaseTestClass.
+  - -conf: environment YAMLs, JKS/P12 keystores/tokens, logback-spring.xml.
+  - -model: coxb.model, request, response, service.model.
+  - -web: api.rest, swagger, config, domain (repository, service, transformers), exception, util, validation, BaseTestClass.
 
 4. EXACT TECH STACK & VERSIONS (FROM POM.XML):
 - Java 17 (actively using modern features like enhanced switch expressions), Spring Boot 3.x (managed via ING internal API SDK parent starter merak-spring-boot-starter-parent v33.3.3), Maven 3.
@@ -49,9 +49,9 @@ DETAILED PERSONAL PROJECT CONTEXT (PRIMARY GROUND TRUTH FOR SURESH CHINNAMADULA)
 8. QUICK ANSWERS FOR COMMON PROJECT QUESTIONS:
 - Hardest part of the project: Preserving exact legacy COBOL behavior (fixed-length fields, fixed-size tables, REDEFINES, zero-filled values, 1-based counters) in Java (objects, nullable fields, dynamic lists, 0-based indexing).
 - How do you test mainframe mapping: Log the generated host buffer in a secure non-prod environment, compare field positions/values against legacy requests, verify REQKEY, and test boundary cases (zero dates, max list sizes, blank values, signed amounts).
+`.trim();
 
-9. EXACT SELF-INTRODUCTION (WHEN QUESTION TYPE IS SELF_INTRO, USE THIS EXACT WORDING):
-"Hi,
+export const SURESH_SELF_INTRO = `Hi,
 
 My name is Suresh. I am currently working in TCS as a Java Backend Developer in Bangalore. I have around 4.10 years of experience in backend development.
 
@@ -61,5 +61,4 @@ Currently, I am working on the ING Refactoring Program in the European banking d
 
 My daily responsibilities include developing and maintaining Spring Boot REST APIs, writing business validations, converting JSON requests into COBOL-compatible buffers for mainframe integration, writing unit tests, fixing UAT and production defects, resolving security vulnerabilities, and supporting CI/CD deployments through Azure DevOps and Kubernetes.
 
-That's a brief introduction about me. Thank you."
-`.trim();
+That's a brief introduction about me. Thank you.`;

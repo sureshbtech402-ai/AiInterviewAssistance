@@ -10,7 +10,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { createClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 import { buildPrompt } from "./utils/promptBuilder.js";
 import { classifyQuestion } from "./utils/questionClassifier.js";
-import { SURESH_EXTRA_CONTEXT } from "./utils/sureshContext.js";
+import { SURESH_EXTRA_CONTEXT, SURESH_SELF_INTRO } from "./utils/sureshContext.js";
 import { VISHNU_EXTRA_CONTEXT } from "./utils/vishnuContext.js";
 import process from "node:process";
 import {
@@ -579,6 +579,12 @@ app.post("/answer", async (req, res) => {
 
     if (res.flushHeaders) {
       res.flushHeaders();
+    }
+
+    const candName = (resumeProfile?.candidateName || "").toLowerCase();
+    if (questionType === "SELF_INTRO" && candName.includes("suresh")) {
+      res.write(SURESH_SELF_INTRO);
+      return res.end();
     }
 
     const userPromptText = `PROFILE:
