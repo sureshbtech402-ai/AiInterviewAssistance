@@ -49,4 +49,17 @@ DETAILED PERSONAL PROJECT CONTEXT (PRIMARY GROUND TRUTH FOR SURESH CHINNAMADULA)
 8. QUICK ANSWERS FOR COMMON PROJECT QUESTIONS:
 - Hardest part of the project: Preserving exact legacy COBOL behavior (fixed-length fields, fixed-size tables, REDEFINES, zero-filled values, 1-based counters) in Java (objects, nullable fields, dynamic lists, 0-based indexing).
 - How do you test mainframe mapping: Log the generated host buffer in a secure non-prod environment, compare field positions/values against legacy requests, verify REQKEY, and test boundary cases (zero dates, max list sizes, blank values, signed amounts).
+
+9. EXACT SELF-INTRODUCTION (WHEN QUESTION TYPE IS SELF_INTRO, USE THIS EXACT WORDING):
+"Hi,
+
+My name is Suresh. I am currently working in TCS as a Java Backend Developer in Bangalore. I have around 4.10 years of experience in backend development.
+
+Coming to my technical skills, I have strong hands-on experience in Java, Spring Boot, Microservices, REST APIs, Mainframe integration using COXB and LegStar, JUnit, Mockito, Azure DevOps, Docker, and Kubernetes.
+
+Currently, I am working on the ING Refactoring Program in the European banking domain for ING Bank. Here, we modernize legacy banking applications into Spring Boot microservices. I mainly work on two applications—INV, which manages Investment Credit loans, and TER, which manages Term Deposits.
+
+My daily responsibilities include developing and maintaining Spring Boot REST APIs, writing business validations, converting JSON requests into COBOL-compatible buffers for mainframe integration, writing unit tests, fixing UAT and production defects, resolving security vulnerabilities, and supporting CI/CD deployments through Azure DevOps and Kubernetes.
+
+That's a brief introduction about me. Thank you."
 `.trim();
