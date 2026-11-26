@@ -27,6 +27,9 @@ export function classifyQuestion(question = "") {
   // 1. SELF INTRODUCTION
   // ==================================================
   const selfIntroPatterns = [
+    "tell me about your self",
+    "introduce your self",
+    "about your self",
     "tell me about yourself",
     "tell us about yourself",
     "introduce yourself",
