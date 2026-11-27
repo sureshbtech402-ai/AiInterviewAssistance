@@ -5,7 +5,7 @@ import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
-function AnswerPanel({ answerData, loading }) {
+function AnswerPanel({ answerData, loading, onDownloadReport, qaCount = 0 }) {
   const answerBodyRef = useRef(null);
   const previousAnswerRef = useRef("");
 
@@ -146,48 +146,48 @@ function AnswerPanel({ answerData, loading }) {
                 strong: ({ children }) => (
                   <strong className="markdown-strong">{children}</strong>
                 ),
-              code({ inline, className, children, ...props }) {
-                const match = /language-(\w+)/.exec(className || "");
-                const codeText = String(children).replace(/\n$/, "");
-                const isBlock = !inline && (match || codeText.includes("\n"));
+                code({ inline, className, children, ...props }) {
+                  const match = /language-(\w+)/.exec(className || "");
+                  const codeText = String(children).replace(/\n$/, "");
+                  const isBlock = !inline && (match || codeText.includes("\n"));
 
-                if (isBlock) {
-                  return (
-                    <div className="code-block-container">
-                      <SyntaxHighlighter
-                        style={oneDark}
-                        language={match ? match[1] : "text"}
-                        PreTag="div"
-                        customStyle={{
-                          borderRadius: "12px",
-                          fontSize: "20px",
-                          padding: "20px",
-                          margin: "18px 0",
-                          lineHeight: "1.7",
-                          background: "#0d1117",
-                          border: "1px solid rgba(148, 163, 184, 0.16)",
-                        }}
-                        codeTagProps={{
-                          style: {
+                  if (isBlock) {
+                    return (
+                      <div className="code-block-container">
+                        <SyntaxHighlighter
+                          style={oneDark}
+                          language={match ? match[1] : "text"}
+                          PreTag="div"
+                          customStyle={{
+                            borderRadius: "12px",
                             fontSize: "20px",
-                            fontFamily:
-                              "Consolas, Monaco, 'Courier New', Courier, monospace",
-                          },
-                        }}
-                        {...props}
-                      >
-                        {codeText}
-                      </SyntaxHighlighter>
-                    </div>
-                  );
-                }
+                            padding: "20px",
+                            margin: "18px 0",
+                            lineHeight: "1.7",
+                            background: "#0d1117",
+                            border: "1px solid rgba(148, 163, 184, 0.16)",
+                          }}
+                          codeTagProps={{
+                            style: {
+                              fontSize: "20px",
+                              fontFamily:
+                                "Consolas, Monaco, 'Courier New', Courier, monospace",
+                            },
+                          }}
+                          {...props}
+                        >
+                          {codeText}
+                        </SyntaxHighlighter>
+                      </div>
+                    );
+                  }
 
-                return (
-                  <code className="inline-code" {...props}>
-                    {children}
-                  </code>
-                );
-              },
+                  return (
+                    <code className="inline-code" {...props}>
+                      {children}
+                    </code>
+                  );
+                },
               }}
             >
               {answerText}
@@ -196,15 +196,34 @@ function AnswerPanel({ answerData, loading }) {
         )}
       </div>
 
-      {hasAnswer && (
-        <div className="copy-footer">
+      {(hasAnswer || qaCount > 0) && (
+        <div
+          className="copy-footer"
+          style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}
+        >
           <button
             type="button"
             className="copy-btn"
-            onClick={copyAnswer}
+            onClick={onDownloadReport}
+            disabled={qaCount === 0}
+            style={{
+              background: qaCount > 0 ? "#16a34a" : "#334155",
+              cursor: qaCount > 0 ? "pointer" : "not-allowed",
+              opacity: qaCount > 0 ? 1 : 0.6,
+            }}
           >
-            📋 Copy
+            📥 Download Q&A ({qaCount})
           </button>
+
+          {hasAnswer && (
+            <button
+              type="button"
+              className="copy-btn"
+              onClick={copyAnswer}
+            >
+              📋 Copy
+            </button>
+          )}
         </div>
       )}
     </div>

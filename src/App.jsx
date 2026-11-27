@@ -791,52 +791,28 @@ function App() {
         )}
 
         {interviewStarted && (
-          <>
-            <div className="main-layout">
-              <QuestionPanel
-                question={question}
-                setQuestion={setQuestion}
-                textareaRef={textareaRef}
-                isInterviewRunning={isInterviewRunning}
-                stopInterviewMode={stopInterviewMode}
-                loading={loading}
-                generateAnswer={generateAnswer}
-                clearQuestionAndAnswer={clearQuestionAndAnswer}
-                screenshotImage={screenshotImage}
-                onTakeScreenshot={takeTabScreenshot}
-                onRemoveScreenshot={() => setScreenshotImage(null)}
-              />
+          <div className="main-layout">
+            <QuestionPanel
+              question={question}
+              setQuestion={setQuestion}
+              textareaRef={textareaRef}
+              isInterviewRunning={isInterviewRunning}
+              stopInterviewMode={stopInterviewMode}
+              loading={loading}
+              generateAnswer={generateAnswer}
+              clearQuestionAndAnswer={clearQuestionAndAnswer}
+              screenshotImage={screenshotImage}
+              onTakeScreenshot={takeTabScreenshot}
+              onRemoveScreenshot={() => setScreenshotImage(null)}
+            />
 
-              <AnswerPanel answerData={answerData} loading={loading} />
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                marginTop: "10px",
-                paddingRight: "8px",
-              }}
-            >
-              <button
-                onClick={handleDownloadReport}
-                disabled={interviewLog.length === 0}
-                style={{
-                  background: interviewLog.length > 0 ? "#16a34a" : "#334155",
-                  color: "#ffffff",
-                  border: "none",
-                  borderRadius: "8px",
-                  padding: "7px 14px",
-                  fontSize: "13px",
-                  fontWeight: "600",
-                  cursor: interviewLog.length > 0 ? "pointer" : "not-allowed",
-                  opacity: interviewLog.length > 0 ? 1 : 0.6,
-                }}
-              >
-                📥 Download Q&A Sheet ({interviewLog.length})
-              </button>
-            </div>
-          </>
+            <AnswerPanel
+              answerData={answerData}
+              loading={loading}
+              onDownloadReport={handleDownloadReport}
+              qaCount={interviewLog.length}
+            />
+          </div>
         )}
       </main>
     </>
