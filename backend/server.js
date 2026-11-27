@@ -11,7 +11,6 @@ import { createClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 import { buildPrompt } from "./utils/promptBuilder.js";
 import { classifyQuestion } from "./utils/questionClassifier.js";
 import { SURESH_EXTRA_CONTEXT, SURESH_SELF_INTRO } from "./utils/sureshContext.js";
-import { VISHNU_EXTRA_CONTEXT } from "./utils/vishnuContext.js";
 import process from "node:process";
 import {
   isFollowUpQuestion,
@@ -79,21 +78,6 @@ const TECH_KEYWORDS = [
   "LegStar:2",
   "COXB:2",
   "REQKEY:2",
-  "ServiceNow:2",
-  "ITSM:2",
-  "HRSD:2",
-  "GlideRecord:2",
-  "GlideAjax:2",
-  "GlideAggregate:2",
-  "Business Rule:2",
-  "Script Include:2",
-  "Flow Designer:2",
-  "Update Set:2",
-  "Transform Map:2",
-  "Import Set:2",
-  "Record Producer:2",
-  "ACL:2",
-  "RITM:2",
 ];
 
 app.get("/", (req, res) => {
@@ -476,8 +460,6 @@ function buildInterviewProfile(profile = {}) {
   const candidateName = (profile.candidateName || "").toLowerCase();
   if (candidateName.includes("suresh") && candidateName.includes("chinnamadula")) {
     parts.push("\n" + SURESH_EXTRA_CONTEXT);
-  } else if (candidateName.includes("vishnu") && candidateName.includes("kummara")) {
-    parts.push("\n" + VISHNU_EXTRA_CONTEXT);
   }
 
   return parts.join("\n") || "No explicit profile data available.";
