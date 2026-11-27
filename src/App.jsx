@@ -792,11 +792,30 @@ function App() {
 
         {interviewStarted && (
           <>
+            <div className="main-layout">
+              <QuestionPanel
+                question={question}
+                setQuestion={setQuestion}
+                textareaRef={textareaRef}
+                isInterviewRunning={isInterviewRunning}
+                stopInterviewMode={stopInterviewMode}
+                loading={loading}
+                generateAnswer={generateAnswer}
+                clearQuestionAndAnswer={clearQuestionAndAnswer}
+                screenshotImage={screenshotImage}
+                onTakeScreenshot={takeTabScreenshot}
+                onRemoveScreenshot={() => setScreenshotImage(null)}
+              />
+
+              <AnswerPanel answerData={answerData} loading={loading} />
+            </div>
+
             <div
               style={{
                 display: "flex",
                 justifyContent: "flex-end",
-                marginBottom: "8px",
+                marginTop: "10px",
+                paddingRight: "8px",
               }}
             >
               <button
@@ -816,24 +835,6 @@ function App() {
               >
                 📥 Download Q&A Sheet ({interviewLog.length})
               </button>
-            </div>
-
-            <div className="main-layout">
-              <QuestionPanel
-                question={question}
-                setQuestion={setQuestion}
-                textareaRef={textareaRef}
-                isInterviewRunning={isInterviewRunning}
-                stopInterviewMode={stopInterviewMode}
-                loading={loading}
-                generateAnswer={generateAnswer}
-                clearQuestionAndAnswer={clearQuestionAndAnswer}
-                screenshotImage={screenshotImage}
-                onTakeScreenshot={takeTabScreenshot}
-                onRemoveScreenshot={() => setScreenshotImage(null)}
-              />
-
-              <AnswerPanel answerData={answerData} loading={loading} />
             </div>
           </>
         )}
