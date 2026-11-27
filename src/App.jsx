@@ -7,6 +7,7 @@ import Header from "./components/Header";
 import UploadResume from "./components/UploadResume";
 import QuestionPanel from "./components/QuestionPanel";
 import AnswerPanel from "./components/AnswerPanel";
+import { downloadInterviewSheet } from "./utils/exportReport";
 
 import "./styles/app.css";
 
@@ -31,6 +32,7 @@ function App() {
   const [showConfig, setShowConfig] = useState(true);
   const [answerData, setAnswerData] = useState(null);
   const [, setConversationHistory] = useState([]);
+  const [interviewLog, setInterviewLog] = useState([]);
   const [loading, setLoading] = useState(false);
   const [interviewStarted, setInterviewStarted] = useState(false);
 
@@ -115,6 +117,7 @@ function App() {
       return;
     }
 
+    // Keep last 3 Q&As for AI follow-up context
     const updatedHistory = [
       ...conversationHistoryRef.current,
       { role: "user", content: cleanQuestion },
@@ -123,6 +126,19 @@ function App() {
 
     conversationHistoryRef.current = updatedHistory;
     setConversationHistory(updatedHistory);
+
+    // Keep FULL interview Q&A log for downloadable report
+    setInterviewLog((prev) => [
+      ...prev,
+      { question: cleanQuestion, answer: cleanAnswer },
+    ]);
+  };
+
+  const handleDownloadReport = () => {
+    downloadInterviewSheet(interviewLog, {
+      candidateName: resumeProfile?.candidateName,
+      company: company === "Others" ? customCompany : company,
+    });
   };
 
   const updateQuestionFromTranscript = (payload) => {
@@ -492,6 +508,7 @@ function App() {
 
     conversationHistoryRef.current = [];
     setConversationHistory([]);
+    setInterviewLog([]);
 
     setQuestion("");
     setScreenshotImage(null);
@@ -774,23 +791,51 @@ function App() {
         )}
 
         {interviewStarted && (
-          <div className="main-layout">
-            <QuestionPanel
-              question={question}
-              setQuestion={setQuestion}
-              textareaRef={textareaRef}
-              isInterviewRunning={isInterviewRunning}
-              stopInterviewMode={stopInterviewMode}
-              loading={loading}
-              generateAnswer={generateAnswer}
-              clearQuestionAndAnswer={clearQuestionAndAnswer}
-              screenshotImage={screenshotImage}
-              onTakeScreenshot={takeTabScreenshot}
-              onRemoveScreenshot={() => setScreenshotImage(null)}
-            />
+          <>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginBottom: "8px",
+              }}
+            >
+              <button
+                onClick={handleDownloadReport}
+                disabled={interviewLog.length === 0}
+                style={{
+                  background: interviewLog.length > 0 ? "#16a34a" : "#334155",
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: "8px",
+                  padding: "7px 14px",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  cursor: interviewLog.length > 0 ? "pointer" : "not-allowed",
+                  opacity: interviewLog.length > 0 ? 1 : 0.6,
+                }}
+              >
+                📥 Download Q&A Sheet ({interviewLog.length})
+              </button>
+            </div>
 
-            <AnswerPanel answerData={answerData} loading={loading} />
-          </div>
+            <div className="main-layout">
+              <QuestionPanel
+                question={question}
+                setQuestion={setQuestion}
+                textareaRef={textareaRef}
+                isInterviewRunning={isInterviewRunning}
+                stopInterviewMode={stopInterviewMode}
+                loading={loading}
+                generateAnswer={generateAnswer}
+                clearQuestionAndAnswer={clearQuestionAndAnswer}
+                screenshotImage={screenshotImage}
+                onTakeScreenshot={takeTabScreenshot}
+                onRemoveScreenshot={() => setScreenshotImage(null)}
+              />
+
+              <AnswerPanel answerData={answerData} loading={loading} />
+            </div>
+          </>
         )}
       </main>
     </>
